@@ -107,26 +107,8 @@ export async function sendVerificationEmail(email: string, token: string): Promi
           </div>
         </body>
         </html>
-      `,
-      text: `
-Welcome to GatorEx! 🐊
-
-You're just one click away from joining the GatorEx community. 
-
-Verify your UF email by visiting: ${verifyLink}
-
-Why do we verify UF emails?
-• Ensures you're a real UF student
-• Creates a trusted community  
-• Prevents spam and fraud
-• Enables secure transactions
-
-This link will expire in 24 hours for security reasons.
-
-Go Gators! 🐊
-GatorEx - Built by students, for students
       `;
-
+      
     const text = `
 Welcome to GatorEx! 🐊
 
@@ -164,11 +146,6 @@ export async function verifyEmailToken(token: string, email: string): Promise<bo
       return false;
     }
 
-    // Check if token has expired
-    if (user.verifyTokenExpiry && user.verifyTokenExpiry < new Date()) {
-      return false;
-    }
-
     // Update user with verified email
     await prisma.user.update({
       where: { id: user.id },
@@ -176,7 +153,6 @@ export async function verifyEmailToken(token: string, email: string): Promise<bo
         ufEmail: email,
         ufEmailVerified: true,
         verifyToken: null,
-        verifyTokenExpiry: null,
         trustScore: { increment: 10 }
       }
     });

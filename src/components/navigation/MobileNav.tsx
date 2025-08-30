@@ -60,7 +60,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
       icon: HomeIcon,
       href: '/sublease',
       active: router.pathname === '/sublease',
-      badge: 'Coming Soon'
+      badge: 'Soon'
     },
     {
       id: 'profile',

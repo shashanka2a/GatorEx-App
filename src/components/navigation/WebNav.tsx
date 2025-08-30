@@ -94,21 +94,24 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                 Sell
               </button>
 
-              <div className="relative">
-                <button
-                  onClick={() => router.push('/sublease')}
-                  disabled
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed min-h-[44px] flex items-center relative"
-                  title="Coming soon"
-                  aria-label="Sublease - Coming soon"
-                >
-                  <HomeIcon size={16} className="mr-2" />
-                  Sublease
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                    Soon
-                  </span>
-                </button>
-              </div>
+              <Link
+                href="/sublease"
+                onClick={() => handleTabSwitch('sublease')}
+                className={`
+                  px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] flex items-center relative
+                  ${router.pathname === '/sublease' 
+                    ? 'text-orange-600 bg-orange-100 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }
+                `}
+                aria-current={router.pathname === '/sublease' ? 'page' : undefined}
+              >
+                <HomeIcon size={16} className="mr-2" />
+                Sublease
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  Soon
+                </span>
+              </Link>
 
               <Link
                 href="/me"

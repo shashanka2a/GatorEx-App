@@ -143,7 +143,7 @@ export default function SubleasePage() {
               <div className="bg-orange-500 w-4 h-4 rounded-full mt-1 mr-4 flex-shrink-0"></div>
               <div>
                 <h3 className="font-semibold text-gray-900">Phase 2: Sublease Platform</h3>
-                <p className="text-gray-600 text-sm">🚧 In Development - Expected Spring 2025</p>
+                <p className="text-gray-600 text-sm">🚧 In Development - Expected Spring 2026</p>
               </div>
             </div>
 
@@ -169,7 +169,7 @@ export default function SubleasePage() {
                 When will the sublease feature launch?
               </h3>
               <p className="text-gray-600">
-                We're targeting Spring 2025 for the initial launch. Waitlist members will get 
+                We're targeting Spring 2026 for the initial launch. Waitlist members will get 
                 early access and updates on our progress.
               </p>
             </div>
