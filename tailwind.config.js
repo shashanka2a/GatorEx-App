@@ -101,6 +101,12 @@ module.exports = {
         'uf-orange-gradient': 'linear-gradient(135deg, #FF9533 0%, #E66B00 100%)',
         'uf-blue-gradient': 'linear-gradient(135deg, #3347FF 0%, #001AE6 100%)',
       },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
