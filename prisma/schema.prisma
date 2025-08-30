@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String     @id @default(cuid())
+  whatsappId         String     @unique
+  ufEmail            String?    @unique
+  ufEmailVerified    Boolean    @default(false)
+  name               String?
+  verifyToken        String?
+  trustScore         Int        @default(0)
+  trustLevel         TrustLevel @default(BASIC)
+  dailyListingCount  Int        @default(0)
+  lastListingDate    DateTime?
+  spamAttempts       Int        @default(0)
+  shadowBanned       Boolean    @default(false)
+  conversationState  String?
+  conversationData   Json?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  
+  listings           Listing[]
+  
+  @@map("users")
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  price       Float?
+  category    String?
+  condition   String?
+  status      ListingStatus @default(DRAFT)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  images      Image[]
+  
+  @@map("listings")
+}
+
+model Image {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String?
+  createdAt DateTime @default(now())
+  
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  @@map("images")
+}
+
+model WhatsAppMessage {
+  id          String   @id @default(cuid())
+  whatsappId  String
+  messageId   String   @unique
+  content     String?
+  mediaUrl    String?
+  mediaType   String?
+  processed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  @@map("whatsapp_messages")
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  whatsappId  String
+  itemName    String
+  priceRange  String?
+  category    String?
+  keywords    String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("subscriptions")
+}
+
+model BuyRequest {
+  id          String   @id @default(cuid())
+  whatsappId  String
+  itemName    String
+  priceRange  String?
+  description String?
+  active      Boolean  @default(true)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("buy_requests")
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_INFO
+  READY
+  PUBLISHED
+  EXPIRED
+  BLOCKED
+  SHADOW_BANNED
+}
+
+enum TrustLevel {
+  BASIC
+  TRUSTED
+  SHADOW_BANNED
+}
