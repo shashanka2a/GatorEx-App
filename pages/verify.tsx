@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { setEmailVerified, setVerifiedEmail } from '../src/lib/client/verification';
 
 export default function VerifyPage() {
   const router = useRouter();

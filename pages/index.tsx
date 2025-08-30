@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
-import { checkEmailVerification } from '../src/lib/email/verification';
+import { checkEmailVerification } from '../src/lib/client/verification';
 
 // Mock listings data
 const mockListings = [
