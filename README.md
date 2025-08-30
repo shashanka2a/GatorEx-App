@@ -137,5 +137,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 Built with 🐊 pride for the Gator community!
 
 ---
-
-*Original Figma design: https://www.figma.com/design/uGx10rZ8dyPeTIByu5dHFa/GatorEx-Mobile-App*
