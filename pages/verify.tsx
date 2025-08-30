@@ -23,8 +23,19 @@ export default function VerifyPage() {
     }
 
     try {
-      // TODO: Implement actual verification API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch('/api/send-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send verification email');
+      }
       
       setIsSubmitted(true);
       
@@ -36,7 +47,7 @@ export default function VerifyPage() {
         });
       }
     } catch (error) {
-      setError('Failed to send verification email. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to send verification email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -46,14 +57,39 @@ export default function VerifyPage() {
     const { token } = router.query;
     
     if (token) {
+      setIsLoading(true);
       try {
-        // TODO: Implement token verification
-        console.log('Verifying token:', token);
+        const response = await fetch('/api/verify-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            token: token as string,
+            email: router.query.email || email 
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Verification failed');
+        }
+        
+        // Analytics event
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('event', 'email_verified', {
+            event_category: 'auth',
+            event_label: 'verify_page'
+          });
+        }
         
         // Redirect to home after successful verification
-        router.push('/');
+        router.push('/?verified=true');
       } catch (error) {
-        setError('Invalid or expired verification link.');
+        setError(error instanceof Error ? error.message : 'Invalid or expired verification link.');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
