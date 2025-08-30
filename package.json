@@ -9,8 +9,11 @@
     "lint": "next lint",
     "export": "next build && next export",
     "setup": "node scripts/setup.js",
+    "setup:prod": "node scripts/setup-production.js",
+    "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:email": "node scripts/test-email.js"
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",

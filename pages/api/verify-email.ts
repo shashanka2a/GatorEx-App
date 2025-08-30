@@ -1,96 +1,66 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Shared in-memory storage - this needs to be the same instance as send-verification
+// In production, use a database or Redis
+declare global {
+  var verificationTokens: Map<string, { email: string; expires: Date; otp: string }> | undefined;
+}
+
+const verificationTokens = globalThis.verificationTokens ?? new Map<string, { email: string; expires: Date; otp: string }>();
+globalThis.verificationTokens = verificationTokens;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { token, email } = req.body;
+  const { token, otp, email } = req.body;
 
-  if (!token || !email) {
-    return res.status(400).json({ error: 'Token and email are required' });
+  if (!token || !otp || !email) {
+    return res.status(400).json({ error: 'Token, OTP, and email are required' });
   }
 
   // Validate UF email
-  if (!email.endsWith('@ufl.edu')) {
+  if (!email.toLowerCase().endsWith('@ufl.edu')) {
     return res.status(400).json({ error: 'Please use a valid UF email address' });
   }
 
   try {
-    // In development mode, use in-memory token storage
-    if (process.env.NODE_ENV === 'development') {
-      const devTokens = (global as any).devTokens || {};
-      const tokenData = devTokens[token];
-      
-      if (!tokenData) {
-        return res.status(400).json({ error: 'Invalid verification token' });
-      }
-      
-      if (new Date() > tokenData.expires) {
-        delete devTokens[token];
-        return res.status(400).json({ error: 'Verification token has expired' });
-      }
-      
-      if (tokenData.email !== email.toLowerCase()) {
-        return res.status(400).json({ error: 'Email does not match token' });
-      }
-      
-      // Clean up token
-      delete devTokens[token];
-      
-      console.log('✅ Development Mode - Email verified:', email);
-      
-      return res.status(200).json({ 
-        success: true,
-        devMode: true,
-        message: 'Email verified successfully in development mode'
-      });
+    // Get stored verification data
+    const storedData = verificationTokens.get(token);
+
+    if (!storedData) {
+      return res.status(400).json({ error: 'Invalid or expired verification code' });
     }
 
-    // Production mode - use database
-    // Find user by verification token
-    const user = await prisma.user.findFirst({
-      where: { verifyToken: token }
-    });
-
-    if (!user) {
-      return res.status(400).json({ error: 'Invalid verification token' });
+    // Check if expired
+    if (new Date() > storedData.expires) {
+      verificationTokens.delete(token);
+      return res.status(400).json({ error: 'Verification code has expired' });
     }
 
-    // Check if token has expired
-    if (user.verifyTokenExpiry && user.verifyTokenExpiry < new Date()) {
-      return res.status(400).json({ error: 'Verification token has expired' });
+    // Check email matches
+    if (storedData.email !== email.toLowerCase()) {
+      return res.status(400).json({ error: 'Email does not match' });
     }
 
-    // Update user with verified email
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        ufEmail: email,
-        ufEmailVerified: true,
-        verifyToken: null,
-        verifyTokenExpiry: null,
-        trustScore: { increment: 10 }
-      }
-    });
+    // Check OTP matches
+    if (storedData.otp !== otp) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
 
-    // Publish any ready draft listings for this user (not shadow banned ones)
-    await prisma.listing.updateMany({
-      where: {
-        userId: user.id,
-        status: 'READY'
-      },
-      data: {
-        status: 'PUBLISHED'
-      }
-    });
+    // Clean up used token
+    verificationTokens.delete(token);
 
-    res.status(200).json({ success: true });
+    console.log('✅ Email verified successfully:', email);
+
+    res.status(200).json({ 
+      success: true,
+      message: 'Email verified successfully!',
+      email: email
+    });
   } catch (error) {
-    console.error('Email verification error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('OTP verification error:', error);
+    res.status(500).json({ error: 'Verification failed' });
   }
 }

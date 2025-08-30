@@ -1,55 +1,50 @@
 import { PrismaClient } from '@prisma/client';
-import nodemailer from 'nodemailer';
+import { getEmailProvider } from './providers';
 
 const prisma = new PrismaClient();
+
+// Rate limiting for email sending
+const emailRateLimit = new Map<string, number[]>();
 
 export function generateVerificationToken(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-// Create email transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-};
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxAttempts = 3;
+
+  const attempts = emailRateLimit.get(email) || [];
+  const recentAttempts = attempts.filter(time => now - time < windowMs);
+
+  if (recentAttempts.length >= maxAttempts) {
+    return false;
+  }
+
+  emailRateLimit.set(email, [...recentAttempts, now]);
+  return true;
+}
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  // Store the token in the user record with 24-hour expiry
-  const expiryDate = new Date();
-  expiryDate.setHours(expiryDate.getHours() + 24);
-  
-  await prisma.user.updateMany({
-    where: { ufEmail: email },
-    data: { 
-      verifyToken: token,
-      verifyTokenExpiry: expiryDate
-    }
-  });
-
-  const verifyLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify?token=${token}`;
+  // Check rate limit
+  if (!checkRateLimit(email)) {
+    throw new Error('Too many verification attempts. Please try again later.');
+  }
+  const verifyLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify?token=${token}&email=${encodeURIComponent(email)}`;
   
   // In development, just log the link
   if (process.env.NODE_ENV === 'development') {
-    console.log(`🔗 Verification link for ${email}: ${verifyLink}`);
+    console.log(`🔗 Magic link for ${email}: ${verifyLink}`);
     return;
   }
 
   // Production email sending
   try {
-    const transporter = createTransporter();
+    const emailProvider = getEmailProvider();
     
-    const mailOptions = {
-      from: `"GatorEx" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Verify your UF email for GatorEx 🐊',
-      html: `
+    const subject = 'Verify your UF email for GatorEx 🐊';
+    const html = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -130,14 +125,32 @@ This link will expire in 24 hours for security reasons.
 
 Go Gators! 🐊
 GatorEx - Built by students, for students
-      `
-    };
+      `;
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Verification email sent to ${email}`);
+    const text = `
+Welcome to GatorEx! 🐊
+
+You're just one click away from joining the GatorEx community. 
+
+Verify your UF email by visiting: ${verifyLink}
+
+Why do we verify UF emails?
+• Ensures you're a real UF student
+• Creates a trusted community  
+• Prevents spam and fraud
+• Enables secure transactions
+
+This link will expire in 24 hours for security reasons.
+
+Go Gators! 🐊
+GatorEx - Built by students, for students
+    `;
+
+    await emailProvider.sendEmail(email, subject, html, text);
+    console.log(`✅ Magic link sent to ${email}`);
   } catch (error) {
-    console.error('❌ Failed to send verification email:', error);
-    throw new Error('Failed to send verification email');
+    console.error('❌ Failed to send magic link:', error);
+    throw new Error('Failed to send magic link');
   }
 }
 
