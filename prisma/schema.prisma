@@ -15,6 +15,7 @@ model User {
   name               String?
   verifyToken        String?
   verifyTokenExpiry  DateTime?
+  source             UserSource @default(WHATSAPP)
   trustScore         Int        @default(0)
   trustLevel         TrustLevel @default(BASIC)
   dailyListingCount  Int        @default(0)
@@ -118,4 +119,9 @@ enum TrustLevel {
   BASIC
   TRUSTED
   SHADOW_BANNED
+}
+
+enum UserSource {
+  WHATSAPP
+  WEB
 }

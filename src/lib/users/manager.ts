@@ -12,8 +12,9 @@ export async function findOrCreateUser(whatsappId: string) {
     user = await prisma.user.create({
       data: {
         whatsappId,
-        ufEmailVerified: false,
-        trustScore: 0,
+        ufEmailVerified: true, // Auto-verified since only UF students can access WhatsApp bot
+        source: 'WHATSAPP',
+        trustScore: 10, // Start with higher trust score for verified UF students
         trustLevel: 'BASIC'
       }
     });

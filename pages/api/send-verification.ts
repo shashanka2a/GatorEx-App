@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       create: {
         whatsappId: `web_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Temporary ID for web users
         ufEmail: email.toLowerCase(),
+        source: 'WEB',
         verifyToken: token,
         verifyTokenExpiry: expiryDate,
         ufEmailVerified: false

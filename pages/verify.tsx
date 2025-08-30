@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function VerifyPage() {
     }
   };
 
-  const handleTokenVerification = async () => {
+  const handleTokenVerification = useCallback(async () => {
     const { token } = router.query;
     
     if (token) {
@@ -92,14 +92,14 @@ export default function VerifyPage() {
         setIsLoading(false);
       }
     }
-  };
+  }, [router, email]);
 
   // Handle token verification on page load
   useEffect(() => {
     if (router.query.token) {
       handleTokenVerification();
     }
-  }, [router.query.token]);
+  }, [router.query.token, handleTokenVerification]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50 flex items-center justify-center p-4">

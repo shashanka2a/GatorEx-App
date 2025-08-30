@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
+import { checkEmailVerification } from '../src/lib/email/verification';
 
 // Mock listings data
 const mockListings = [
@@ -109,6 +110,12 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [userVerified, setUserVerified] = useState(false);
+
+  useEffect(() => {
+    const verified = checkEmailVerification();
+    setUserVerified(verified);
+  }, []);
 
   const categories = ['All', 'Electronics', 'Books', 'Clothing', 'Furniture', 'Transportation', 'Other'];
 
@@ -126,7 +133,7 @@ export default function HomePage() {
   });
 
   return (
-    <Layout onSearch={handleSearch}>
+    <Layout userVerified={userVerified} onSearch={handleSearch}>
       <Head>
         <title>Buy Items - GatorEx</title>
         <meta name="description" content="Buy items safely from fellow UF students" />

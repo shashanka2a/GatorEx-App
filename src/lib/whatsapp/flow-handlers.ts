@@ -1,4 +1,4 @@
-import { generateVerificationToken, sendVerificationEmail } from '../email/verification';
+// Email verification imports removed - not needed for WhatsApp flow
 import { getConversationState, updateConversationState, clearConversationState } from './conversation-state';
 import { checkRateLimit } from './rate-limiter';
 import { moderateContent } from './moderation';
@@ -24,10 +24,24 @@ export async function handleConsentResponse(whatsappId: string, message: string)
   const consent = message.toUpperCase().trim();
   
   if (consent === 'YES') {
-    await updateConversationState(whatsappId, 'AWAITING_UF_EMAIL');
-    return `Great! Now I need to verify you're a UF student.
+    // Since only UF students can access this bot, directly create verified user
+    const { findOrCreateUser } = await import('../users/manager');
+    const user = await findOrCreateUser(whatsappId);
+    
+    // Mark as verified UF student (since they can only access if they're UF students)
+    await updateConversationState(whatsappId, 'AWAITING_INTENT', {
+      ufVerified: true,
+      onboardingComplete: true
+    });
+    
+    return `🎉 Perfect! You're all set up!
 
-Please send me your UF email address (must end with @ufl.edu):`;
+What would you like to do today?
+
+🛒 **BUY** - Search for items or set up alerts
+🏷️ **SELL** - List an item for sale
+
+Just reply "BUY" or "SELL" to get started!`;
   } else if (consent === 'NO') {
     return `No problem! Feel free to message me anytime if you change your mind. 
 
@@ -37,39 +51,7 @@ Have a great day! 🐊`;
   }
 }
 
-export async function handleUFEmailSubmission(whatsappId: string, email: string): Promise<string> {
-  // Validate UF email format
-  if (!email.toLowerCase().endsWith('@ufl.edu')) {
-    return `That doesn't look like a UF email address. Please send your @ufl.edu email:`;
-  }
-
-  // Extract name from email
-  const ufName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
-  // Generate verification token and send email
-  const token = generateVerificationToken();
-  
-  try {
-    await sendVerificationEmail(email, token);
-    
-    // Store user data
-    await updateConversationState(whatsappId, 'AWAITING_INTENT', {
-      ufName,
-      ufEmail: email
-    });
-
-    return `Perfect! I've sent a verification link to ${email}
-
-Once you verify, you can start buying and selling. For now, are you looking to:
-
-🛒 BUY something
-🏷️ SELL something
-
-Just reply "BUY" or "SELL"`;
-  } catch (error) {
-    return `Sorry, I couldn't send the verification email. Please try again with your UF email:`;
-  }
-}
+// UF Email submission removed - not needed since only UF students can access the bot
 
 export async function handleIntentSelection(whatsappId: string, message: string): Promise<string> {
   const intent = message.toUpperCase().trim();

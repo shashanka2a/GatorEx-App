@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 export type ConversationState = 
   | 'INITIAL'
   | 'AWAITING_CONSENT'
-  | 'AWAITING_UF_EMAIL'
   | 'AWAITING_INTENT'
   | 'BUYING_ITEM_NAME'
   | 'BUYING_PRICE_RANGE'
@@ -32,6 +31,8 @@ export interface ConversationData {
   ufName?: string;
   ufEmail?: string;
   intent?: 'BUYING' | 'SELLING';
+  ufVerified?: boolean;
+  onboardingComplete?: boolean;
 }
 
 export async function getConversationState(whatsappId: string): Promise<ConversationData> {

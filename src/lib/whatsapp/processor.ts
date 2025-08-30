@@ -3,7 +3,6 @@ import { getConversationState } from './conversation-state';
 import { 
   handleInitialMessage,
   handleConsentResponse,
-  handleUFEmailSubmission,
   handleIntentSelection,
   handleBuyingFlow,
   handleSellingFlow
@@ -27,9 +26,6 @@ export async function processWhatsAppMessage(
 
       case 'AWAITING_CONSENT':
         return await handleConsentResponse(whatsappId, message);
-
-      case 'AWAITING_UF_EMAIL':
-        return await handleUFEmailSubmission(whatsappId, message);
 
       case 'AWAITING_INTENT':
       case 'VERIFIED':
