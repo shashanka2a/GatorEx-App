@@ -36,7 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           user: {
             select: {
               name: true,
-              verified: true
+              ufEmailVerified: true,
+              trustLevel: true,
+              whatsappId: true
             }
           }
         },
@@ -59,16 +61,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         category: listing.category || 'Other',
         seller: {
           name: listing.user?.name || 'Anonymous',
-          verified: listing.user?.verified || false,
+          verified: listing.user?.ufEmailVerified || false,
           rating: 4.5 + Math.random() * 0.5,
-          responseTime: '1h'
+          responseTime: '1h',
+          trustLevel: listing.user?.trustLevel || 'BASIC'
         },
         timePosted: getTimeAgo(listing.createdAt),
         condition: listing.condition || 'Good',
         trending: Math.random() > 0.7,
         savings: listing.price ? Math.floor(Math.random() * 50) + 10 : 0,
         description: listing.description || 'Contact seller for details',
-        contact: listing.contact
+        whatsappLink: `https://wa.me/${listing.user?.whatsappId}?text=${encodeURIComponent(`Hi! I'm interested in your "${listing.title}" listing on GatorEx.`)}`
       }));
       
       res.status(200).json(transformedListings);

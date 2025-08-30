@@ -73,7 +73,7 @@ export async function recordSpamAttempt(whatsappId: string, reason: string) {
     create: {
       whatsappId,
       spamAttempts: 1,
-      verified: false
+      ufEmailVerified: false
     },
     update: {
       spamAttempts: { increment: 1 }

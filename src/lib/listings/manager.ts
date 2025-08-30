@@ -68,7 +68,6 @@ export async function updateDraftListing(listingId: string, listingData: any) {
       price: listingData.price || undefined,
       category: listingData.category || undefined,
       condition: listingData.condition || undefined,
-      contact: listingData.contact || undefined,
       status: hasAllMandatoryFields ? 'READY' : 'DRAFT'
     }
   });

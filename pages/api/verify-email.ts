@@ -33,9 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        email,
-        verified: true,
-        verifyToken: null
+        ufEmail: email,
+        ufEmailVerified: true,
+        verifyToken: null,
+        trustScore: { increment: 10 }
       }
     });
 

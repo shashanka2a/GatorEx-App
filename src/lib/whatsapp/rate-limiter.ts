@@ -108,7 +108,7 @@ export async function updateUserTrustLevel(whatsappId: string) {
   const spamAttempts = user.spamAttempts;
 
   // Upgrade to trusted if user has good history
-  if (user.verified && publishedCount >= 5 && spamAttempts === 0 && user.trustLevel === 'BASIC') {
+  if (user.ufEmailVerified && publishedCount >= 5 && spamAttempts === 0 && user.trustLevel === 'BASIC') {
     await prisma.user.update({
       where: { whatsappId },
       data: { trustLevel: 'TRUSTED' }

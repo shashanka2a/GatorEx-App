@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       prisma.listing.count({ where: { status: 'DRAFT' } }),
       prisma.listing.count({ where: { status: 'SHADOW_BANNED' } }),
       prisma.user.count(),
-      prisma.user.count({ where: { verified: true } }),
+      prisma.user.count({ where: { ufEmailVerified: true } }),
       prisma.user.count({ where: { trustLevel: 'TRUSTED' } }),
       prisma.user.count({ where: { shadowBanned: true } }),
       prisma.listing.count({ 
@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         include: {
           user: {
             select: {
-              verified: true,
+              ufEmailVerified: true,
               name: true,
               trustLevel: true,
               shadowBanned: true
