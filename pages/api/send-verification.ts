@@ -21,6 +21,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // In development mode, skip database and email for demo purposes
+    if (process.env.NODE_ENV === 'development') {
+      const token = generateVerificationToken();
+      const verifyLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify?token=${token}&email=${encodeURIComponent(email)}`;
+      
+      console.log('🔗 Development Mode - Verification link:');
+      console.log(verifyLink);
+      console.log('📧 Email:', email);
+      console.log('🎫 Token:', token);
+      
+      // Store token in memory for development (in production this would be in database)
+      if (typeof global === 'undefined') {
+        (global as any) = {};
+      }
+      if (!(global as any).devTokens) {
+        (global as any).devTokens = {};
+      }
+      (global as any).devTokens[token] = {
+        email: email.toLowerCase(),
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      };
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Verification email sent successfully',
+        devMode: true,
+        verifyLink // Include link in response for development
+      });
+    }
+
+    // Production mode - use database and email
     // Check if user already exists and is verified
     const existingUser = await prisma.user.findUnique({
       where: { ufEmail: email.toLowerCase() }

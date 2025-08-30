@@ -38,6 +38,16 @@ export default function VerifyPage() {
         throw new Error(data.error || 'Failed to send verification email');
       }
       
+      // In development mode, show the verification link
+      if (data.devMode && data.verifyLink) {
+        console.log('🔗 Development verification link:', data.verifyLink);
+        // Auto-redirect to verification link in development
+        if (confirm('Development mode: Click OK to auto-verify, or Cancel to see the email flow')) {
+          window.location.href = data.verifyLink;
+          return;
+        }
+      }
+      
       setIsSubmitted(true);
       
       // Analytics event
@@ -76,6 +86,10 @@ export default function VerifyPage() {
         if (!response.ok) {
           throw new Error(data.error || 'Verification failed');
         }
+        
+        // Store verification status locally
+        setEmailVerified(true);
+        setVerifiedEmail(router.query.email as string || email);
         
         // Analytics event
         if (typeof window !== 'undefined' && (window as any).gtag) {
