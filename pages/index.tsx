@@ -28,7 +28,7 @@ const mockListings = [
     trending: true,
     savings: 25,
     description: 'Barely used iPhone 13 Pro in excellent condition. Includes original box and charger.',
-    whatsappLink: 'https://wa.me/1234567890?text=Hi! I\'m interested in your iPhone 13 Pro listing on GatorEx.'
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your iPhone 13 Pro listing on GatorEx.'
   },
   {
     id: '2',
@@ -52,7 +52,7 @@ const mockListings = [
     trending: false,
     savings: 57,
     description: 'Used calculus textbook in good condition. Some highlighting but all pages intact.',
-    whatsappLink: 'https://wa.me/1234567891?text=Hi! I\'m interested in your Calculus textbook listing on GatorEx.'
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your Calculus textbook listing on GatorEx.'
   },
   {
     id: '3',
@@ -76,7 +76,7 @@ const mockListings = [
     trending: false,
     savings: 33,
     description: 'Barely used gaming chair, very comfortable for long study sessions.',
-    whatsappLink: 'https://wa.me/1234567892?text=Hi! I\'m interested in your Gaming Chair listing on GatorEx.'
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your Gaming Chair listing on GatorEx.'
   },
   {
     id: '4',
@@ -100,7 +100,7 @@ const mockListings = [
     trending: true,
     savings: 20,
     description: 'MacBook Air M1 in excellent condition. Perfect for students. Includes charger.',
-    whatsappLink: 'https://wa.me/1234567893?text=Hi! I\'m interested in your MacBook Air listing on GatorEx.'
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your MacBook Air listing on GatorEx.'
   }
 ];
 

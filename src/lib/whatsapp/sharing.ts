@@ -1,5 +1,5 @@
 export function generateWhatsAppBotLink(intent?: 'sell' | 'buy'): string {
-  const baseNumber = process.env.WHATSAPP_BOT_NUMBER || '1234567890';
+  const baseNumber = process.env.WHATSAPP_BOT_NUMBER || '15558912275';
   let message = 'Hi GatorEx Bot!';
   
   if (intent === 'sell') {

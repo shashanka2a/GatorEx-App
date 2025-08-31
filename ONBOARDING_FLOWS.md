@@ -112,7 +112,7 @@ Bot: 🎉 Your listing is live!
 📱 iPhone 12 Pro - $450
 🔗 https://gatorex.com/listing/abc123
 
-Buyers will contact you via: https://wa.me/1234567890
+Buyers will contact you via: https://wa.me/15558912275
 
 Your listing expires in 14 days. I'll remind you 2 days before!
 
