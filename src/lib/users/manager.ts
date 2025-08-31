@@ -13,7 +13,6 @@ export async function findOrCreateUser(whatsappId: string) {
       data: {
         whatsappId,
         ufEmailVerified: true, // Auto-verified since only UF students can access WhatsApp bot
-        source: 'WHATSAPP',
         trustScore: 10, // Start with higher trust score for verified UF students
         trustLevel: 'BASIC'
       }
