@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const body = req.body;
+      console.log('📨 Webhook received:', JSON.stringify(body, null, 2));
       
       // Process WhatsApp messages
       if (body.entry && body.entry[0] && body.entry[0].changes) {
@@ -50,8 +51,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
               }
               
+              console.log(`📱 Processing message from ${whatsappId}: "${messageText}"`);
+              
               // Process the message
               const response = await processWhatsAppMessage(whatsappId, messageText, hasImage, imageUrl);
+              console.log(`🤖 Generated response: "${response}"`);
               
               // Send response back to WhatsApp
               await sendWhatsAppMessage(whatsappId, response);
@@ -72,13 +76,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function sendWhatsAppMessage(to: string, message: string): Promise<void> {
   try {
-    // Use the actual WhatsApp sender in production
-    if (process.env.NODE_ENV === 'production' && process.env.WHATSAPP_ACCESS_TOKEN) {
+    // Send WhatsApp message if we have the access token
+    if (process.env.WHATSAPP_ACCESS_TOKEN) {
       const { sendWhatsAppMessage: actualSender } = await import('../../../src/lib/whatsapp/sender');
       await actualSender(to, message);
+      console.log(`✅ Sent WhatsApp message to ${to}: ${message.substring(0, 50)}...`);
     } else {
-      // Development mode - just log
-      console.log(`[DEV] Sending to ${to}: ${message}`);
+      // No access token - just log
+      console.log(`[NO TOKEN] Would send to ${to}: ${message}`);
     }
   } catch (error) {
     console.error('Failed to send WhatsApp message:', error);
