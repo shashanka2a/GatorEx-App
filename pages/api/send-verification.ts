@@ -72,7 +72,7 @@ async function sendSimpleEmail(email: string, otp: string): Promise<void> {
   console.log(`🔢 OTP for ${email}: ${otp}`);
   
   // Check if we have Gmail credentials
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log('📧 No Gmail credentials found, using development mode');
     return;
   }
@@ -84,13 +84,13 @@ async function sendSimpleEmail(email: string, otp: string): Promise<void> {
     const transporter = nodemailer.createTransporter({
       service: 'gmail',
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
       }
     });
 
     await transporter.sendMail({
-      from: `"GatorEx" <${process.env.GMAIL_USER}>`,
+      from: `"GatorEx" <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Your GatorEx Verification Code 🐊',
       html: `

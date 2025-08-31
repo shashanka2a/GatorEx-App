@@ -8,7 +8,7 @@ import { checkEmailVerification } from '../src/lib/client/verification';
 const mockListings = [
   {
     id: '1',
-    title: 'iPhone 13 Pro - Excellent Condition',
+    title: 'iPhone 15 Pro - Excellent Condition 🔥',
     price: '$650',
     originalPrice: '$845',
     image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
@@ -27,8 +27,8 @@ const mockListings = [
     condition: 'Excellent',
     trending: true,
     savings: 25,
-    description: 'Barely used iPhone 13 Pro in excellent condition. Includes original box and charger.',
-    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your iPhone 13 Pro listing on GatorEx.'
+    description: 'Barely used iPhone 15 Pro in excellent condition. Includes original box and charger.',
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your iPhone 15 Pro listing on GatorEx.'
   },
   {
     id: '2',
@@ -56,9 +56,9 @@ const mockListings = [
   },
   {
     id: '3',
-    title: 'Gaming Chair - Like New',
-    price: '$200',
-    originalPrice: '$300',
+    title: 'Sofa Chair - Like New',
+    price: '$50',
+    originalPrice: '$75',
     image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
     location: 'Via WhatsApp',
     likes: 15,
@@ -75,14 +75,14 @@ const mockListings = [
     condition: 'Like New',
     trending: false,
     savings: 33,
-    description: 'Barely used gaming chair, very comfortable for long study sessions.',
-    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your Gaming Chair listing on GatorEx.'
+    description: 'Barely used sofa chair, very comfortable for long study sessions.',
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your Sofa Chair listing on GatorEx.'
   },
   {
     id: '4',
-    title: 'MacBook Air M1 - 2021',
-    price: '$800',
-    originalPrice: '$999',
+    title: 'MacBook M2 Pro - 2023',
+    price: '$850',
+    originalPrice: '$1299',
     image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400',
     location: 'Via WhatsApp',
     likes: 42,
@@ -98,9 +98,9 @@ const mockListings = [
     timePosted: '5 hours ago',
     condition: 'Excellent',
     trending: true,
-    savings: 20,
-    description: 'MacBook Air M1 in excellent condition. Perfect for students. Includes charger.',
-    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your MacBook Air listing on GatorEx.'
+    savings: 35,
+    description: 'MacBook M2 Pro in excellent condition. Perfect for students. Includes charger.',
+    whatsappLink: 'https://wa.me/15558912275?text=Hi! I\'m interested in your MacBook M2 Pro listing on GatorEx.'
   }
 ];
 

@@ -1,63 +1,76 @@
 #!/usr/bin/env node
 
+const nodemailer = require('nodemailer');
 require('dotenv').config({ path: '.env.local' });
 
-const { sendVerificationEmail } = require('../src/lib/email/verification');
-const readline = require('readline');
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-function question(query) {
-  return new Promise(resolve => rl.question(query, resolve));
-}
-
 async function testEmail() {
-  console.log('📧 Email Service Test\n');
+  console.log('🧪 Testing email configuration...\n');
   
   // Check environment variables
-  const emailProvider = process.env.EMAIL_PROVIDER || 'gmail';
-  console.log(`Using email provider: ${emailProvider}`);
+  console.log('📧 Email Provider:', process.env.EMAIL_PROVIDER);
+  console.log('👤 SMTP User:', process.env.SMTP_USER);
+  console.log('🔑 SMTP Pass:', process.env.SMTP_PASS ? '✅ Set' : '❌ Missing');
+  console.log('🌐 App URL:', process.env.NEXT_PUBLIC_APP_URL);
+  console.log('🏗️  Node ENV:', process.env.NODE_ENV);
   
-  const requiredVars = {
-    gmail: ['SMTP_USER', 'SMTP_PASS'],
-    sendgrid: ['SENDGRID_API_KEY', 'SENDGRID_FROM_EMAIL'],
-    ses: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'SES_FROM_EMAIL']
-  };
-  
-  const missing = requiredVars[emailProvider]?.filter(varName => !process.env[varName]) || [];
-  
-  if (missing.length > 0) {
-    console.error('❌ Missing environment variables:', missing.join(', '));
-    console.log('Please check your .env.local file');
-    process.exit(1);
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log('\n❌ Missing Gmail credentials. Please set SMTP_USER and SMTP_PASS in .env.local');
+    return;
   }
   
-  const email = await question('Enter UF email to test: ');
-  
-  if (!email.endsWith('@ufl.edu')) {
-    console.error('❌ Please enter a valid UF email address');
-    process.exit(1);
+  if (process.env.SMTP_PASS === 'YOUR_ACTUAL_16_CHAR_APP_PASSWORD_HERE') {
+    console.log('\n❌ Please replace the placeholder password with your actual Gmail app password');
+    return;
   }
-  
-  console.log('\n🚀 Sending test email...');
   
   try {
-    await sendVerificationEmail(email, 'test-token-' + Date.now());
-    console.log('✅ Email sent successfully!');
-    console.log('📬 Check your inbox (and spam folder)');
+    console.log('\n📨 Creating transporter...');
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    
+    console.log('✅ Transporter created');
+    
+    console.log('🔍 Verifying connection...');
+    await transporter.verify();
+    console.log('✅ Gmail connection verified!');
+    
+    // Send test email
+    const testEmail = 'test@ufl.edu'; // Replace with your actual UF email for testing
+    console.log(`📤 Sending test email to ${testEmail}...`);
+    
+    const info = await transporter.sendMail({
+      from: `"GatorEx Test" <${process.env.SMTP_USER}>`,
+      to: testEmail,
+      subject: '🧪 GatorEx Email Test',
+      html: `
+        <h2>🐊 Email Test Successful!</h2>
+        <p>If you're reading this, your GatorEx email configuration is working correctly.</p>
+        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+        <p>Go Gators! 🐊</p>
+      `,
+      text: `🐊 Email Test Successful!\n\nIf you're reading this, your GatorEx email configuration is working correctly.\n\nTimestamp: ${new Date().toISOString()}\n\nGo Gators! 🐊`
+    });
+    
+    console.log('✅ Test email sent successfully!');
+    console.log('📧 Message ID:', info.messageId);
+    console.log('\n🎉 Email configuration is working correctly!');
+    
   } catch (error) {
-    console.error('❌ Email failed:', error.message);
-    console.log('\n🔧 Troubleshooting tips:');
-    console.log('1. Check your email provider credentials');
-    console.log('2. Verify sender email is authenticated');
-    console.log('3. Check firewall/network settings');
-    console.log('4. Review email provider documentation');
+    console.error('\n❌ Email test failed:', error.message);
+    
+    if (error.message.includes('Invalid login')) {
+      console.log('\n💡 This usually means:');
+      console.log('   1. Wrong email or password');
+      console.log('   2. 2-Factor Authentication not enabled');
+      console.log('   3. App password not generated');
+      console.log('   4. Using regular password instead of app password');
+    }
   }
-  
-  rl.close();
 }
 
 testEmail().catch(console.error);
