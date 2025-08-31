@@ -2,138 +2,156 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-interface RateLimitResult {
+export interface RateLimitResult {
   allowed: boolean;
-  reason?: string;
-  dailyCount?: number;
-  activeCount?: number;
-  maxDaily?: number;
-  maxActive?: number;
+  remaining?: number;
+  resetTime?: Date;
 }
 
-export async function checkRateLimit(whatsappId: string): Promise<RateLimitResult> {
-  const user = await prisma.user.findUnique({
-    where: { whatsappId },
-    include: {
-      listings: {
-        where: {
-          status: { in: ['PUBLISHED', 'READY'] },
-          expiresAt: { gt: new Date() }
-        }
+// Rate limits configuration
+const RATE_LIMITS = {
+  DAILY_LISTINGS: 3,
+  HOURLY_MESSAGES: 20,
+  DAILY_MESSAGES: 100
+};
+
+export async function checkRateLimit(whatsappId: string, type: 'listing' | 'message' = 'listing'): Promise<RateLimitResult> {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thisHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+  
+  try {
+    if (type === 'listing') {
+      return await checkListingRateLimit(whatsappId, today);
+    } else {
+      return await checkMessageRateLimit(whatsappId, today, thisHour);
+    }
+  } catch (error) {
+    console.error('Rate limit check failed:', error);
+    // Fail open - allow the action if we can't check limits
+    return { allowed: true };
+  }
+}
+
+async function checkListingRateLimit(whatsappId: string, today: Date): Promise<RateLimitResult> {
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Count listings created today
+  const todayListings = await prisma.listing.count({
+    where: {
+      user: { whatsappId },
+      createdAt: {
+        gte: today,
+        lt: tomorrow
       }
     }
   });
-
-  if (!user) {
-    return { allowed: true };
-  }
-
-  // Get limits based on trust level
-  const limits = getTrustLimits(user.trustLevel);
   
-  // Check daily limit
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const remaining = Math.max(0, RATE_LIMITS.DAILY_LISTINGS - todayListings);
+  const allowed = todayListings < RATE_LIMITS.DAILY_LISTINGS;
   
-  const isNewDay = !user.lastListingDate || user.lastListingDate < today;
-  const dailyCount = isNewDay ? 0 : user.dailyListingCount;
-  
-  if (dailyCount >= limits.dailyMax) {
-    return {
-      allowed: false,
-      reason: 'daily_limit',
-      dailyCount,
-      maxDaily: limits.dailyMax
-    };
-  }
-
-  // Check active listings limit
-  const activeCount = user.listings.length;
-  
-  if (activeCount >= limits.activeMax) {
-    return {
-      allowed: false,
-      reason: 'active_limit',
-      activeCount,
-      maxActive: limits.activeMax
-    };
-  }
-
   return {
-    allowed: true,
-    dailyCount,
-    activeCount,
-    maxDaily: limits.dailyMax,
-    maxActive: limits.activeMax
+    allowed,
+    remaining,
+    resetTime: tomorrow
   };
 }
 
-export async function incrementUserListingCount(whatsappId: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const user = await prisma.user.findUnique({
+async function checkMessageRateLimit(whatsappId: string, today: Date, thisHour: Date): Promise<RateLimitResult> {
+  const nextHour = new Date(thisHour);
+  nextHour.setHours(nextHour.getHours() + 1);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Check if we have a rate limit record for this user
+  let rateLimitRecord = await prisma.rateLimitRecord.findUnique({
     where: { whatsappId }
   });
-
-  if (!user) return;
-
-  const isNewDay = !user.lastListingDate || user.lastListingDate < today;
   
-  await prisma.user.update({
-    where: { whatsappId },
-    data: {
-      dailyListingCount: isNewDay ? 1 : user.dailyListingCount + 1,
-      lastListingDate: new Date()
-    }
-  });
-}
-
-export async function updateUserTrustLevel(whatsappId: string) {
-  const user = await prisma.user.findUnique({
-    where: { whatsappId },
-    include: {
-      listings: {
-        where: {
-          status: 'PUBLISHED',
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
-        }
+  if (!rateLimitRecord) {
+    // Create new rate limit record
+    rateLimitRecord = await prisma.rateLimitRecord.create({
+      data: {
+        whatsappId,
+        hourlyCount: 1,
+        dailyCount: 1,
+        lastHourReset: thisHour,
+        lastDayReset: today
       }
-    }
-  });
-
-  if (!user) return;
-
-  const publishedCount = user.listings.length;
-  const spamAttempts = user.spamAttempts;
-
-  // Upgrade to trusted if user has good history
-  if (user.ufEmailVerified && publishedCount >= 5 && spamAttempts === 0 && user.trustLevel === 'BASIC') {
-    await prisma.user.update({
-      where: { whatsappId },
-      data: { trustLevel: 'TRUSTED' }
     });
+    
+    return { allowed: true, remaining: RATE_LIMITS.HOURLY_MESSAGES - 1 };
   }
-
-  // Shadow ban if too many spam attempts
-  if (spamAttempts >= 3 && user.trustLevel !== 'SHADOW_BANNED') {
-    await prisma.user.update({
+  
+  // Reset counters if needed
+  let { hourlyCount, dailyCount } = rateLimitRecord;
+  
+  if (rateLimitRecord.lastHourReset < thisHour) {
+    hourlyCount = 0;
+  }
+  
+  if (rateLimitRecord.lastDayReset < today) {
+    dailyCount = 0;
+  }
+  
+  // Check limits
+  const hourlyAllowed = hourlyCount < RATE_LIMITS.HOURLY_MESSAGES;
+  const dailyAllowed = dailyCount < RATE_LIMITS.DAILY_MESSAGES;
+  const allowed = hourlyAllowed && dailyAllowed;
+  
+  if (allowed) {
+    // Update counters
+    await prisma.rateLimitRecord.update({
       where: { whatsappId },
-      data: { 
-        trustLevel: 'SHADOW_BANNED',
-        shadowBanned: true
+      data: {
+        hourlyCount: hourlyCount + 1,
+        dailyCount: dailyCount + 1,
+        lastHourReset: thisHour,
+        lastDayReset: today
       }
     });
   }
+  
+  return {
+    allowed,
+    remaining: Math.min(
+      RATE_LIMITS.HOURLY_MESSAGES - hourlyCount,
+      RATE_LIMITS.DAILY_MESSAGES - dailyCount
+    ),
+    resetTime: !hourlyAllowed ? nextHour : tomorrow
+  };
 }
 
-function getTrustLimits(trustLevel: string) {
-  switch (trustLevel) {
-    case 'TRUSTED':
-      return { dailyMax: 5, activeMax: 15 };
-    case 'SHADOW_BANNED':
-      return { dailyMax: 0, activeMax: 0 };
-    default: // BASIC
-      return { dailyMax: 3, activeMax: 10 };
+export async function getRateLimitStatus(whatsappId: string): Promise<{
+  listings: RateLimitResult;
+  messages: RateLimitResult;
+}> {
+  const [listings, messages] = await Promise.all([
+    checkRateLimit(whatsappId, 'listing'),
+    checkRateLimit(whatsappId, 'message')
+  ]);
+  
+  return { listings, messages };
+}
+
+export function getRateLimitMessage(result: RateLimitResult, type: 'listing' | 'message'): string {
+  if (result.allowed) {
+    return '';
+  }
+  
+  const resetTime = result.resetTime;
+  const timeUntilReset = resetTime ? Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60)) : 0;
+  
+  if (type === 'listing') {
+    return `You've reached your daily limit of ${RATE_LIMITS.DAILY_LISTINGS} listings. Try again tomorrow!`;
+  } else {
+    if (timeUntilReset < 60) {
+      return `You're sending messages too quickly. Please wait ${timeUntilReset} minutes before trying again.`;
+    } else {
+      const hoursUntilReset = Math.ceil(timeUntilReset / 60);
+      return `You've reached your daily message limit. Try again in ${hoursUntilReset} hours.`;
+    }
   }
 }

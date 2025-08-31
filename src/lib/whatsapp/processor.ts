@@ -13,7 +13,8 @@ const prisma = new PrismaClient();
 export async function processWhatsAppMessage(
   whatsappId: string,
   message: string,
-  hasImage: boolean = false
+  hasImage: boolean = false,
+  imageUrl: string = ''
 ): Promise<string> {
   try {
     const conversationData = await getConversationState(whatsappId);
@@ -71,7 +72,7 @@ What would you like to do?`;
       case 'SELLING_EXTERNAL_LINK':
       case 'SELLING_CATEGORY_CONFIRM':
       case 'SELLING_CONDITION_CONFIRM':
-        return await handleSellingFlow(whatsappId, message, state, hasImage);
+        return await handleSellingFlow(whatsappId, message, state, hasImage, imageUrl);
 
       default:
         // Fallback - restart conversation

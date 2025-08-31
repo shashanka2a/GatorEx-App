@@ -105,6 +105,19 @@ model BuyRequest {
   @@map("buy_requests")
 }
 
+model RateLimitRecord {
+  id            String   @id @default(cuid())
+  whatsappId    String   @unique
+  hourlyCount   Int      @default(0)
+  dailyCount    Int      @default(0)
+  lastHourReset DateTime @default(now())
+  lastDayReset  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("rate_limit_records")
+}
+
 enum ListingStatus {
   DRAFT
   PENDING_INFO

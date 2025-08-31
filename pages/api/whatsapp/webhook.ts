@@ -33,16 +33,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const whatsappId = message.from;
               let messageText = '';
               let hasImage = false;
+              let imageUrl = '';
               
               if (message.type === 'text') {
                 messageText = message.text.body;
               } else if (message.type === 'image') {
                 messageText = message.image.caption || '';
                 hasImage = true;
+                
+                // Download and store the image
+                try {
+                  const { downloadWhatsAppMedia } = await import('../../../src/lib/whatsapp/media');
+                  imageUrl = await downloadWhatsAppMedia(message.image.id);
+                } catch (error) {
+                  console.error('Failed to download image:', error);
+                }
               }
               
               // Process the message
-              const response = await processWhatsAppMessage(whatsappId, messageText, hasImage);
+              const response = await processWhatsAppMessage(whatsappId, messageText, hasImage, imageUrl);
               
               // Send response back to WhatsApp
               await sendWhatsAppMessage(whatsappId, response);
@@ -62,20 +71,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function sendWhatsAppMessage(to: string, message: string): Promise<void> {
-  // TODO: Implement actual WhatsApp API sending
-  console.log(`Sending to ${to}: ${message}`);
-  
-  // In production, use WhatsApp Business API
-  // const response = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
-  //   method: 'POST',
-  //   headers: {
-  //     'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-  //     'Content-Type': 'application/json'
-  //   },
-  //   body: JSON.stringify({
-  //     messaging_product: 'whatsapp',
-  //     to,
-  //     text: { body: message }
-  //   })
-  // });
+  try {
+    // Use the actual WhatsApp sender in production
+    if (process.env.NODE_ENV === 'production' && process.env.WHATSAPP_ACCESS_TOKEN) {
+      const { sendWhatsAppMessage: actualSender } = await import('../../../src/lib/whatsapp/sender');
+      await actualSender(to, message);
+    } else {
+      // Development mode - just log
+      console.log(`[DEV] Sending to ${to}: ${message}`);
+    }
+  } catch (error) {
+    console.error('Failed to send WhatsApp message:', error);
+    // Don't throw - we don't want to break the webhook if sending fails
+  }
 }

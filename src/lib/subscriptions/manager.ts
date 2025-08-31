@@ -126,7 +126,7 @@ function checkPriceMatch(priceRange: string, listingPrice: number): boolean {
 }
 
 async function sendSubscriptionNotification(whatsappId: string, listing: any): Promise<void> {
-  // TODO: Implement WhatsApp message sending
+
   const message = `🔔 New match for your alert!
 
 📱 ${listing.title}
@@ -136,7 +136,16 @@ async function sendSubscriptionNotification(whatsappId: string, listing: any): P
 Interested? Contact the seller:
 ${generateWhatsAppContactLink(listing.user.whatsappId, listing.title)}`;
 
-  console.log(`Notification to ${whatsappId}: ${message}`);
+  try {
+    if (process.env.NODE_ENV === 'production' && process.env.WHATSAPP_ACCESS_TOKEN) {
+      const { sendWhatsAppMessage } = await import('../whatsapp/sender');
+      await sendWhatsAppMessage(whatsappId, message);
+    } else {
+      console.log(`[DEV] Notification to ${whatsappId}: ${message}`);
+    }
+  } catch (error) {
+    console.error('Failed to send subscription notification:', error);
+  }
 }
 
 function generateWhatsAppContactLink(sellerWhatsappId: string, itemTitle: string): string {

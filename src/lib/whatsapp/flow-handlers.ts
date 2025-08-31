@@ -120,7 +120,7 @@ Want to do anything else? Just say "BUY" or "SELL"`;
   return `Something went wrong. Let's start over - say "BUY" or "SELL"`;
 }
 
-export async function handleSellingFlow(whatsappId: string, message: string, state: string, hasImage: boolean = false): Promise<string> {
+export async function handleSellingFlow(whatsappId: string, message: string, state: string, hasImage: boolean = false, imageUrl: string = ''): Promise<string> {
   const conversationData = await getConversationState(whatsappId);
   
   switch (state) {
@@ -160,7 +160,7 @@ Now I need at least one photo. Please send me a clear image of your item:`;
       const suggestions = await suggestCategoryAndCondition(conversationData.itemName || '');
       
       await updateConversationState(whatsappId, 'SELLING_CATEGORY_CONFIRM', {
-        images: ['image_url'], // TODO: Handle actual image upload
+        images: imageUrl ? [imageUrl] : [],
         category: suggestions.category,
         condition: suggestions.condition
       });
