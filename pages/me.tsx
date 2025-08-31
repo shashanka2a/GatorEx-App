@@ -167,7 +167,12 @@ export default function ProfilePage() {
                   <Mail size={16} className="text-gray-400" />
                   <span className="text-gray-600">{user.ufEmail}</span>
                   {user.verified && (
-                    <CheckCircle size={16} className="text-green-500" />
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle size={16} className="text-green-500" />
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                        🐊 UF Verified
+                      </span>
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center space-x-4 mt-2">

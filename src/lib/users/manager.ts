@@ -3,18 +3,19 @@ import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-export async function findOrCreateUser(whatsappId: string) {
+export async function findOrCreateUser(userId: string) {
   let user = await prisma.user.findUnique({
-    where: { whatsappId }
+    where: { id: userId }
   });
 
   if (!user) {
     user = await prisma.user.create({
       data: {
-        whatsappId,
-        ufEmailVerified: true, // Auto-verified since only UF students can access WhatsApp bot
+        id: userId,
+        email: `temp_${userId}@temp.com`, // Temporary email, will be updated
+        ufEmailVerified: true, // Auto-verified since only UF students can access the system
         trustScore: 10, // Start with higher trust score for verified UF students
-        trustLevel: 'BASIC'
+        profileCompleted: false
       }
     });
   }
@@ -22,14 +23,14 @@ export async function findOrCreateUser(whatsappId: string) {
   return user;
 }
 
-export async function verifyUserEmail(whatsappId: string, ufEmail: string) {
+export async function verifyUserEmail(userId: string, ufEmail: string) {
   // Validate UF email format
   if (!ufEmail.endsWith('@ufl.edu')) {
     throw new Error('Invalid UF email address');
   }
 
   const user = await prisma.user.update({
-    where: { whatsappId },
+    where: { id: userId },
     data: {
       ufEmail,
       ufEmailVerified: true,
@@ -41,11 +42,11 @@ export async function verifyUserEmail(whatsappId: string, ufEmail: string) {
   return user;
 }
 
-export async function createVerificationToken(whatsappId: string): Promise<string> {
+export async function createVerificationToken(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   
   await prisma.user.update({
-    where: { whatsappId },
+    where: { id: userId },
     data: { verifyToken: token }
   });
   
@@ -58,9 +59,9 @@ export async function getUserByVerificationToken(token: string) {
   });
 }
 
-export async function incrementUserTrustScore(whatsappId: string, points: number = 1) {
+export async function incrementUserTrustScore(userId: string, points: number = 1) {
   const user = await prisma.user.update({
-    where: { whatsappId },
+    where: { id: userId },
     data: {
       trustScore: { increment: points }
     }
@@ -72,12 +73,11 @@ export async function incrementUserTrustScore(whatsappId: string, points: number
   return user;
 }
 
-export async function decrementUserTrustScore(whatsappId: string, points: number = 5) {
+export async function decrementUserTrustScore(userId: string, points: number = 5) {
   const user = await prisma.user.update({
-    where: { whatsappId },
+    where: { id: userId },
     data: {
-      trustScore: { decrement: points },
-      spamAttempts: { increment: 1 }
+      trustScore: { decrement: points }
     }
   });
 
@@ -88,34 +88,43 @@ export async function decrementUserTrustScore(whatsappId: string, points: number
 }
 
 async function updateTrustLevel(user: any) {
-  let newTrustLevel = user.trustLevel;
+  // Simple trust level logic based on score
+  // This can be expanded later with more sophisticated rules
   
-  // Upgrade to trusted (score >= 50, verified, low spam)
-  if (user.trustScore >= 50 && user.ufEmailVerified && user.spamAttempts <= 1) {
-    newTrustLevel = 'TRUSTED';
-  }
-  
-  // Shadow ban (score <= -20 or spam attempts >= 3)
-  if (user.trustScore <= -20 || user.spamAttempts >= 3) {
-    newTrustLevel = 'SHADOW_BANNED';
-  }
-  
-  if (newTrustLevel !== user.trustLevel) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        trustLevel: newTrustLevel,
-        shadowBanned: newTrustLevel === 'SHADOW_BANNED'
-      }
-    });
+  if (user.trustScore <= -20) {
+    console.log(`🚨 User ${user.id} has very low trust score: ${user.trustScore}`);
+  } else if (user.trustScore >= 50 && user.ufEmailVerified) {
+    console.log(`✅ User ${user.id} has high trust score: ${user.trustScore}`);
   }
 }
 
-export function generateWhatsAppContactLink(whatsappId: string, listingTitle?: string): string {
+export async function generateContactLink(userId: string, listingTitle?: string): Promise<string> {
+  // Get the user's phone number from the database
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { phoneNumber: true, name: true }
+  });
+
+  if (!user?.phoneNumber) {
+    // Fallback to email if no phone number
+    const message = listingTitle 
+      ? `Hi! I'm interested in your "${listingTitle}" listing on GatorEx.`
+      : 'Hi! I saw your listing on GatorEx and I\'m interested.';
+    
+    const encodedMessage = encodeURIComponent(message);
+    return `mailto:${userId}?subject=${encodeURIComponent('GatorEx Listing Inquiry')}&body=${encodedMessage}`;
+  }
+
+  // Create iMessage/SMS link
   const message = listingTitle 
-    ? `Hi! I'm interested in your "${listingTitle}" listing on GatorEx.`
-    : 'Hi! I saw your listing on GatorEx and I\'m interested.';
+    ? `Hi ${user.name || ''}! I'm interested in your "${listingTitle}" listing on GatorEx.`
+    : `Hi ${user.name || ''}! I saw your listing on GatorEx and I'm interested.`;
   
   const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${whatsappId}?text=${encodedMessage}`;
+  
+  // Format phone number for SMS link (remove formatting)
+  const phoneDigits = user.phoneNumber.replace(/\D/g, '');
+  
+  // Use sms: protocol for cross-platform compatibility
+  return `sms:+1${phoneDigits}?body=${encodedMessage}`;
 }

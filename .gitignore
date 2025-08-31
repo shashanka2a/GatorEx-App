@@ -83,3 +83,9 @@ jspm_packages/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Local SQLite database
+dev.db
+dev.db-journal
+*.db
+*.db-journal

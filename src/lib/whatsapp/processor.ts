@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { getConversationState } from './conversation-state';
 import { 
   handleInitialMessage,
@@ -8,34 +7,32 @@ import {
   handleSellingFlow
 } from './flow-handlers';
 
-const prisma = new PrismaClient();
-
 export async function processWhatsAppMessage(
-  whatsappId: string,
+  userId: string,
   message: string,
   hasImage: boolean = false,
   imageUrl: string = ''
 ): Promise<string> {
   try {
-    const conversationData = await getConversationState(whatsappId);
+    const conversationData = await getConversationState(userId);
     const { state } = conversationData;
 
     // Handle conversation flow based on current state
     switch (state) {
       case 'INITIAL':
-        return await handleInitialMessage(whatsappId);
+        return await handleInitialMessage(userId);
 
       case 'AWAITING_CONSENT':
-        return await handleConsentResponse(whatsappId, message);
+        return await handleConsentResponse(userId, message);
 
       case 'AWAITING_INTENT':
       case 'VERIFIED':
         // Check for new intent or handle current intent
         const lowerMessage = message.toLowerCase().trim();
         if (lowerMessage === 'buy' || lowerMessage === 'buying') {
-          return await handleIntentSelection(whatsappId, 'BUY');
+          return await handleIntentSelection(userId, 'BUY');
         } else if (lowerMessage === 'sell' || lowerMessage === 'selling') {
-          return await handleIntentSelection(whatsappId, 'SELL');
+          return await handleIntentSelection(userId, 'SELL');
         } else if (lowerMessage === 'help') {
           return `🐊 GatorEx Bot Commands:
 
@@ -46,9 +43,9 @@ export async function processWhatsAppMessage(
 What would you like to do?`;
         } else if (message.toUpperCase().includes('RENEW')) {
           const { handleRenewalRequest } = await import('../listings/expiry');
-          return await handleRenewalRequest(whatsappId, message);
+          return await handleRenewalRequest(userId, message);
         } else if (state === 'AWAITING_INTENT') {
-          return await handleIntentSelection(whatsappId, message);
+          return await handleIntentSelection(userId, message);
         } else {
           // Default help for verified users
           return `Hi again! What would you like to do?
@@ -62,7 +59,7 @@ What would you like to do?`;
       case 'BUYING_ITEM_NAME':
       case 'BUYING_PRICE_RANGE':
       case 'BUYING_CONFIRM_SUBSCRIPTION':
-        return await handleBuyingFlow(whatsappId, message, state);
+        return await handleBuyingFlow(userId, message, state);
 
       // Selling flow states
       case 'SELLING_ITEM_NAME':
@@ -72,11 +69,11 @@ What would you like to do?`;
       case 'SELLING_EXTERNAL_LINK':
       case 'SELLING_CATEGORY_CONFIRM':
       case 'SELLING_CONDITION_CONFIRM':
-        return await handleSellingFlow(whatsappId, message, state, hasImage, imageUrl);
+        return await handleSellingFlow(userId, message, state, hasImage, imageUrl);
 
       default:
         // Fallback - restart conversation
-        return await handleInitialMessage(whatsappId);
+        return await handleInitialMessage(userId);
     }
 
   } catch (error) {

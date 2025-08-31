@@ -6,7 +6,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface ListingDetailProps {
   listingId: string;
-  onWhatsAppChat: () => void;
+  onContactSeller: () => void;
 }
 
 const mockListings = {
@@ -93,7 +93,7 @@ const mockListings = {
   }
 };
 
-export function ListingDetail({ listingId, onWhatsAppChat }: ListingDetailProps) {
+export function ListingDetail({ listingId, onContactSeller }: ListingDetailProps) {
   const listing = mockListings[listingId as keyof typeof mockListings] || mockListings["1"];
   const savingsAmount = parseInt(listing.originalPrice.slice(1)) - parseInt(listing.price.slice(1));
   const savingsPercent = Math.round((savingsAmount / parseInt(listing.originalPrice.slice(1))) * 100);
@@ -311,7 +311,7 @@ export function ListingDetail({ listingId, onWhatsAppChat }: ListingDetailProps)
           </Button>
           <Button 
             className="flex-1 bg-uf-gradient hover:opacity-90 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-            onClick={onWhatsAppChat}
+            onClick={onContactSeller}
           >
             <MessageCircle className="w-4 h-4 mr-2" />
             Message Seller

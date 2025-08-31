@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const messages = change.value.messages;
             
             for (const message of messages) {
-              const whatsappId = message.from;
+              const userId = message.from;
               let messageText = '';
               let hasImage = false;
               let imageUrl = '';
@@ -44,21 +44,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 
                 // Download and store the image
                 try {
-                  const { downloadWhatsAppMedia } = await import('../../../src/lib/whatsapp/media');
-                  imageUrl = await downloadWhatsAppMedia(message.image.id);
+                  const { downloadMedia } = await import('../../../src/lib/whatsapp/media');
+                  imageUrl = await downloadMedia(message.image.url, message.image.id);
                 } catch (error) {
                   console.error('Failed to download image:', error);
                 }
               }
               
-              console.log(`📱 Processing message from ${whatsappId}: "${messageText}"`);
+              console.log(`📱 Processing message from ${userId}: "${messageText}"`);
               
               // Process the message
-              const response = await processWhatsAppMessage(whatsappId, messageText, hasImage, imageUrl);
+              const response = await processWhatsAppMessage(userId, messageText, hasImage, imageUrl);
               console.log(`🤖 Generated response: "${response}"`);
               
               // Send response back to WhatsApp
-              await sendWhatsAppMessage(whatsappId, response);
+              await sendWhatsAppMessage(userId, response);
             }
           }
         }

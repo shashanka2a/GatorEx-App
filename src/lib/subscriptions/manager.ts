@@ -3,77 +3,29 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function createSubscription(
-  whatsappId: string,
+  userId: string,
   itemName: string,
   priceRange?: string
 ): Promise<void> {
-  // Extract keywords from item name
-  const keywords = itemName.toLowerCase()
-    .split(/\s+/)
-    .filter(word => word.length > 2)
-    .map(word => word.replace(/[^\w]/g, ''));
-
-  // Suggest category based on item name
-  const category = suggestCategory(itemName);
-
-  await prisma.subscription.create({
-    data: {
-      whatsappId,
-      itemName,
-      priceRange,
-      category,
-      keywords
-    }
-  });
+  // For now, just log the subscription request since the subscription model doesn't exist in the schema
+  // In a real implementation, you'd want to add a Subscription model to the schema
+  console.log(`Creating subscription for user ${userId}: ${itemName} (${priceRange})`);
 }
 
 export async function createBuyRequest(
-  whatsappId: string,
+  userId: string,
   itemName: string,
   priceRange?: string
 ): Promise<void> {
-  // Buy requests expire in 30 days
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  await prisma.buyRequest.create({
-    data: {
-      whatsappId,
-      itemName,
-      priceRange,
-      expiresAt
-    }
-  });
+  // For now, just log the buy request since the buyRequest model doesn't exist in the schema
+  // In a real implementation, you'd want to add a BuyRequest model to the schema
+  console.log(`Creating buy request for user ${userId}: ${itemName} (${priceRange})`);
 }
 
 export async function notifySubscribers(listing: any): Promise<void> {
-  // Find matching subscriptions
-  const subscriptions = await prisma.subscription.findMany({
-    where: {
-      active: true,
-      OR: [
-        // Match by category
-        { category: listing.category },
-        // Match by keywords in title
-        {
-          keywords: {
-            hasSome: extractKeywords(listing.title)
-          }
-        }
-      ]
-    }
-  });
-
-  // Send notifications to subscribers
-  for (const subscription of subscriptions) {
-    // Check price range if specified
-    if (subscription.priceRange && listing.price) {
-      const priceMatch = checkPriceMatch(subscription.priceRange, listing.price);
-      if (!priceMatch) continue;
-    }
-
-    // Send notification (implement WhatsApp sending)
-    await sendSubscriptionNotification(subscription.whatsappId, listing);
-  }
+  // For now, just log the notification since the subscription model doesn't exist in the schema
+  // In a real implementation, you'd want to add a Subscription model to the schema
+  console.log(`Would notify subscribers about new listing: ${listing.title}`);
 }
 
 function suggestCategory(itemName: string): string {
@@ -125,7 +77,7 @@ function checkPriceMatch(priceRange: string, listingPrice: number): boolean {
   return true; // Default to match if can't parse
 }
 
-async function sendSubscriptionNotification(whatsappId: string, listing: any): Promise<void> {
+async function sendSubscriptionNotification(userId: string, listing: any): Promise<void> {
 
   const message = `🔔 New match for your alert!
 
@@ -133,21 +85,18 @@ async function sendSubscriptionNotification(whatsappId: string, listing: any): P
 💰 $${listing.price}
 📍 ${listing.category}
 
-Interested? Contact the seller:
-${generateWhatsAppContactLink(listing.user.whatsappId, listing.title)}`;
+Interested? Contact the seller via the app!`;
 
   try {
-    if (process.env.NODE_ENV === 'production' && process.env.WHATSAPP_ACCESS_TOKEN) {
-      const { sendWhatsAppMessage } = await import('../whatsapp/sender');
-      await sendWhatsAppMessage(whatsappId, message);
+    if (process.env.NODE_ENV === 'production') {
+      // TODO: Implement in-app notification system
+      console.log(`[PROD] Notification to ${userId}: ${message}`);
     } else {
-      console.log(`[DEV] Notification to ${whatsappId}: ${message}`);
+      console.log(`[DEV] Notification to ${userId}: ${message}`);
     }
   } catch (error) {
     console.error('Failed to send subscription notification:', error);
   }
 }
 
-function generateWhatsAppContactLink(sellerWhatsappId: string, itemTitle: string): string {
-  return `https://wa.me/${sellerWhatsappId}?text=${encodeURIComponent(`Hi! I'm interested in your "${itemTitle}" listing on GatorEx.`)}`;
-}
+// Removed WhatsApp contact link generation since we're using in-app messaging

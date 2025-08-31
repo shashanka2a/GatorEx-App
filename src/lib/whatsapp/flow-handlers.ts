@@ -5,31 +5,31 @@ import { moderateContent } from './moderation';
 import { createDraftListing, publishListing } from '../listings/manager';
 import { suggestCategoryAndCondition } from './ai-suggestions';
 
-export async function handleInitialMessage(whatsappId: string): Promise<string> {
-  await updateConversationState(whatsappId, 'AWAITING_CONSENT');
+export async function handleInitialMessage(userId: string): Promise<string> {
+  await updateConversationState(userId, 'AWAITING_CONSENT');
   
   return `👋 Welcome to GatorEx! 
 
 I help UF students buy and sell items safely on campus.
 
 To get started, I need your consent to:
-• Store your WhatsApp number
+• Store your user information
 • Send you listing notifications
 • Connect you with other students
 
 Reply "YES" to continue or "NO" to stop.`;
 }
 
-export async function handleConsentResponse(whatsappId: string, message: string): Promise<string> {
+export async function handleConsentResponse(userId: string, message: string): Promise<string> {
   const consent = message.toUpperCase().trim();
   
   if (consent === 'YES') {
-    // Since only UF students can access this bot, directly create verified user
+    // Since only UF students can access this system, directly create verified user
     const { findOrCreateUser } = await import('../users/manager');
-    const user = await findOrCreateUser(whatsappId);
+    const user = await findOrCreateUser(userId);
     
     // Mark as verified UF student (since they can only access if they're UF students)
-    await updateConversationState(whatsappId, 'AWAITING_INTENT', {
+    await updateConversationState(userId, 'AWAITING_INTENT', {
       ufVerified: true,
       onboardingComplete: true
     });
@@ -53,16 +53,16 @@ Have a great day! 🐊`;
 
 // UF Email submission removed - not needed since only UF students can access the bot
 
-export async function handleIntentSelection(whatsappId: string, message: string): Promise<string> {
+export async function handleIntentSelection(userId: string, message: string): Promise<string> {
   const intent = message.toUpperCase().trim();
   
   if (intent === 'BUY' || intent === 'BUYING') {
-    await updateConversationState(whatsappId, 'BUYING_ITEM_NAME', { intent: 'BUYING' });
+    await updateConversationState(userId, 'BUYING_ITEM_NAME', { intent: 'BUYING' });
     return `🛒 What are you looking to buy?
 
 Just tell me the item name (e.g., "iPhone 13", "calculus textbook", "bike"):`;
   } else if (intent === 'SELL' || intent === 'SELLING') {
-    await updateConversationState(whatsappId, 'SELLING_ITEM_NAME', { intent: 'SELLING' });
+    await updateConversationState(userId, 'SELLING_ITEM_NAME', { intent: 'SELLING' });
     return `🏷️ What are you selling?
 
 Please tell me the item name:`;
@@ -71,12 +71,12 @@ Please tell me the item name:`;
   }
 }
 
-export async function handleBuyingFlow(whatsappId: string, message: string, state: string): Promise<string> {
-  const conversationData = await getConversationState(whatsappId);
+export async function handleBuyingFlow(userId: string, message: string, state: string): Promise<string> {
+  const conversationData = await getConversationState(userId);
   
   switch (state) {
     case 'BUYING_ITEM_NAME':
-      await updateConversationState(whatsappId, 'BUYING_PRICE_RANGE', {
+      await updateConversationState(userId, 'BUYING_PRICE_RANGE', {
         itemName: message.trim()
       });
       return `Got it! Looking for "${message.trim()}"
@@ -88,7 +88,7 @@ Examples: "$50-100", "under $200", "skip"`;
     case 'BUYING_PRICE_RANGE':
       const priceRange = message.toLowerCase().trim() === 'skip' ? undefined : message.trim();
       
-      await updateConversationState(whatsappId, 'BUYING_CONFIRM_SUBSCRIPTION', {
+      await updateConversationState(userId, 'BUYING_CONFIRM_SUBSCRIPTION', {
         priceRange
       });
       
@@ -100,15 +100,15 @@ Reply "CONFIRM" to set up alerts, or "POST REQUEST" to post a buy request that s
     case 'BUYING_CONFIRM_SUBSCRIPTION':
       if (message.toUpperCase().includes('CONFIRM')) {
         const { createSubscription } = await import('../subscriptions/manager');
-        await createSubscription(whatsappId, conversationData.itemName!, conversationData.priceRange);
-        await clearConversationState(whatsappId);
+        await createSubscription(userId, conversationData.itemName!, conversationData.priceRange);
+        await clearConversationState(userId);
         return `✅ Alert set up! I'll message you when matching items are posted.
 
 Want to do anything else? Just say "BUY" or "SELL"`;
       } else if (message.toUpperCase().includes('POST')) {
         const { createBuyRequest } = await import('../subscriptions/manager');
-        await createBuyRequest(whatsappId, conversationData.itemName!, conversationData.priceRange);
-        await clearConversationState(whatsappId);
+        await createBuyRequest(userId, conversationData.itemName!, conversationData.priceRange);
+        await clearConversationState(userId);
         return `📢 Buy request posted! Sellers can now see you're looking for "${conversationData.itemName}"
 
 Want to do anything else? Just say "BUY" or "SELL"`;
@@ -120,8 +120,8 @@ Want to do anything else? Just say "BUY" or "SELL"`;
   return `Something went wrong. Let's start over - say "BUY" or "SELL"`;
 }
 
-export async function handleSellingFlow(whatsappId: string, message: string, state: string, hasImage: boolean = false, imageUrl: string = ''): Promise<string> {
-  const conversationData = await getConversationState(whatsappId);
+export async function handleSellingFlow(userId: string, message: string, state: string, hasImage: boolean = false, imageUrl: string = ''): Promise<string> {
+  const conversationData = await getConversationState(userId);
   
   switch (state) {
     case 'SELLING_ITEM_NAME':
@@ -133,7 +133,7 @@ export async function handleSellingFlow(whatsappId: string, message: string, sta
 Please try a different item:`;
       }
       
-      await updateConversationState(whatsappId, 'SELLING_PRICE', {
+      await updateConversationState(userId, 'SELLING_PRICE', {
         itemName: message.trim()
       });
       return `Great! Now what's your asking price for "${message.trim()}"?
@@ -146,7 +146,7 @@ Please enter a number (e.g., "50", "125.99"):`;
         return `That doesn't look like a valid price. Please enter just the number (e.g., "50", "125.99"):`;
       }
       
-      await updateConversationState(whatsappId, 'SELLING_IMAGE', { price });
+      await updateConversationState(userId, 'SELLING_IMAGE', { price });
       return `Perfect! $${price} for ${conversationData.itemName}
 
 Now I need at least one photo. Please send me a clear image of your item:`;
@@ -159,7 +159,7 @@ Now I need at least one photo. Please send me a clear image of your item:`;
       // Get AI suggestions for category and condition
       const suggestions = await suggestCategoryAndCondition(conversationData.itemName || '');
       
-      await updateConversationState(whatsappId, 'SELLING_CATEGORY_CONFIRM', {
+      await updateConversationState(userId, 'SELLING_CATEGORY_CONFIRM', {
         images: imageUrl ? [imageUrl] : [],
         category: suggestions.category,
         condition: suggestions.condition
@@ -186,7 +186,7 @@ Is this correct? Reply "YES" or tell me the right category/condition:`;
         }
       }
       
-      await updateConversationState(whatsappId, 'SELLING_MEETING_SPOT', {
+      await updateConversationState(userId, 'SELLING_MEETING_SPOT', {
         category,
         condition
       });
@@ -199,7 +199,7 @@ Or just say "skip" if you'll decide later:`;
     case 'SELLING_MEETING_SPOT':
       const meetingSpot = message.toLowerCase().trim() === 'skip' ? undefined : message.trim();
       
-      await updateConversationState(whatsappId, 'SELLING_EXTERNAL_LINK', { meetingSpot });
+      await updateConversationState(userId, 'SELLING_EXTERNAL_LINK', { meetingSpot });
       return `Any external links? (Facebook Marketplace, Amazon, etc.)
 
 Send the link or say "skip":`;
@@ -208,9 +208,9 @@ Send the link or say "skip":`;
       const externalLink = message.toLowerCase().trim() === 'skip' ? undefined : message.trim();
       
       // Check rate limits
-      const rateLimitResult = await checkRateLimit(whatsappId);
+      const rateLimitResult = await checkRateLimit(userId);
       if (!rateLimitResult.allowed) {
-        await clearConversationState(whatsappId);
+        await clearConversationState(userId);
         return `You've reached your daily limit of 3 listings. Try again tomorrow!`;
       }
       
@@ -226,24 +226,26 @@ Send the link or say "skip":`;
           has_image: true
         };
         
-        const listing = await publishListing(whatsappId, listingData);
-        await clearConversationState(whatsappId);
+        const listing = await publishListing(userId, listingData);
+        await clearConversationState(userId);
         
         const listingUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/listing/${listing.id}`;
-        const whatsappLink = `https://wa.me/${whatsappId}?text=${encodeURIComponent(`Hi! I'm interested in your "${conversationData.itemName}" listing on GatorEx.`)}`;
+        // Generate contact link using phone number for iMessage/SMS
+        const { generateContactLink } = await import('../users/manager');
+        const contactLink = await generateContactLink(userId, conversationData.itemName);
         
         return `🎉 Your listing is live!
 
 📱 ${conversationData.itemName} - $${conversationData.price}
 🔗 ${listingUrl}
 
-Buyers will contact you via: ${whatsappLink}
+Buyers will contact you via: ${contactLink}
 
 Your listing expires in 14 days. I'll remind you 2 days before!
 
 Want to list something else? Just say "SELL"`;
       } catch (error) {
-        await clearConversationState(whatsappId);
+        await clearConversationState(userId);
         return `Sorry, something went wrong creating your listing. Please try again by saying "SELL"`;
       }
   }

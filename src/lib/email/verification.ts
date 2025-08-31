@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { getEmailProvider } from './providers';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db/turso';
 
 // Rate limiting for email sending
 const emailRateLimit = new Map<string, number[]>();

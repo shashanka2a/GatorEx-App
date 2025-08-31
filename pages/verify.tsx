@@ -1,139 +1,72 @@
-import { useState, useEffect, useCallback } from 'react';
-import Head from 'next/head';
+import { useState } from 'react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { setEmailVerified, setVerifiedEmail } from '../src/lib/client/verification';
+import Head from 'next/head';
+import { GetServerSideProps } from 'next';
+import { Logo } from '../src/components/ui/Logo';
 
 export default function VerifyPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [token, setToken] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const router = useRouter();
+
+  const validateUFEmail = (email: string): boolean => {
+    const ufDomains = ['@ufl.edu', '@gators.ufl.edu'];
+    return ufDomains.some(domain => email.toLowerCase().endsWith(domain));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    setLoading(true);
+    setMessage('');
 
-    // Validate UF email
-    if (!email.toLowerCase().endsWith('@ufl.edu')) {
-      setError('Please enter a valid UF email address (@ufl.edu)');
-      setIsLoading(false);
+    if (!validateUFEmail(email)) {
+      setMessage('Please use a valid UF email address (@ufl.edu or @gators.ufl.edu)');
+      setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/send-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email.toLowerCase() }),
+      const result = await signIn('email', {
+        email: email.toLowerCase().trim(),
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send verification code');
-      }
-      
-      // Store token for OTP verification
-      setToken(data.token);
-      
-      // In development mode, show the OTP
-      if (data.devMode && data.devOTP) {
-        console.log('🔢 Development OTP:', data.devOTP);
-        alert(`Development mode - Your OTP is: ${data.devOTP}`);
-      }
-      
-      setIsSubmitted(true);
-      
-      // Analytics event
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'email_verification_requested', {
-          event_category: 'auth',
-          event_label: 'verify_page'
-        });
+      if (result?.error) {
+        setMessage('Failed to send sign-in link. Please try again.');
+      } else {
+        setEmailSent(true);
+        setMessage('Check your email for a sign-in link!');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to send verification email. Please try again.');
+      setMessage('Network error. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-
-  const handleOTPVerification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          token,
-          otp,
-          email 
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
-      }
-      
-      // Store verification status locally
-      setEmailVerified(true);
-      setVerifiedEmail(email);
-      
-      // Analytics event
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('event', 'email_verified', {
-          event_category: 'auth',
-          event_label: 'verify_page'
-        });
-      }
-      
-      // Redirect to home after successful verification
-      router.push('/?verified=true');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Invalid verification code.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // No automatic token verification needed for OTP flow
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50 flex items-center justify-center p-4">
+    <>
       <Head>
-        <title>Verify UF Email - GatorEx</title>
-        <meta name="description" content="Verify your UF email to access GatorEx marketplace" />
+        <title>Sign In - GatorEx</title>
+        <meta name="description" content="Sign in to GatorEx with your UF email" />
       </Head>
+      
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <Logo className="mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Sign In to GatorEx
+            </h1>
+            <p className="text-gray-600">
+              Enter your UF email to get a magic sign-in link
+            </p>
+          </div>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        {!isSubmitted ? (
-          <>
-            <div className="text-center mb-8">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} className="text-orange-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Verify Your UF Email
-              </h1>
-              <p className="text-gray-600">
-                Enter your UF email address to get started with GatorEx
-              </p>
-            </div>
-
+          {!emailSent ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -145,126 +78,91 @@ export default function VerifyPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your.name@ufl.edu"
-                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-                  <AlertCircle size={16} />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Sending...' : 'Send Verification Email'}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Why do we need this?{' '}
-                <button className="text-orange-600 hover:text-orange-700 underline">
-                  Learn more
-                </button>
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="text-center">
-            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail size={32} className="text-blue-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Enter Verification Code
-            </h1>
-            <p className="text-gray-600 mb-6">
-              We've sent a 6-digit code to{' '}
-              <span className="font-medium">{email}</span>
-            </p>
-            
-            <form onSubmit={handleOTPVerification} className="space-y-6">
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Code
-                </label>
-                <input
-                  type="text"
-                  id="otp"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  maxLength={6}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Only @ufl.edu and @gators.ufl.edu emails accepted
+                </p>
               </div>
-
-              {error && (
-                <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-                  <AlertCircle size={16} />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
 
               <button
                 type="submit"
-                disabled={isLoading || otp.length !== 6}
-                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isLoading ? 'Verifying...' : 'Verify Code'}
+                {loading ? 'Sending...' : 'Send Magic Link'}
               </button>
             </form>
-
-            <div className="mt-6 space-y-3">
-              <p className="text-sm text-gray-600">
-                Didn't receive the code?{' '}
-                <button 
-                  onClick={() => {
-                    setIsSubmitted(false);
-                    setOtp('');
-                    setError('');
-                  }}
-                  className="text-orange-600 hover:text-orange-700 underline"
-                >
-                  Resend code
-                </button>
+          ) : (
+            <div className="text-center space-y-4">
+              <div className="text-6xl mb-4">📧</div>
+              <h2 className="text-xl font-semibold text-gray-900">Check Your Email</h2>
+              <p className="text-gray-600">
+                We've sent a magic link to <strong>{email}</strong>
+              </p>
+              <p className="text-sm text-gray-500">
+                Click the link in your email to sign in. The link expires in 24 hours.
               </p>
               
               <button
                 onClick={() => {
-                  setIsSubmitted(false);
+                  setEmailSent(false);
                   setEmail('');
-                  setOtp('');
-                  setError('');
+                  setMessage('');
                 }}
-                className="text-gray-500 hover:text-gray-700 underline text-sm"
+                className="text-orange-500 hover:text-orange-600 text-sm font-medium"
               >
                 Use a different email
               </button>
             </div>
+          )}
 
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
-                <strong>Dev Mode:</strong> Check browser alert or console for the OTP
-              </div>
-            )}
-          </div>
-        )}
+          {message && !emailSent && (
+            <div className={`mt-4 p-3 rounded-lg text-sm ${
+              message.includes('Check your email')
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {message}
+            </div>
+          )}
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-            <span>🔒 Secure</span>
-            <span>🎓 UF Students Only</span>
-            <span>📧 One-time verification</span>
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <strong>UF Students Only:</strong> GatorEx is exclusively for verified University of Florida students. Your email domain confirms your student status.
+            </p>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
+  
+  // If user is already signed in, redirect to appropriate page
+  if (session?.user) {
+    // Check if profile is completed
+    if (session.user.profileCompleted) {
+      return {
+        redirect: {
+          destination: '/buy',
+          permanent: false,
+        },
+      };
+    } else {
+      return {
+        redirect: {
+          destination: '/complete-profile',
+          permanent: false,
+        },
+      };
+    }
+  }
+
+  return {
+    props: {},
+  };
+};

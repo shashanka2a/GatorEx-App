@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../src/lib/db/turso';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -14,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           gt: new Date()
         },
         user: {
-          shadowBanned: false
+          ufEmailVerified: true
         }
       };
       
@@ -37,8 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             select: {
               name: true,
               ufEmailVerified: true,
-              trustLevel: true,
-              whatsappId: true
+              phoneNumber: true,
+              email: true
             }
           }
         },
@@ -64,14 +62,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           verified: listing.user?.ufEmailVerified || false,
           rating: 4.5 + Math.random() * 0.5,
           responseTime: '1h',
-          trustLevel: listing.user?.trustLevel || 'BASIC'
+          phoneNumber: listing.user?.phoneNumber,
+          email: listing.user?.email
         },
         timePosted: getTimeAgo(listing.createdAt),
         condition: listing.condition || 'Good',
         trending: Math.random() > 0.7,
         savings: listing.price ? Math.floor(Math.random() * 50) + 10 : 0,
         description: listing.description || 'Contact seller for details',
-        whatsappLink: `https://wa.me/${listing.user?.whatsappId}?text=${encodeURIComponent(`Hi! I'm interested in your "${listing.title}" listing on GatorEx.`)}`
+        smsLink: listing.user?.phoneNumber ? `sms:${listing.user.phoneNumber}?body=${encodeURIComponent(`Hi! I'm interested in your "${listing.title}" listing on GatorEx.`)}` : null,
+        emailLink: `mailto:${listing.user?.email}?subject=${encodeURIComponent(`GatorEx: ${listing.title}`)}&body=${encodeURIComponent(`Hi! I'm interested in your "${listing.title}" listing on GatorEx.`)}`
       }));
       
       res.status(200).json(transformedListings);

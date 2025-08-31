@@ -7,22 +7,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { whatsappId, message } = req.body;
+    const { userId, message } = req.body;
     
-    if (!whatsappId || !message) {
-      return res.status(400).json({ error: 'Missing whatsappId or message' });
+    if (!userId || !message) {
+      return res.status(400).json({ error: 'Missing userId or message' });
     }
 
-    console.log(`🧪 Testing message processing for ${whatsappId}: "${message}"`);
+    console.log(`🧪 Testing message processing for ${userId}: "${message}"`);
     
-    const response = await processWhatsAppMessage(whatsappId, message);
+    const response = await processWhatsAppMessage(userId, message);
     
     console.log(`🤖 Generated response: "${response}"`);
     
     res.status(200).json({ 
       success: true, 
       response,
-      whatsappId,
+      userId,
       message 
     });
   } catch (error) {

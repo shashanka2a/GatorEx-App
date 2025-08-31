@@ -3,42 +3,85 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model User {
   id                 String     @id @default(cuid())
-  whatsappId         String     @unique
-  ufEmail            String?    @unique
-  ufEmailVerified    Boolean    @default(false)
   name               String?
-  verifyToken        String?
-  verifyTokenExpiry  DateTime?
-  source             UserSource @default(WHATSAPP)
-  trustScore         Int        @default(0)
-  trustLevel         TrustLevel @default(BASIC)
+  email              String     @unique
+  emailVerified      DateTime?
+  image              String?
+  ufEmail            String?
+  ufEmailVerified    Boolean    @default(false)
+  profileCompleted   Boolean    @default(false)
+  phoneNumber        String?
   dailyListingCount  Int        @default(0)
   lastListingDate    DateTime?
-  spamAttempts       Int        @default(0)
-  shadowBanned       Boolean    @default(false)
-  conversationState  String?
-  conversationData   Json?
+  otpCode            String?
+  otpExpiry          DateTime?
+  otpAttempts        Int        @default(0)
+  verifyToken        String?
+  verifyTokenExpiry  DateTime?
+  trustScore         Int        @default(0)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   
+  accounts           Account[]
+  sessions           Session[]
   listings           Listing[]
   
   @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
 }
 
 model Listing {
   id          String        @id @default(cuid())
   title       String
   description String?
-  price       Float?
+  price       Float
   category    String?
   condition   String?
+  meetingSpot String?
   status      ListingStatus @default(DRAFT)
   expiresAt   DateTime
   createdAt   DateTime      @default(now())
@@ -64,58 +107,16 @@ model Image {
   @@map("images")
 }
 
-model WhatsAppMessage {
-  id          String   @id @default(cuid())
-  whatsappId  String
-  messageId   String   @unique
-  content     String?
-  mediaUrl    String?
-  mediaType   String?
-  processed   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  
-  @@map("whatsapp_messages")
-}
 
-model Subscription {
-  id          String   @id @default(cuid())
-  whatsappId  String
-  itemName    String
-  priceRange  String?
-  category    String?
-  keywords    String[]
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("subscriptions")
-}
 
-model BuyRequest {
-  id          String   @id @default(cuid())
-  whatsappId  String
-  itemName    String
-  priceRange  String?
-  description String?
-  active      Boolean  @default(true)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model VerificationAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
   
-  @@map("buy_requests")
-}
-
-model RateLimitRecord {
-  id            String   @id @default(cuid())
-  whatsappId    String   @unique
-  hourlyCount   Int      @default(0)
-  dailyCount    Int      @default(0)
-  lastHourReset DateTime @default(now())
-  lastDayReset  DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  @@map("rate_limit_records")
+  @@map("verification_attempts")
 }
 
 enum ListingStatus {
@@ -128,13 +129,3 @@ enum ListingStatus {
   SHADOW_BANNED
 }
 
-enum TrustLevel {
-  BASIC
-  TRUSTED
-  SHADOW_BANNED
-}
-
-enum UserSource {
-  WHATSAPP
-  WEB
-}

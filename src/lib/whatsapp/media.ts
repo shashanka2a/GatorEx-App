@@ -10,38 +10,23 @@ export interface MediaUploadResult {
   mimeType: string;
 }
 
-export async function downloadWhatsAppMedia(mediaId: string): Promise<string> {
+export async function downloadMedia(mediaUrl: string, mediaId: string): Promise<string> {
   try {
-    // Get media URL from WhatsApp
-    const mediaResponse = await axios.get(
-      `https://graph.facebook.com/v18.0/${mediaId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`
-        }
-      }
-    );
-    
-    const mediaUrl = mediaResponse.data.url;
-    const mimeType = mediaResponse.data.mime_type || 'image/jpeg';
-    
-    // Download the actual media file
+    // Download the media file
     const fileResponse = await axios.get(mediaUrl, {
-      headers: {
-        'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`
-      },
       responseType: 'arraybuffer'
     });
     
     const buffer = Buffer.from(fileResponse.data);
-    const filename = `whatsapp-${mediaId}-${Date.now()}.${getFileExtension(mimeType)}`;
+    const mimeType = fileResponse.headers['content-type'] || 'image/jpeg';
+    const filename = `media-${mediaId}-${Date.now()}.${getFileExtension(mimeType)}`;
     
     // Upload to configured storage service
     const uploadResult = await uploadToStorage(buffer, filename, mimeType);
     
     return uploadResult.url;
   } catch (error) {
-    console.error('Error downloading WhatsApp media:', error);
+    console.error('Error downloading media:', error);
     return '';
   }
 }

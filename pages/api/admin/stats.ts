@@ -16,32 +16,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalListings,
       publishedListings,
       draftListings,
-      shadowBannedListings,
       totalUsers,
       verifiedUsers,
-      trustedUsers,
-      shadowBannedUsers,
-      blockedToday,
-      spamAttempts,
+      profileCompletedUsers,
       recentListings
     ] = await Promise.all([
       prisma.listing.count(),
       prisma.listing.count({ where: { status: 'PUBLISHED' } }),
       prisma.listing.count({ where: { status: 'DRAFT' } }),
-      prisma.listing.count({ where: { status: 'SHADOW_BANNED' } }),
       prisma.user.count(),
       prisma.user.count({ where: { ufEmailVerified: true } }),
-      prisma.user.count({ where: { trustLevel: 'TRUSTED' } }),
-      prisma.user.count({ where: { shadowBanned: true } }),
-      prisma.listing.count({ 
-        where: { 
-          status: 'BLOCKED',
-          createdAt: { gte: today }
-        } 
-      }),
-      prisma.user.aggregate({
-        _sum: { spamAttempts: true }
-      }),
+      prisma.user.count({ where: { profileCompleted: true } }),
       prisma.listing.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -50,8 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             select: {
               ufEmailVerified: true,
               name: true,
-              trustLevel: true,
-              shadowBanned: true
+              profileCompleted: true
             }
           }
         }
@@ -62,15 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalListings,
       publishedListings,
       draftListings,
-      shadowBannedListings,
       totalUsers,
       verifiedUsers,
-      trustedUsers,
-      shadowBannedUsers,
-      moderationStats: {
-        blockedToday,
-        spamAttempts: spamAttempts._sum.spamAttempts || 0
-      },
+      profileCompletedUsers,
       recentListings
     });
   } catch (error) {

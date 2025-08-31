@@ -75,11 +75,11 @@ export async function updateDraftListing(listingId: string, listingData: any) {
   return updatedListing;
 }
 
-export async function createVerificationLink(whatsappId: string): Promise<string> {
+export async function createVerificationLink(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   
   await prisma.user.update({
-    where: { whatsappId },
+    where: { id: userId },
     data: { verifyToken: token }
   });
   

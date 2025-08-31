@@ -47,11 +47,11 @@ Reply "RENEW ${listing.id}" to extend it, or let it expire naturally.
 💰 Current price: $${listing.price}
 📅 Expires: ${listing.expiresAt.toLocaleDateString()}`;
 
-  // TODO: Implement WhatsApp message sending
-  console.log(`Expiry reminder to ${listing.user.whatsappId}: ${message}`);
+  // TODO: Implement email notification or in-app notification
+  console.log(`Expiry reminder for listing ${listing.id}: ${message}`);
 }
 
-export async function handleRenewalRequest(whatsappId: string, message: string): Promise<string> {
+export async function handleRenewalRequest(userId: string, message: string): Promise<string> {
   const renewMatch = message.match(/RENEW\s+([a-zA-Z0-9]+)/i);
   
   if (!renewMatch) {
@@ -64,7 +64,7 @@ export async function handleRenewalRequest(whatsappId: string, message: string):
   const listing = await prisma.listing.findFirst({
     where: {
       id: listingId,
-      user: { whatsappId },
+      userId: userId,
       status: 'PUBLISHED'
     }
   });

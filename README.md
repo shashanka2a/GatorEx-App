@@ -6,7 +6,7 @@ A production-ready Next.js 14 application for University of Florida students to 
 
 - **Student Verification**: UF email verification ensures a trusted community
 - **Secure Marketplace**: Buy and sell textbooks, furniture, electronics, and more
-- **Direct Communication**: WhatsApp integration for seamless seller-buyer communication
+- **Direct Communication**: Email integration for seamless seller-buyer communication
 - **Mobile-First Design**: Optimized for mobile devices with responsive UI
 - **Category Browsing**: Easy navigation through different item categories
 - **User Profiles**: Seller ratings and verification badges for trust

@@ -15,16 +15,16 @@ const RATE_LIMITS = {
   DAILY_MESSAGES: 100
 };
 
-export async function checkRateLimit(whatsappId: string, type: 'listing' | 'message' = 'listing'): Promise<RateLimitResult> {
+export async function checkRateLimit(userId: string, type: 'listing' | 'message' = 'listing'): Promise<RateLimitResult> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const thisHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
   
   try {
     if (type === 'listing') {
-      return await checkListingRateLimit(whatsappId, today);
+      return await checkListingRateLimit(userId, today);
     } else {
-      return await checkMessageRateLimit(whatsappId, today, thisHour);
+      return await checkMessageRateLimit(userId, today, thisHour);
     }
   } catch (error) {
     console.error('Rate limit check failed:', error);
@@ -33,14 +33,14 @@ export async function checkRateLimit(whatsappId: string, type: 'listing' | 'mess
   }
 }
 
-async function checkListingRateLimit(whatsappId: string, today: Date): Promise<RateLimitResult> {
+async function checkListingRateLimit(userId: string, today: Date): Promise<RateLimitResult> {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   
   // Count listings created today
   const todayListings = await prisma.listing.count({
     where: {
-      user: { whatsappId },
+      userId: userId,
       createdAt: {
         gte: today,
         lt: tomorrow
@@ -58,7 +58,7 @@ async function checkListingRateLimit(whatsappId: string, today: Date): Promise<R
   };
 }
 
-async function checkMessageRateLimit(whatsappId: string, today: Date, thisHour: Date): Promise<RateLimitResult> {
+async function checkMessageRateLimit(userId: string, today: Date, thisHour: Date): Promise<RateLimitResult> {
   const nextHour = new Date(thisHour);
   nextHour.setHours(nextHour.getHours() + 1);
   
@@ -67,7 +67,7 @@ async function checkMessageRateLimit(whatsappId: string, today: Date, thisHour: 
   
   // For now, use a simple in-memory rate limiting for messages
   // In production, you'd want to use Redis or database storage
-  const messageKey = `${whatsappId}_messages_${today.toISOString().split('T')[0]}`;
+  const messageKey = `${userId}_messages_${today.toISOString().split('T')[0]}`;
   
   // Simple rate limiting - allow up to limits per day/hour
   // This is a basic implementation - in production use Redis
@@ -78,13 +78,13 @@ async function checkMessageRateLimit(whatsappId: string, today: Date, thisHour: 
   };
 }
 
-export async function getRateLimitStatus(whatsappId: string): Promise<{
+export async function getRateLimitStatus(userId: string): Promise<{
   listings: RateLimitResult;
   messages: RateLimitResult;
 }> {
   const [listings, messages] = await Promise.all([
-    checkRateLimit(whatsappId, 'listing'),
-    checkRateLimit(whatsappId, 'message')
+    checkRateLimit(userId, 'listing'),
+    checkRateLimit(userId, 'message')
   ]);
   
   return { listings, messages };
