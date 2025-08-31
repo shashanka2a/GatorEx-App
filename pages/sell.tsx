@@ -2,7 +2,7 @@ import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import { getSessionFromNextRequest } from '../src/lib/auth/session';
-import { prisma } from '../src/lib/db/turso';
+import { prisma } from '../src/lib/db/prisma';
 
 export default function SellPage() {
   return (

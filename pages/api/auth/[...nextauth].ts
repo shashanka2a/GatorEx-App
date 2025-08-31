@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from 'next-auth';
 import EmailProvider from 'next-auth/providers/email';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import nodemailer from 'nodemailer';
-import { prisma } from '@/lib/db/turso';
+import { prisma } from '../../../src/lib/db/prisma';
 
 // UF email domains
 const UF_DOMAINS = ['ufl.edu', 'gators.ufl.edu'];

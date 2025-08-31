@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { GetServerSideProps } from 'next';
 import { getSessionFromNextRequest } from '../src/lib/auth/session';
-import { prisma } from '../src/lib/db/turso';
+import { prisma } from '../src/lib/db/prisma';
 
 interface Listing {
   id: string;

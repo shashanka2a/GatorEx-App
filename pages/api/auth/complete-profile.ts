@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { requireAuth } from '../../../src/lib/auth/session';
-import { prisma } from '../../../src/lib/db/turso';
+import { prisma } from '../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { sendOTPEmail } from '../email/otp';
-import { prisma } from '../db/turso';
+import { prisma } from '../db/prisma';
 
 // UF email domains
 const UF_DOMAINS = ['ufl.edu', 'gators.ufl.edu'];
