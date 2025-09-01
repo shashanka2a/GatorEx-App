@@ -15,6 +15,8 @@ import {
   Loader2
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
+import router from 'next/router';
+import router from 'next/router';
 
 interface UserProfile {
   id: string;
@@ -62,9 +64,13 @@ export default function ProfilePage() {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/user/profile');
       
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please sign in to view your profile');
+        }
         throw new Error('Failed to fetch profile');
       }
       
@@ -72,7 +78,7 @@ export default function ProfilePage() {
       setUser(profileData);
     } catch (err) {
       console.error('Error fetching profile:', err);
-      setError('Failed to load profile data');
+      setError(err instanceof Error ? err.message : 'Failed to load profile data');
     } finally {
       setLoading(false);
     }
@@ -343,7 +349,11 @@ export default function ProfilePage() {
                         <img
                           src={listing.image}
                           alt={listing.title}
-                          className="w-20 h-20 object-cover rounded-lg"
+                          className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            // Open image in modal or new tab
+                            window.open(listing.image, '_blank');
+                          }}
                         />
                       ) : (
                         <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -353,11 +363,11 @@ export default function ProfilePage() {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-medium text-gray-900 truncate">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors">
                               {listing.title}
                             </h3>
-                            <p className="text-lg font-semibold text-gray-900 mt-1">
+                            <p className="text-lg font-semibold text-green-600 mt-1">
                               ${listing.price}
                             </p>
                             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
@@ -369,29 +379,62 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 flex-shrink-0">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
                               {listing.status}
                             </span>
                             
-                            {listing.status === 'EXPIRED' && (
-                              <button
-                                onClick={() => handleRenewListing(listing.id)}
-                                className="text-orange-600 hover:text-orange-700 p-1"
-                                title="Renew listing"
-                              >
-                                <RefreshCw size={16} />
-                              </button>
-                            )}
-                            
-                            {listing.status === 'DRAFT' && (
-                              <button
-                                className="text-blue-600 hover:text-blue-700 p-1"
-                                title="Complete listing"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                            )}
+                            {/* Action Buttons */}
+                            <div className="flex items-center space-x-1">
+                              {listing.status === 'PUBLISHED' && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      // Copy listing link to clipboard
+                                      navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
+                                      // You could add a toast notification here
+                                    }}
+                                    className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors"
+                                    title="Copy listing link"
+                                  >
+                                    <Eye size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      // Navigate to edit page (you'll need to create this)
+                                      router.push(`/edit-listing/${listing.id}`);
+                                    }}
+                                    className="text-gray-600 hover:text-gray-700 p-1 rounded hover:bg-gray-50 transition-colors"
+                                    title="Edit listing"
+                                  >
+                                    <Edit3 size={16} />
+                                  </button>
+                                </>
+                              )}
+                              
+                              {listing.status === 'EXPIRED' && (
+                                <button
+                                  onClick={() => handleRenewListing(listing.id)}
+                                  className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50 transition-colors"
+                                  title="Renew listing"
+                                >
+                                  <RefreshCw size={16} />
+                                </button>
+                              )}
+                              
+                              {listing.status === 'DRAFT' && (
+                                <button
+                                  onClick={() => {
+                                    // Navigate to complete listing
+                                    router.push('/sell');
+                                  }}
+                                  className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors"
+                                  title="Complete listing"
+                                >
+                                  <Edit3 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
