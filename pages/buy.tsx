@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { GetServerSideProps } from 'next';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { prisma } from '../src/lib/db/prisma';
 import { Card } from '../src/components/ui/card';
 import { Button } from '../src/components/ui/button';
 import { Badge } from '../src/components/ui/badge';
-import { Heart, MapPin, Shield, Clock, Eye, MessageCircle, Mail, Phone, Search, Filter } from 'lucide-react';
+import { Heart, MapPin, Shield, Clock, Eye, MessageCircle, Mail, Phone, Search, Filter, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from '../src/components/figma/ImageWithFallback';
 import WebNav from '../src/components/navigation/WebNav';
 import MobileNav from '../src/components/navigation/MobileNav';
 import ListingModal from '../src/components/ui/ListingModal';
+import { ListingGridSkeleton } from '../src/components/ui/ListingSkeleton';
+import { ListingCard } from '../src/components/ui/ListingCard';
 
 interface Listing {
   id: string;
@@ -31,37 +31,83 @@ interface Listing {
   };
 }
 
-interface BuyPageProps {
-  listings: Listing[];
-}
-
-export default function BuyPage({ listings }: BuyPageProps) {
+export default function BuyPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [filteredListings, setFilteredListings] = useState(listings);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
 
   const categories = ['all', 'electronics', 'textbooks', 'furniture', 'clothing', 'other'];
 
+  // Fetch listings with optimized API call
+  const fetchListings = useCallback(async (category?: string, search?: string, pageNum = 1, append = false) => {
+    try {
+      if (!append) {
+        setLoading(true);
+        setError(null);
+      }
+      
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.append('category', category);
+      if (search) params.append('search', search);
+      params.append('page', pageNum.toString());
+      params.append('limit', '20');
+      
+      const response = await fetch(`/api/listings?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch listings');
+      
+      const data = await response.json();
+      
+      if (append) {
+        setListings(prev => [...prev, ...data]);
+      } else {
+        setListings(data);
+      }
+      
+      setHasMore(data.length === 20); // If we got less than 20, no more pages
+    } catch (err) {
+      setError('Failed to load listings. Please try again.');
+      console.error('Error fetching listings:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
-    let filtered = listings;
+    fetchListings();
+  }, [fetchListings]);
 
-    if (searchTerm) {
-      filtered = filtered.filter(listing =>
-        listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Debounced search and category filtering
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setPage(1);
+      fetchListings(selectedCategory, searchTerm, 1, false);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedCategory, fetchListings]);
+
+  // Load more function for infinite scroll
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchListings(selectedCategory, searchTerm, nextPage, true);
     }
+  }, [loading, hasMore, page, selectedCategory, searchTerm, fetchListings]);
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(listing => listing.category === selectedCategory);
-    }
-
-    setFilteredListings(filtered);
-  }, [searchTerm, selectedCategory, listings]);
+  // Memoized filtered listings for better performance
+  const filteredListings = useMemo(() => {
+    return listings; // API already handles filtering
+  }, [listings]);
 
   const handleContactSeller = (action: 'sms' | 'email', listing: Listing) => {
     if (!session) {
@@ -76,9 +122,9 @@ export default function BuyPage({ listings }: BuyPageProps) {
     }
   };
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchTerm(query);
-  };
+  }, []);
 
   const handleListingClick = (listing: Listing) => {
     setSelectedListing(listing);
@@ -133,11 +179,11 @@ export default function BuyPage({ listings }: BuyPageProps) {
                 </div>
                 
                 <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none z-10" />
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="pl-10 pr-8 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all min-w-[160px]"
+                    className="pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all min-w-[160px] appearance-none"
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>
@@ -150,8 +196,26 @@ export default function BuyPage({ listings }: BuyPageProps) {
             </Card>
           </div>
 
-          {/* Listings Grid */}
-          {filteredListings.length === 0 ? (
+          {/* Loading State */}
+          {loading && <ListingGridSkeleton />}
+
+          {/* Error State */}
+          {error && !loading && (
+            <Card className="p-12 text-center">
+              <div className="text-red-400 text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <Button 
+                onClick={() => fetchListings(selectedCategory, searchTerm)}
+                className="bg-uf-gradient text-white hover:opacity-90"
+              >
+                Try Again
+              </Button>
+            </Card>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && filteredListings.length === 0 && (
             <Card className="p-12 text-center">
               <div className="text-gray-400 text-6xl mb-4">📦</div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No items found</h3>
@@ -166,152 +230,32 @@ export default function BuyPage({ listings }: BuyPageProps) {
                 List an Item
               </Button>
             </Card>
-          ) : (
+          )}
+
+          {/* Listings Grid */}
+          {!loading && !error && filteredListings.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredListings.map((listing) => (
-                <Card 
-                  key={listing.id} 
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 p-0 overflow-hidden cursor-pointer group h-full flex flex-col"
-                  onClick={() => handleListingClick(listing)}
-                >
-                  {/* Image Section - Fixed Height */}
-                  <div className="relative h-48 flex-shrink-0">
-                    {listing.images.length > 0 ? (
-                      <ImageWithFallback
-                        src={listing.images[0].url}
-                        alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-4xl text-gray-400">📦</span>
-                      </div>
-                    )}
-                    
-                    <div className="absolute top-3 right-3">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-0 w-8 h-8 bg-white/90 hover:bg-white text-gray-600 hover:text-red-500 rounded-full shadow-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Handle favorite logic here
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="absolute bottom-3 left-3">
-                      <Badge variant="secondary" className="bg-black/80 text-white text-xs">
-                        {listing.condition}
-                      </Badge>
-                    </div>
-
-                    {listing.images.length > 1 && (
-                      <div className="absolute bottom-3 right-3">
-                        <Badge variant="secondary" className="bg-black/80 text-white text-xs">
-                          +{listing.images.length - 1} more
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Content Section - Flexible Height */}
-                  <div className="p-4 flex-1 flex flex-col">
-                    {/* Title - Fixed Height */}
-                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 h-12 leading-6">
-                      {listing.title}
-                    </h3>
-                    
-                    {/* Price and Category */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xl font-bold text-orange-600">${listing.price}</span>
-                      <Badge className="bg-orange-100 text-orange-800 text-xs">
-                        {listing.category}
-                      </Badge>
-                    </div>
-                    
-                    {/* Description - Fixed Height */}
-                    <div className="mb-3 h-10">
-                      {listing.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {listing.description}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Location and Date */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                      <div className="flex items-center gap-1 truncate">
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{listing.meetingSpot}</span>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Seller Info */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                          <Shield className="w-3 h-3" />
-                          <span>Verified</span>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 truncate">
-                        👤 {listing.user.name || 'UF Student'}
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons - Fixed at Bottom */}
-                    <div className="mt-auto">
-                      {session ? (
-                        <div className="flex gap-2">
-                          {listing.user.phoneNumber && (
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleContactSeller('sms', listing);
-                              }}
-                              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                              size="sm"
-                            >
-                              <Phone className="w-4 h-4 mr-1" />
-                              Text
-                            </Button>
-                          )}
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleContactSeller('email', listing);
-                            }}
-                            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                            size="sm"
-                          >
-                            <Mail className="w-4 h-4 mr-1" />
-                            Email
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push('/verify');
-                          }}
-                          variant="outline"
-                          className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50"
-                          size="sm"
-                        >
-                          🔐 Sign in to contact seller
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  onListingClick={handleListingClick}
+                  onContactSeller={handleContactSeller}
+                />
               ))}
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {!loading && !error && filteredListings.length > 0 && hasMore && (
+            <div className="text-center mt-8">
+              <Button
+                onClick={loadMore}
+                variant="outline"
+                className="px-8 py-3 border-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
+                Load More Listings
+              </Button>
             </div>
           )}
         </div>
@@ -331,44 +275,4 @@ export default function BuyPage({ listings }: BuyPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  try {
-    // Fetch published listings - no authentication required for browsing
-    const listings = await prisma.listing.findMany({
-      where: {
-        status: 'PUBLISHED',
-        expiresAt: {
-          gt: new Date()
-        }
-      },
-      include: {
-        images: {
-          select: { url: true }
-        },
-        user: {
-          select: { 
-            email: true,
-            name: true,
-            phoneNumber: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-
-    return {
-      props: {
-        listings: JSON.parse(JSON.stringify(listings))
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching listings:', error);
-    return {
-      props: {
-        listings: []
-      },
-    };
-  }
-};
+// Remove getServerSideProps to enable client-side rendering for better performance

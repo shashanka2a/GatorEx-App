@@ -262,36 +262,36 @@ export default function ProfilePage() {
         <title>Profile - GatorEx</title>
       </Head>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:py-8">
         {/* User Card */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
           <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center">
-                <User size={32} className="text-orange-600" />
+            <div className="flex items-start space-x-3 md:space-x-4 flex-1">
+              <div className="bg-orange-100 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0">
+                <User size={24} className="text-orange-600 md:w-8 md:h-8" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Mail size={16} className="text-gray-400" />
-                  <span className="text-gray-600">{user?.ufEmail}</span>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg md:text-2xl font-bold text-gray-900 truncate">{user?.name}</h1>
+                <div className="flex items-center space-x-2 mt-1 flex-wrap">
+                  <Mail size={14} className="text-gray-400 flex-shrink-0" />
+                  <span className="text-sm text-gray-600 truncate">{user?.ufEmail}</span>
                   {user?.verified && (
-                    <div className="flex items-center space-x-1">
-                      <CheckCircle size={16} className="text-green-500" />
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      <CheckCircle size={14} className="text-green-500" />
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
                         🐊 UF Verified
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTrustLevelColor(user?.trustLevel || 'BASIC')}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-2 space-y-1 sm:space-y-0">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getTrustLevelColor(user?.trustLevel || 'BASIC')}`}>
                     {user?.trustLevel}
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs md:text-sm text-gray-600">
                     Trust Score: {user?.trustScore}/100
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs md:text-sm text-gray-600">
                     Joined {user?.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : ''}
                   </span>
                 </div>
@@ -304,27 +304,27 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
-            <div className="text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
+            <div className="text-center p-2">
               <div className="flex items-center justify-center mb-1">
-                <Star size={16} className="text-yellow-500 mr-1" />
-                <span className="font-semibold text-gray-900">{user?.rating}</span>
+                <Star size={14} className="text-yellow-500 mr-1" />
+                <span className="font-semibold text-gray-900 text-sm md:text-base">{user?.rating}</span>
               </div>
               <p className="text-xs text-gray-600">Rating</p>
             </div>
             
-            <div className="text-center">
-              <div className="font-semibold text-gray-900 mb-1">{user?.totalSales}</div>
+            <div className="text-center p-2">
+              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">{user?.totalSales}</div>
               <p className="text-xs text-gray-600">Total Listings</p>
             </div>
             
-            <div className="text-center">
-              <div className="font-semibold text-gray-900 mb-1">{user?.totalViews}</div>
+            <div className="text-center p-2">
+              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">{user?.totalViews}</div>
               <p className="text-xs text-gray-600">Total Views</p>
             </div>
             
-            <div className="text-center">
-              <div className="font-semibold text-gray-900 mb-1">
+            <div className="text-center p-2">
+              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">
                 {user?.listings.filter(l => l.status === 'PUBLISHED').length}
               </div>
               <p className="text-xs text-gray-600">Active Listings</p>
@@ -335,10 +335,10 @@ export default function ProfilePage() {
         {/* Listings Section */}
         <div className="bg-white rounded-lg shadow-sm">
           <div className="border-b border-gray-200">
-            <div className="flex space-x-8 px-6">
+            <div className="flex space-x-4 md:space-x-8 px-4 md:px-6 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('active')}
-                className={`py-4 border-b-2 font-medium text-sm ${
+                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
                   activeTab === 'active'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -348,7 +348,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={() => setActiveTab('draft')}
-                className={`py-4 border-b-2 font-medium text-sm ${
+                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
                   activeTab === 'draft'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -358,7 +358,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={() => setActiveTab('expired')}
-                className={`py-4 border-b-2 font-medium text-sm ${
+                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
                   activeTab === 'expired'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -369,7 +369,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {filteredListings.length === 0 ? (
               <div className="text-center py-12">
                 <Package size={48} className="mx-auto text-gray-400 mb-4" />
