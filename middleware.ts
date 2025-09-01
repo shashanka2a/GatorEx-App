@@ -1,93 +1,45 @@
-import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default withAuth(
-  function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-    // Allow access to auth pages and public browsing routes
-    if (
-      pathname.startsWith('/verify') ||
-      pathname.startsWith('/verify-request') ||
-      pathname.startsWith('/login-otp') ||
-      pathname.startsWith('/auth/') ||
-      pathname === '/' ||
-      pathname === '/buy' ||
-      pathname === '/sublease'
-    ) {
-      return NextResponse.next();
-    }
+  // Check if user has a session cookie
+  const sessionToken = req.cookies.get('next-auth.session-token')?.value ||
+    req.cookies.get('__Secure-next-auth.session-token')?.value;
 
-    // Protected routes that require authentication
-    const protectedRoutes = ['/sell', '/me', '/share'];
-    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-
-    if (isProtectedRoute && !token) {
-      return NextResponse.redirect(new URL('/verify', req.url));
-    }
-
-    // If user is signed in but not UF verified, redirect to verify
-    if (token && !token.ufEmailVerified && pathname !== '/verify' && pathname !== '/login-otp') {
-      return NextResponse.redirect(new URL('/verify', req.url));
-    }
-
-    // If user is UF verified but hasn't completed profile, redirect to complete-profile
-    // Exception: allow access to /me page to view profile status
-    if (token && token.ufEmailVerified && !token.profileCompleted && pathname !== '/complete-profile' && pathname !== '/me') {
-      return NextResponse.redirect(new URL('/complete-profile', req.url));
-    }
-
-    // If user has completed profile but tries to access complete-profile, redirect to buy
-    if (token && token.profileCompleted && pathname === '/complete-profile') {
-      return NextResponse.redirect(new URL('/buy', req.url));
-    }
-
+  // Allow access to auth pages and public browsing routes
+  if (
+    pathname.startsWith('/verify') ||
+    pathname.startsWith('/verify-request') ||
+    pathname.startsWith('/login-otp') ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/logo') ||
+    pathname.startsWith('/apple-touch-icon') ||
+    pathname.startsWith('/manifest') ||
+    pathname.includes('.') ||
+    pathname === '/' ||
+    pathname === '/buy' ||
+    pathname === '/sublease'
+  ) {
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
-        
-        // Public routes that don't require authentication
-        const publicRoutes = [
-          '/',
-          '/buy',
-          '/sublease',
-          '/verify',
-          '/verify-request',
-          '/login-otp'
-        ];
-        
-        // Allow access to public routes and static files
-        if (
-          publicRoutes.includes(pathname) ||
-          pathname.startsWith('/api/auth/') ||
-          pathname.startsWith('/_next') ||
-          pathname.startsWith('/favicon') ||
-          pathname.startsWith('/logo') ||
-          pathname.startsWith('/apple-touch-icon') ||
-          pathname.startsWith('/manifest') ||
-          pathname.includes('.')
-        ) {
-          return true;
-        }
-
-        // Protected routes require authentication
-        const protectedRoutes = ['/sell', '/me', '/share'];
-        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-        
-        if (isProtectedRoute) {
-          return !!token;
-        }
-
-        // Default to allowing access for other routes
-        return true;
-      },
-    },
   }
-);
+
+  // Protected routes that require authentication
+  const protectedRoutes = ['/sell', '/me', '/share', '/complete-profile'];
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+  if (isProtectedRoute && !sessionToken) {
+    return NextResponse.redirect(new URL('/verify', req.url));
+  }
+
+  // For now, if user has a session token, let them through
+  // The individual pages will handle more specific checks
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
