@@ -63,21 +63,15 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async session({ session, user }) {
-      if (session.user && user) {
-        // Fetch fresh user data from database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { id: true, ufEmailVerified: true, profileCompleted: true }
-        });
-        
-        session.user.id = user.id;
-        session.user.ufEmailVerified = dbUser?.ufEmailVerified || false;
-        session.user.profileCompleted = dbUser?.profileCompleted || false;
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.ufEmailVerified = token.ufEmailVerified as boolean;
+        session.user.profileCompleted = token.profileCompleted as boolean;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         // Fetch fresh user data from database
@@ -88,6 +82,17 @@ export const authOptions: NextAuthOptions = {
         token.ufEmailVerified = dbUser?.ufEmailVerified || false;
         token.profileCompleted = dbUser?.profileCompleted || false;
       }
+      
+      // Refresh token data when session is updated
+      if (trigger === 'update' && token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { ufEmailVerified: true, profileCompleted: true }
+        });
+        token.ufEmailVerified = dbUser?.ufEmailVerified || false;
+        token.profileCompleted = dbUser?.profileCompleted || false;
+      }
+      
       return token;
     },
   },
@@ -105,7 +110,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
   },
 };
 
