@@ -5,6 +5,14 @@ import { GetServerSideProps } from 'next';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { prisma } from '../src/lib/db/prisma';
+import { Card } from '../src/components/ui/card';
+import { Button } from '../src/components/ui/button';
+import { Badge } from '../src/components/ui/badge';
+import { Heart, MapPin, Shield, Clock, Eye, MessageCircle, Mail, Phone, Search, Filter } from 'lucide-react';
+import { ImageWithFallback } from '../src/components/figma/ImageWithFallback';
+import WebNav from '../src/components/navigation/WebNav';
+import MobileNav from '../src/components/navigation/MobileNav';
+import Layout from '../src/components/layout/Layout';
 
 interface Listing {
   id: string;
@@ -66,6 +74,10 @@ export default function BuyPage({ listings }: BuyPageProps) {
     }
   };
 
+  const handleSearch = (query: string) => {
+    setSearchTerm(query);
+  };
+
   return (
     <>
       <Head>
@@ -74,114 +86,117 @@ export default function BuyPage({ listings }: BuyPageProps) {
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <Link href="/" className="flex items-center space-x-2">
-                  <h1 className="text-2xl font-bold text-orange-600">🐊 GatorEx</h1>
-                </Link>
-                <nav className="hidden md:flex space-x-8">
-                  <Link href="/buy" className="text-orange-600 font-medium">Buy</Link>
-                  <Link href="/sell" className="text-gray-700 hover:text-orange-600">Sell</Link>
-                  <Link href="/sublease" className="text-gray-700 hover:text-orange-600">Sublease</Link>
-                </nav>
+        {/* Navigation */}
+        <WebNav userVerified={!!session?.user} onSearch={setSearchTerm} />
+        <MobileNav userVerified={!!session?.user} />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          {/* Hero Section */}
+          <div className="bg-uf-gradient p-6 rounded-2xl text-white mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-2">Find Great Deals</h1>
+                <p className="text-white/90">From fellow Gators you can trust</p>
               </div>
-              
-              <div className="flex items-center space-x-4">
-                {session ? (
-                  <>
-                    <span className="text-sm text-gray-600">{session.user?.email}</span>
-                    <Link href="/me" className="text-sm text-gray-700 hover:text-orange-600">
-                      Profile
-                    </Link>
-                  </>
-                ) : (
-                  <Link 
-                    href="/verify"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-                  >
-                    Sign In
-                  </Link>
-                )}
+              <div className="text-right">
+                <div className="text-2xl font-bold">{filteredListings.length}</div>
+                <div className="text-xs text-white/80">Items Available</div>
               </div>
             </div>
           </div>
-        </header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Search and Filters */}
-          <div className="mb-8 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
+          <div className="mb-8">
+            <Card className="p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+                
+                <div className="relative">
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="pl-10 pr-8 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white transition-all min-w-[160px]"
+                  >
+                    {categories.map(category => (
+                      <option key={category} value={category}>
+                        {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            </Card>
           </div>
 
           {/* Listings Grid */}
           {filteredListings.length === 0 ? (
-            <div className="text-center py-12">
+            <Card className="p-12 text-center">
               <div className="text-gray-400 text-6xl mb-4">📦</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No items found</h3>
+              <p className="text-gray-600 mb-6">
                 {searchTerm || selectedCategory !== 'all' 
                   ? 'Try adjusting your search or filters'
                   : 'Be the first to list an item!'
                 }
               </p>
-              <Link
-                href="/sell"
-                className="inline-block mt-4 bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
-              >
+              <Button className="bg-uf-gradient text-white hover:opacity-90">
+                <MessageCircle className="w-4 h-4 mr-2" />
                 List an Item
-              </Link>
-            </div>
+              </Button>
+            </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredListings.map((listing) => (
-                <div key={listing.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                  {listing.images.length > 0 && (
-                    <img
-                      src={listing.images[0].url}
-                      alt={listing.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                    />
-                  )}
+                <Card 
+                  key={listing.id} 
+                  className="bg-white rounded-xl shadow-lg border-0 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 p-0 overflow-hidden"
+                >
+                  <div className="relative">
+                    {listing.images.length > 0 ? (
+                      <ImageWithFallback
+                        src={listing.images[0].url}
+                        alt={listing.title}
+                        className="w-full h-48 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                        <span className="text-4xl text-gray-400">📦</span>
+                      </div>
+                    )}
+                    
+                    <div className="absolute top-3 right-3">
+                      <Button variant="ghost" size="sm" className="p-0 w-8 h-8 bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 rounded-full">
+                        <Heart className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="absolute bottom-3 left-3">
+                      <Badge variant="secondary" className="bg-black/70 text-white">
+                        {listing.condition}
+                      </Badge>
+                    </div>
+                  </div>
                   
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
                       {listing.title}
                     </h3>
                     
-                    <p className="text-2xl font-bold text-orange-600 mb-2">
-                      ${listing.price}
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                      <span className="bg-gray-100 px-2 py-1 rounded">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl font-bold text-uf-orange">${listing.price}</span>
+                      <Badge className="bg-orange-100 text-orange-800 text-xs">
                         {listing.category}
-                      </span>
-                      <span>{listing.condition}</span>
+                      </Badge>
                     </div>
                     
                     {listing.description && (
@@ -190,47 +205,64 @@ export default function BuyPage({ listings }: BuyPageProps) {
                       </p>
                     )}
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                      <span>📍 {listing.meetingSpot}</span>
-                      <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>{listing.meetingSpot}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
                     
-                    <div className="text-xs text-gray-600 mb-3">
-                      <div>👤 {listing.user.name || 'UF Student'}</div>
-                      {session && listing.user.phoneNumber && (
-                        <div>📱 {listing.user.phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}</div>
-                      )}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                          <Shield className="w-3 h-3" />
+                          <span>Verified</span>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        👤 {listing.user.name || 'UF Student'}
+                      </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
                       {session ? (
-                        <>
+                        <div className="flex gap-2">
                           {listing.user.phoneNumber && (
-                            <button
+                            <Button
                               onClick={() => handleContactSeller('sms', listing)}
-                              className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium text-center"
+                              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                              size="sm"
                             >
-                              💬 Text
-                            </button>
+                              <Phone className="w-4 h-4 mr-1" />
+                              Text
+                            </Button>
                           )}
-                          <button
+                          <Button
                             onClick={() => handleContactSeller('email', listing)}
-                            className="flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium text-center"
+                            className="flex-1 bg-uf-gradient hover:opacity-90 text-white"
+                            size="sm"
                           >
-                            ✉️ Email
-                          </button>
-                        </>
+                            <Mail className="w-4 h-4 mr-1" />
+                            Email
+                          </Button>
+                        </div>
                       ) : (
-                        <button
+                        <Button
                           onClick={() => router.push('/verify')}
-                          className="w-full bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium text-center border-2 border-dashed border-gray-300"
+                          variant="outline"
+                          className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50"
+                          size="sm"
                         >
                           🔐 Sign in to contact seller
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}
