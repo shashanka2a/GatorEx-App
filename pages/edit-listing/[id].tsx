@@ -5,12 +5,28 @@ import Head from 'next/head';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import Layout from '../../src/components/layout/Layout';
 
+interface Listing {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+  condition: string | null;
+  meetingSpot: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  userId: string;
+  images: Array<{ url: string }>;
+}
+
 export default function EditListingPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { id } = router.query;
   
-  const [listing, setListing] = useState(null);
+  const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,6 +57,8 @@ export default function EditListingPage() {
   }, [id, session, fetchListing]);
 
   const handleSave = async () => {
+    if (!listing) return;
+    
     setSaving(true);
     try {
       const response = await fetch(`/api/listings/${id}`, {
@@ -160,8 +178,8 @@ export default function EditListingPage() {
             </label>
             <input
               type="text"
-              value={listing.title || ''}
-              onChange={(e) => setListing({...listing, title: e.target.value})}
+              value={listing?.title || ''}
+              onChange={(e) => listing && setListing({...listing, title: e.target.value})}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -172,8 +190,8 @@ export default function EditListingPage() {
             </label>
             <input
               type="number"
-              value={listing.price || ''}
-              onChange={(e) => setListing({...listing, price: parseFloat(e.target.value)})}
+              value={listing?.price || ''}
+              onChange={(e) => listing && setListing({...listing, price: parseFloat(e.target.value)})}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -183,8 +201,8 @@ export default function EditListingPage() {
               Description
             </label>
             <textarea
-              value={listing.description || ''}
-              onChange={(e) => setListing({...listing, description: e.target.value})}
+              value={listing?.description || ''}
+              onChange={(e) => listing && setListing({...listing, description: e.target.value})}
               rows={4}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -196,8 +214,8 @@ export default function EditListingPage() {
                 Category
               </label>
               <select
-                value={listing.category || ''}
-                onChange={(e) => setListing({...listing, category: e.target.value})}
+                value={listing?.category || ''}
+                onChange={(e) => listing && setListing({...listing, category: e.target.value})}
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select category</option>
@@ -214,8 +232,8 @@ export default function EditListingPage() {
                 Condition
               </label>
               <select
-                value={listing.condition || ''}
-                onChange={(e) => setListing({...listing, condition: e.target.value})}
+                value={listing?.condition || ''}
+                onChange={(e) => listing && setListing({...listing, condition: e.target.value})}
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select condition</option>
@@ -234,8 +252,8 @@ export default function EditListingPage() {
             </label>
             <input
               type="text"
-              value={listing.meetingSpot || ''}
-              onChange={(e) => setListing({...listing, meetingSpot: e.target.value})}
+              value={listing?.meetingSpot || ''}
+              onChange={(e) => listing && setListing({...listing, meetingSpot: e.target.value})}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="e.g., Reitz Union, Library West"
             />
