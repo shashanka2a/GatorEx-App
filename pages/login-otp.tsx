@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
 import Head from 'next/head';
 import { Logo } from '../src/components/ui/Logo';
 
@@ -57,9 +58,9 @@ export default function OTPLogin() {
 
       if (response.ok) {
         setMessage(data.message);
-        // Redirect after successful login
+        // Force a page reload to pick up the new session
         setTimeout(() => {
-          router.push(data.redirectTo || '/me');
+          window.location.href = data.redirectTo || '/me';
         }, 1000);
       } else {
         setError(data.error);

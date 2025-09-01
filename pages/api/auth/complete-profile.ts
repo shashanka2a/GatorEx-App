@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { requireAuth } from '../../../src/lib/auth/session';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './[...nextauth]';
 import { prisma } from '../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -8,8 +9,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await requireAuth(req, res);
-    if (!session) return; // requireAuth already sent error response
+    const session = await getServerSession(req, res, authOptions);
+    if (!session || !session.user?.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
     const { name, phoneNumber } = req.body;
     
@@ -25,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Update user profile
     await prisma.user.update({
-      where: { id: session.userId },
+      where: { id: session.user.id },
       data: {
         name: name.trim(),
         phoneNumber: phoneDigits,

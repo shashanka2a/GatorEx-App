@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
-import { signIn } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './[...nextauth]';
 
 const prisma = new PrismaClient();
 
@@ -106,6 +107,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     }
+
+    // Create a session for the user
+    // We need to create a session record in the database
+    const sessionToken = `otp-session-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    await prisma.session.create({
+      data: {
+        sessionToken,
+        userId: user.id,
+        expires
+      }
+    });
+
+    // Set the session cookie
+    res.setHeader('Set-Cookie', [
+      `next-auth.session-token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires.toUTCString()}`,
+      `__Secure-next-auth.session-token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=${expires.toUTCString()}`
+    ]);
 
     // Determine redirect URL
     let redirectTo = '/buy'; // Default
