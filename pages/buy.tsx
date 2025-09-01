@@ -12,7 +12,6 @@ import { Heart, MapPin, Shield, Clock, Eye, MessageCircle, Mail, Phone, Search, 
 import { ImageWithFallback } from '../src/components/figma/ImageWithFallback';
 import WebNav from '../src/components/navigation/WebNav';
 import MobileNav from '../src/components/navigation/MobileNav';
-import Layout from '../src/components/layout/Layout';
 
 interface Listing {
   id: string;

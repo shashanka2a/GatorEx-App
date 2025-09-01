@@ -83,8 +83,8 @@ export function PostListing({ onComplete }: PostListingProps) {
                   />
                   <Button
                     size="sm"
-                    variant="destructive"
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                    variant="outline"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 text-white border-red-500 hover:bg-red-600"
                     onClick={() => removePhoto(index)}
                   >
                     <X className="w-3 h-3" />

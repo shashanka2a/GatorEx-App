@@ -123,10 +123,10 @@ export function ListingDetail({ listingId, onContactSeller }: ListingDetailProps
         </div>
         
         <div className="absolute top-4 right-4 flex gap-2">
-          <Button size="sm" variant="secondary" className="rounded-full w-10 h-10 p-0 bg-white/90 backdrop-blur-sm">
+          <Button size="sm" variant="ghost" className="rounded-full w-10 h-10 p-0 bg-white/90 backdrop-blur-sm">
             <Heart className="w-4 h-4" />
           </Button>
-          <Button size="sm" variant="secondary" className="rounded-full w-10 h-10 p-0 bg-white/90 backdrop-blur-sm">
+          <Button size="sm" variant="ghost" className="rounded-full w-10 h-10 p-0 bg-white/90 backdrop-blur-sm">
             <Share2 className="w-4 h-4" />
           </Button>
         </div>

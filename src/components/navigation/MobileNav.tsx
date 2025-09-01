@@ -6,10 +6,9 @@ import {
   MessageCircle, 
   Home as HomeIcon, 
   User,
-  QrCode,
   X
 } from 'lucide-react';
-import { generateWhatsAppBotLink } from '../../lib/whatsapp/sharing';
+import ChatBot from '../chat/ChatBot';
 
 interface MobileNavProps {
   userVerified?: boolean;
@@ -17,7 +16,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ userVerified = false }: MobileNavProps) {
   const router = useRouter();
-  const [showSellModal, setShowSellModal] = useState(false);
+  const [showChatBot, setShowChatBot] = useState(false);
 
   const handleSellClick = () => {
     // Analytics event
@@ -29,7 +28,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
       return;
     }
 
-    setShowSellModal(true);
+    router.push('/sell');
   };
 
   const handleTabSwitch = (tab: string) => {
@@ -141,57 +140,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
         </div>
       </nav>
 
-      {/* Sell Modal */}
-      {showSellModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 relative shadow-2xl">
-            <button
-              onClick={() => setShowSellModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              aria-label="Close modal"
-            >
-              <X size={20} />
-            </button>
 
-            <div className="text-center">
-              <div className="mb-4">
-                <MessageCircle size={48} className="mx-auto text-orange-500 mb-2" />
-                <h2 className="text-xl font-bold text-gray-900">Start Selling</h2>
-                <p className="text-gray-600 mt-1">Chat with our bot to list your item</p>
-              </div>
-
-              <div className="space-y-3">
-                <a
-                  href={generateWhatsAppBotLink('sell')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
-                >
-                  🚀 Open WhatsApp Bot
-                </a>
-
-                <button
-                  onClick={() => {
-                    // Show QR code or copy link functionality
-                    navigator.clipboard.writeText(generateWhatsAppBotLink('sell'));
-                    alert('Bot link copied to clipboard!');
-                  }}
-                  className="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  <QrCode size={16} className="inline mr-2" />
-                  Copy Bot Link
-                </button>
-              </div>
-
-              <div className="mt-4 text-sm text-gray-500">
-                <p>📱 Quick & easy listing</p>
-                <p>🔒 UF students only</p>
-                <p>💬 Direct buyer contact</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -89,7 +89,7 @@ export function Profile({ onEditProfile, onCreateListing, onListingClick }: Prof
         </div>
         
         <Button 
-          variant="secondary" 
+          variant="outline" 
           className="w-full mt-4"
           onClick={onEditProfile}
         >

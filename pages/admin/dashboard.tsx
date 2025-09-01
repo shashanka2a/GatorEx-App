@@ -110,7 +110,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <Badge variant={
                   listing.status === 'PUBLISHED' ? 'default' :
-                  listing.status === 'DRAFT' ? 'secondary' : 'destructive'
+                  listing.status === 'DRAFT' ? 'secondary' : 'outline'
                 }>
                   {listing.status}
                 </Badge>
