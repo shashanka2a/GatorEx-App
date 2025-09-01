@@ -61,16 +61,28 @@ export default function EditListingPage() {
     
     setSaving(true);
     try {
+      // Only send the fields that can be updated
+      const updateData = {
+        title: listing.title,
+        description: listing.description,
+        price: listing.price,
+        category: listing.category,
+        condition: listing.condition,
+        meetingSpot: listing.meetingSpot
+      };
+
       const response = await fetch(`/api/listings/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(listing)
+        body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
         router.push('/me');
       } else {
-        setError('Failed to save changes');
+        const errorData = await response.json();
+        console.error('Save error:', errorData);
+        setError(errorData.error || 'Failed to save changes');
       }
     } catch (err) {
       console.error('Error saving listing:', err);

@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import ChatBot from '../chat/ChatBot';
+import { useLoading } from '../../contexts/LoadingContext';
 
 interface WebNavProps {
   userVerified?: boolean;
@@ -18,6 +19,7 @@ interface WebNavProps {
 
 export default function WebNav({ userVerified = false, onSearch }: WebNavProps) {
   const router = useRouter();
+  const { setNavigating } = useLoading();
   const [showChatBot, setShowChatBot] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -28,17 +30,23 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
     analytics.trackSellCTA('web_top_nav');
 
     if (!userVerified) {
-      router.push('/login-otp');
+      setNavigating(true);
+      router.push('/login-otp').finally(() => setNavigating(false));
       return;
     }
 
-    router.push('/sell');
+    setNavigating(true);
+    router.push('/sell').finally(() => setNavigating(false));
   };
 
-  const handleTabSwitch = (tab: string) => {
+  const handleTabSwitch = (tab: string, href: string) => {
     // Analytics event
     const { analytics } = require('../../lib/analytics');
     analytics.trackTabSwitch(tab, 'web');
+    
+    // Show loading animation
+    setNavigating(true);
+    router.push(href).finally(() => setNavigating(false));
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -69,9 +77,11 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
 
             {/* Center Navigation */}
             <div className="flex items-center space-x-2 bg-gray-50 rounded-xl p-1">
-              <Link
-                href="/"
-                onClick={() => handleTabSwitch('buy')}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleTabSwitch('buy', '/');
+                }}
                 className={`
                   px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] min-w-[80px] flex items-center justify-center
                   ${(router.pathname === '/' || router.pathname === '/buy')
@@ -83,11 +93,10 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
               >
                 <ShoppingBag size={16} className="mr-2" />
                 Buy
-              </Link>
+              </button>
 
-              <Link
-                href="/sell"
-                onClick={() => handleTabSwitch('sell')}
+              <button
+                onClick={handleSellClick}
                 className={`
                   px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-sm font-medium hover:from-orange-600 hover:to-orange-700 transition-all duration-200 min-h-[44px] flex items-center shadow-sm hover:shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
                   ${router.pathname === '/sell' ? 'from-orange-600 to-orange-700' : ''}
@@ -97,11 +106,13 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
               >
                 <MessageCircle size={16} className="mr-2" />
                 Sell
-              </Link>
+              </button>
 
-              <Link
-                href="/sublease"
-                onClick={() => handleTabSwitch('sublease')}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleTabSwitch('sublease', '/sublease');
+                }}
                 className={`
                   px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] min-w-[100px] flex items-center justify-center relative
                   ${router.pathname === '/sublease' 
@@ -116,7 +127,7 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                 <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
                   Soon
                 </span>
-              </Link>
+              </button>
             </div>
 
             {/* Right Section */}
@@ -147,9 +158,11 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                   </div>
                 )}
                 
-                <Link
-                  href="/me"
-                  onClick={() => handleTabSwitch('profile')}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleTabSwitch('profile', '/me');
+                  }}
                   className={`
                     px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] flex items-center border
                     ${(router.pathname === '/me' || router.pathname === '/complete-profile')
@@ -161,7 +174,7 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                 >
                   <User size={16} className="mr-2" />
                   Profile
-                </Link>
+                </button>
               </div>
             </div>
           </div>

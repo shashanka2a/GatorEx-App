@@ -9,6 +9,7 @@ import {
   X
 } from 'lucide-react';
 import ChatBot from '../chat/ChatBot';
+import { useLoading } from '../../contexts/LoadingContext';
 
 interface MobileNavProps {
   userVerified?: boolean;
@@ -16,6 +17,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ userVerified = false }: MobileNavProps) {
   const router = useRouter();
+  const { setNavigating } = useLoading();
   const [showChatBot, setShowChatBot] = useState(false);
 
   const handleSellClick = () => {
@@ -24,17 +26,23 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
     analytics.trackSellCTA('mobile_bottom_nav');
 
     if (!userVerified) {
-      router.push('/login-otp');
+      setNavigating(true);
+      router.push('/login-otp').finally(() => setNavigating(false));
       return;
     }
 
-    router.push('/sell');
+    setNavigating(true);
+    router.push('/sell').finally(() => setNavigating(false));
   };
 
-  const handleTabSwitch = (tab: string) => {
+  const handleTabSwitch = (tab: string, href: string) => {
     // Analytics event
     const { analytics } = require('../../lib/analytics');
     analytics.trackTabSwitch(tab, 'mobile');
+    
+    // Show loading animation
+    setNavigating(true);
+    router.push(href).finally(() => setNavigating(false));
   };
 
   const navItems = [
@@ -89,7 +97,6 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
                   key={item.id}
                   onClick={() => {
                     item.onClick();
-                    handleTabSwitch(item.id);
                   }}
                   className={`
                     relative flex flex-col items-center justify-center p-3 min-h-[48px] min-w-[48px] rounded-xl transition-all duration-200
@@ -113,10 +120,12 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
             }
 
             return (
-              <Link
+              <button
                 key={item.id}
-                href={item.href}
-                onClick={() => handleTabSwitch(item.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleTabSwitch(item.id, item.href);
+                }}
                 className={`
                   relative flex flex-col items-center justify-center p-3 min-h-[48px] min-w-[48px] rounded-xl transition-all duration-200
                   ${isActive 
@@ -134,7 +143,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
                     Soon
                   </span>
                 )}
-              </Link>
+              </button>
             );
           })}
         </div>

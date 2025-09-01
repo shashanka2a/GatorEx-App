@@ -8,6 +8,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Add cache headers for better performance
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
   try {
     const session = await getServerSession(req, res, authOptions);
     
@@ -15,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Fetch user profile data
+    // Fetch user profile data with listings in a single optimized query
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -26,6 +29,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         profileCompleted: true,
         trustScore: true,
         createdAt: true,
+        listings: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            status: true,
+            createdAt: true,
+            expiresAt: true,
+            images: {
+              select: {
+                url: true
+              },
+              take: 1 // Only get first image for performance
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50 // Limit to recent 50 listings for performance
+        },
         _count: {
           select: {
             listings: {
@@ -40,24 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Fetch user's listings with stats
-    const listings = await prisma.listing.findMany({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        title: true,
-        price: true,
-        status: true,
-        createdAt: true,
-        expiresAt: true,
-        images: {
-          select: {
-            url: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const listings = user.listings;
 
     // Calculate user stats
     const publishedListings = listings.filter(l => l.status === 'PUBLISHED');

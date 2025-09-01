@@ -42,15 +42,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       case 'PUT':
         const { title, description, price, category, condition, meetingSpot } = req.body;
 
+        // Validate required fields
+        if (!title || price === undefined || price === null) {
+          return res.status(400).json({ error: 'Title and price are required' });
+        }
+
+        // Ensure price is a valid number
+        const numericPrice = typeof price === 'string' ? parseFloat(price) : Number(price);
+        if (isNaN(numericPrice) || numericPrice < 0) {
+          return res.status(400).json({ error: 'Price must be a valid positive number' });
+        }
+
         const updatedListing = await prisma.listing.update({
           where: { id },
           data: {
-            title,
-            description,
-            price: parseFloat(price),
-            category,
-            condition,
-            meetingSpot,
+            title: title.trim(),
+            description: description?.trim() || null,
+            price: numericPrice,
+            category: category || null,
+            condition: condition || null,
+            meetingSpot: meetingSpot?.trim() || null,
             updatedAt: new Date()
           },
           include: {
