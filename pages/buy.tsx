@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { GetServerSideProps } from 'next';
-import { getSessionFromNextRequest } from '../src/lib/auth/session';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { prisma } from '../src/lib/db/prisma';
 
 interface Listing {
@@ -24,10 +25,11 @@ interface Listing {
 
 interface BuyPageProps {
   listings: Listing[];
-  userEmail: string;
 }
 
-export default function BuyPage({ listings, userEmail }: BuyPageProps) {
+export default function BuyPage({ listings }: BuyPageProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [filteredListings, setFilteredListings] = useState(listings);
@@ -51,9 +53,17 @@ export default function BuyPage({ listings, userEmail }: BuyPageProps) {
     setFilteredListings(filtered);
   }, [searchTerm, selectedCategory, listings]);
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/verify';
+  const handleContactSeller = (action: 'sms' | 'email', listing: Listing) => {
+    if (!session) {
+      router.push('/verify');
+      return;
+    }
+
+    if (action === 'sms' && listing.user.phoneNumber) {
+      window.open(`sms:${listing.user.phoneNumber}?body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`);
+    } else if (action === 'email') {
+      window.open(`mailto:${listing.user.email}?subject=GatorEx: ${listing.title}&body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`);
+    }
   };
 
   return (
@@ -69,21 +79,32 @@ export default function BuyPage({ listings, userEmail }: BuyPageProps) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-4">
-                <h1 className="text-2xl font-bold text-orange-600">🐊 GatorEx</h1>
+                <Link href="/" className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold text-orange-600">🐊 GatorEx</h1>
+                </Link>
                 <nav className="hidden md:flex space-x-8">
                   <Link href="/buy" className="text-orange-600 font-medium">Buy</Link>
                   <Link href="/sell" className="text-gray-700 hover:text-orange-600">Sell</Link>
+                  <Link href="/sublease" className="text-gray-700 hover:text-orange-600">Sublease</Link>
                 </nav>
               </div>
               
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">{userEmail}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Logout
-                </button>
+                {session ? (
+                  <>
+                    <span className="text-sm text-gray-600">{session.user?.email}</span>
+                    <Link href="/me" className="text-sm text-gray-700 hover:text-orange-600">
+                      Profile
+                    </Link>
+                  </>
+                ) : (
+                  <Link 
+                    href="/verify"
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                  >
+                    Sign In
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -175,27 +196,38 @@ export default function BuyPage({ listings, userEmail }: BuyPageProps) {
                     </div>
                     
                     <div className="text-xs text-gray-600 mb-3">
-                      <div>👤 {listing.user.name}</div>
-                      {listing.user.phoneNumber && (
+                      <div>👤 {listing.user.name || 'UF Student'}</div>
+                      {session && listing.user.phoneNumber && (
                         <div>📱 {listing.user.phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}</div>
                       )}
                     </div>
                     
                     <div className="flex gap-2">
-                      {listing.user.phoneNumber && (
-                        <a
-                          href={`sms:${listing.user.phoneNumber}?body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`}
-                          className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium text-center"
+                      {session ? (
+                        <>
+                          {listing.user.phoneNumber && (
+                            <button
+                              onClick={() => handleContactSeller('sms', listing)}
+                              className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium text-center"
+                            >
+                              💬 Text
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleContactSeller('email', listing)}
+                            className="flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium text-center"
+                          >
+                            ✉️ Email
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => router.push('/verify')}
+                          className="w-full bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium text-center border-2 border-dashed border-gray-300"
                         >
-                          💬 Text
-                        </a>
+                          🔐 Sign in to contact seller
+                        </button>
                       )}
-                      <a
-                        href={`mailto:${listing.user.email}?subject=GatorEx: ${listing.title}&body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`}
-                        className="flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium text-center"
-                      >
-                        ✉️ Email
-                      </a>
                     </div>
                   </div>
                 </div>
@@ -208,36 +240,9 @@ export default function BuyPage({ listings, userEmail }: BuyPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    // This will be handled by middleware, but let's double-check
-    const session = getSessionFromNextRequest(req as any);
-    
-    if (!session) {
-      return {
-        redirect: {
-          destination: '/verify',
-          permanent: false,
-        },
-      };
-    }
-
-    // Check if user has completed profile
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: { profileCompleted: true, email: true }
-    });
-
-    if (!user?.profileCompleted) {
-      return {
-        redirect: {
-          destination: '/complete-profile',
-          permanent: false,
-        },
-      };
-    }
-
-    // Fetch published listings
+    // Fetch published listings - no authentication required for browsing
     const listings = await prisma.listing.findMany({
       where: {
         status: 'PUBLISHED',
@@ -264,16 +269,14 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 
     return {
       props: {
-        listings: JSON.parse(JSON.stringify(listings)),
-        userEmail: session.email
+        listings: JSON.parse(JSON.stringify(listings))
       },
     };
   } catch (error) {
     console.error('Error fetching listings:', error);
     return {
       props: {
-        listings: [],
-        userEmail: ''
+        listings: []
       },
     };
   }

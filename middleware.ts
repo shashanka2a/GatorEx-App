@@ -6,14 +6,24 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // Allow access to auth pages and public routes
+    // Allow access to auth pages and public browsing routes
     if (
       pathname.startsWith('/verify') ||
       pathname.startsWith('/verify-request') ||
       pathname.startsWith('/auth/') ||
-      pathname === '/'
+      pathname === '/' ||
+      pathname === '/buy' ||
+      pathname === '/sublease'
     ) {
       return NextResponse.next();
+    }
+
+    // Protected routes that require authentication
+    const protectedRoutes = ['/sell', '/me', '/share'];
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+    if (isProtectedRoute && !token) {
+      return NextResponse.redirect(new URL('/verify', req.url));
     }
 
     // If user is signed in but not UF verified, redirect to verify
@@ -31,11 +41,6 @@ export default withAuth(
       return NextResponse.redirect(new URL('/buy', req.url));
     }
 
-    // Block access to sell page if not verified
-    if (pathname === '/sell' && (!token || !token.ufEmailVerified)) {
-      return NextResponse.redirect(new URL('/verify', req.url));
-    }
-
     return NextResponse.next();
   },
   {
@@ -43,11 +48,18 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         
-        // Allow access to public routes
+        // Public routes that don't require authentication
+        const publicRoutes = [
+          '/',
+          '/buy',
+          '/sublease',
+          '/verify',
+          '/verify-request'
+        ];
+        
+        // Allow access to public routes and static files
         if (
-          pathname === '/' ||
-          pathname.startsWith('/verify') ||
-          pathname.startsWith('/verify-request') ||
+          publicRoutes.includes(pathname) ||
           pathname.startsWith('/api/auth/') ||
           pathname.startsWith('/_next') ||
           pathname.startsWith('/favicon') ||
@@ -59,8 +71,16 @@ export default withAuth(
           return true;
         }
 
-        // Require authentication for all other routes
-        return !!token;
+        // Protected routes require authentication
+        const protectedRoutes = ['/sell', '/me', '/share'];
+        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+        
+        if (isProtectedRoute) {
+          return !!token;
+        }
+
+        // Default to allowing access for other routes
+        return true;
       },
     },
   }
