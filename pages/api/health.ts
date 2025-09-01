@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/src/lib/prisma';
+import { prisma } from '../../src/lib/db/prisma';
 
 export const runtime = 'nodejs';
 
