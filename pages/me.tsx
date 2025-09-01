@@ -353,7 +353,9 @@ export default function ProfilePage() {
                           className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => {
                             // Open image in modal or new tab
-                            window.open(listing.image, '_blank');
+                            if (listing.image) {
+                              window.open(listing.image, '_blank');
+                            }
                           }}
                         />
                       ) : (
