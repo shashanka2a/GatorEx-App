@@ -9,6 +9,10 @@ interface Message {
   isBot: boolean;
   timestamp: Date;
   images?: string[];
+  buttons?: Array<{
+    text: string;
+    value: string;
+  }>;
 }
 
 interface ListingDraft {
@@ -76,14 +80,15 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     scrollToBottom();
   }, [messages]);
 
-  const addBotMessage = useCallback((text: string, delay = 1000) => {
+  const addBotMessage = useCallback((text: string, delay = 1000, buttons?: Array<{text: string, value: string}>) => {
     setIsTyping(true);
     setTimeout(() => {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         text,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        buttons
       }]);
       setIsTyping(false);
     }, delay);
@@ -153,6 +158,22 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   };
 
   const handleStepFlow = async (userInput: string) => {
+    // Check for restart command
+    if (userInput.toLowerCase().trim() === 'restart' || userInput.toLowerCase().trim() === 'start over') {
+      setStep(0);
+      setDraft({
+        title: '',
+        price: null,
+        images: [],
+        category: '',
+        condition: '',
+        meetingSpot: '',
+        description: ''
+      });
+      addBotMessage("Let's start over! What would you like to sell?");
+      return;
+    }
+
     switch (step) {
       case 0: // Item title
         if (userInput.trim().length < 3) {
@@ -191,33 +212,73 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       
       case 3: // Category
         if (!CATEGORIES.includes(userInput)) {
-          addBotMessage(`Please choose from these categories: ${CATEGORIES.join(', ')}`);
+          const categoryButtons = CATEGORIES.map(category => ({
+            text: category,
+            value: category
+          }));
+          addBotMessage(`Please choose one of these categories:`, 1000, categoryButtons);
           return;
         }
         
         setDraft(prev => ({ ...prev, category: userInput }));
-        addBotMessage(`Got it! Now, what's the condition of your ${draft.title}? Choose from: ${CONDITIONS.join(', ')}`);
+        const conditionButtons = CONDITIONS.map(condition => ({
+          text: condition,
+          value: condition
+        }));
+        
+        addBotMessage(`Got it! Now, what's the condition of your ${draft.title}?`, 1000, conditionButtons);
         setStep(4);
         break;
       
       case 4: // Condition
         if (!CONDITIONS.includes(userInput)) {
-          addBotMessage(`Please choose from these conditions: ${CONDITIONS.join(', ')}`);
+          const conditionButtons = CONDITIONS.map(condition => ({
+            text: condition,
+            value: condition
+          }));
+          addBotMessage(`Please choose one of these conditions:`, 1000, conditionButtons);
           return;
         }
         
         setDraft(prev => ({ ...prev, condition: userInput }));
-        addBotMessage(`Great! Where would you like to meet buyers? Choose from: ${MEETING_SPOTS.join(', ')}`);
+        const meetingSpotButtons = MEETING_SPOTS.map(spot => ({
+          text: spot,
+          value: spot
+        }));
+        meetingSpotButtons.push({ text: 'Other (Custom)', value: 'Other' });
+        
+        addBotMessage(`Great! Where would you like to meet buyers? Choose from these popular campus locations:`, 1000, meetingSpotButtons);
         setStep(5);
         break;
       
       case 5: // Meeting spot
-        if (!MEETING_SPOTS.includes(userInput) && userInput !== 'Other') {
-          addBotMessage(`Please choose from these meeting spots: ${MEETING_SPOTS.join(', ')}`);
+        // Make meeting spot validation more flexible
+        const normalizedInput = userInput.toLowerCase().trim();
+        let matchedSpot = null;
+        
+        // Check if input is a number (1-9)
+        const spotNumber = parseInt(normalizedInput);
+        if (!isNaN(spotNumber) && spotNumber >= 1 && spotNumber <= MEETING_SPOTS.length) {
+          matchedSpot = MEETING_SPOTS[spotNumber - 1];
+        } else {
+          // Check for text match
+          matchedSpot = MEETING_SPOTS.find(spot => 
+            spot.toLowerCase().includes(normalizedInput) || 
+            normalizedInput.includes(spot.toLowerCase())
+          );
+        }
+        
+        if (!matchedSpot && normalizedInput !== 'other') {
+          const meetingSpotButtons = MEETING_SPOTS.map(spot => ({
+            text: spot,
+            value: spot
+          }));
+          meetingSpotButtons.push({ text: 'Other (Custom)', value: 'Other' });
+          addBotMessage(`Please choose one of these meeting spots:`, 1000, meetingSpotButtons);
           return;
         }
         
-        setDraft(prev => ({ ...prev, meetingSpot: userInput }));
+        setDraft(prev => ({ ...prev, meetingSpot: matchedSpot || userInput }));
         addBotMessage(`Perfect! Finally, add a description with any additional details about your ${draft.title}. Include condition details, why you're selling, etc.`);
         setStep(6);
         break;
@@ -246,8 +307,18 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   };
 
   const handleOptionalFields = () => {
-    addBotMessage(`Great! I have the required info. Now let's add some optional details to make your listing better. What category best describes your ${draft.title}? Choose from: ${CATEGORIES.join(', ')}`);
+    const categoryButtons = CATEGORIES.map(category => ({
+      text: category,
+      value: category
+    }));
+    
+    addBotMessage(`Great! I have the required info. Now let's add some optional details to make your listing better. What category best describes your ${draft.title}?`, 1000, categoryButtons);
     setStep(3);
+  };
+
+  const handleButtonClick = (value: string) => {
+    addUserMessage(value);
+    handleStepFlow(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -449,6 +520,19 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
                         alt={`Upload ${idx + 1}`}
                         className="w-full h-24 object-cover rounded-lg"
                       />
+                    ))}
+                  </div>
+                )}
+                {message.buttons && message.buttons.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {message.buttons.map((button, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleButtonClick(button.value)}
+                        className="px-3 py-2 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
+                      >
+                        {button.text}
+                      </button>
                     ))}
                   </div>
                 )}
