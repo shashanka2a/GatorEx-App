@@ -11,7 +11,7 @@ function generateOTP(): string {
 
 // Create email transporter
 function createTransporter() {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
