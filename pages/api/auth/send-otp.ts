@@ -68,7 +68,7 @@ async function sendOTPEmail(email: string, otp: string): Promise<boolean> {
     });
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to send OTP email:', error);
     return false;
   }
@@ -95,7 +95,7 @@ async function storeOTP(email: string, otp: string): Promise<boolean> {
     });
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to store OTP:', error);
     return false;
   }
@@ -156,7 +156,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Send OTP error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {

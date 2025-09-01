@@ -17,7 +17,7 @@ export default function OTPLogin() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/auth/test-otp', {
+      const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

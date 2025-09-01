@@ -62,12 +62,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Test error:', error);
     return res.status(500).json({ 
       error: 'Test failed', 
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: error?.message || 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
     });
   } finally {
     await prisma.$disconnect();

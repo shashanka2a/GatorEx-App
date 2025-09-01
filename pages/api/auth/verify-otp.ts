@@ -125,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Verify OTP error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   } finally {
