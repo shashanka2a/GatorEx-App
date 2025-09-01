@@ -33,7 +33,8 @@ export default withAuth(
     }
 
     // If user is UF verified but hasn't completed profile, redirect to complete-profile
-    if (token && token.ufEmailVerified && !token.profileCompleted && pathname !== '/complete-profile') {
+    // Exception: allow access to /me page so users can see their profile
+    if (token && token.ufEmailVerified && !token.profileCompleted && pathname !== '/complete-profile' && pathname !== '/me') {
       return NextResponse.redirect(new URL('/complete-profile', req.url));
     }
 
