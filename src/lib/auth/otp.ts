@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { prisma } from '../db/prisma';
 import nodemailer from 'nodemailer';
 
 // Create email transporter
@@ -67,22 +67,27 @@ export async function sendOTPEmail(email: string, otp: string): Promise<boolean>
   }
 }
 
-// Store OTP in database (using Supabase)
+// Store OTP in database (using Prisma)
 export async function storeOTP(email: string, otp: string): Promise<boolean> {
   try {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    const { error } = await supabase
-      .from('otp_codes')
-      .upsert({
+    // Delete any existing OTP for this email first
+    await prisma.oTP.deleteMany({
+      where: { email }
+    });
+
+    // Create new OTP record
+    await prisma.oTP.create({
+      data: {
         email,
         code: otp,
-        expires_at: expiresAt.toISOString(),
-        attempts: 0,
-        created_at: new Date().toISOString()
-      });
+        expiresAt,
+        attempts: 0
+      }
+    });
 
-    return !error;
+    return true;
   } catch (error) {
     console.error('Failed to store OTP:', error);
     return false;
@@ -93,44 +98,40 @@ export async function storeOTP(email: string, otp: string): Promise<boolean> {
 export async function verifyOTP(email: string, inputCode: string): Promise<{ success: boolean; message: string }> {
   try {
     // Get the latest OTP for this email
-    const { data, error } = await supabase
-      .from('otp_codes')
-      .select('*')
-      .eq('email', email)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    const otpRecord = await prisma.oTP.findFirst({
+      where: { email },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    if (error || !data) {
+    if (!otpRecord) {
       return { success: false, message: 'No OTP found. Please request a new code.' };
     }
 
     // Check if expired
-    if (new Date() > new Date(data.expires_at)) {
+    if (new Date() > otpRecord.expiresAt) {
       return { success: false, message: 'Code expired. Please request a new code.' };
     }
 
     // Check attempts
-    if (data.attempts >= 3) {
+    if (otpRecord.attempts && otpRecord.attempts >= 3) {
       return { success: false, message: 'Too many attempts. Please request a new code.' };
     }
 
     // Verify code
-    if (data.code !== inputCode) {
+    if (otpRecord.code !== inputCode) {
       // Increment attempts
-      await supabase
-        .from('otp_codes')
-        .update({ attempts: data.attempts + 1 })
-        .eq('id', data.id);
+      await prisma.oTP.update({
+        where: { id: otpRecord.id },
+        data: { attempts: (otpRecord.attempts || 0) + 1 }
+      });
 
       return { success: false, message: 'Invalid code. Please try again.' };
     }
 
     // Success - delete the used OTP
-    await supabase
-      .from('otp_codes')
-      .delete()
-      .eq('id', data.id);
+    await prisma.oTP.delete({
+      where: { id: otpRecord.id }
+    });
 
     return { success: true, message: 'Code verified successfully!' };
   } catch (error) {

@@ -1,7 +1,54 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOTP } from '../../../src/lib/auth/otp';
-import { prisma } from '../../../src/lib/db/prisma';
-import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+import { signIn } from 'next-auth/react';
+
+const prisma = new PrismaClient();
+
+// Verify OTP
+async function verifyOTP(email: string, inputCode: string): Promise<{ success: boolean; message: string }> {
+  try {
+    // Get the latest OTP for this email
+    const otpRecord = await prisma.oTP.findFirst({
+      where: { email },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!otpRecord) {
+      return { success: false, message: 'No OTP found. Please request a new code.' };
+    }
+
+    // Check if expired
+    if (new Date() > otpRecord.expiresAt) {
+      return { success: false, message: 'Code expired. Please request a new code.' };
+    }
+
+    // Check attempts
+    if (otpRecord.attempts && otpRecord.attempts >= 3) {
+      return { success: false, message: 'Too many attempts. Please request a new code.' };
+    }
+
+    // Verify code
+    if (otpRecord.code !== inputCode) {
+      // Increment attempts
+      await prisma.oTP.update({
+        where: { id: otpRecord.id },
+        data: { attempts: (otpRecord.attempts || 0) + 1 }
+      });
+
+      return { success: false, message: 'Invalid code. Please try again.' };
+    }
+
+    // Success - delete the used OTP
+    await prisma.oTP.delete({
+      where: { id: otpRecord.id }
+    });
+
+    return { success: true, message: 'Code verified successfully!' };
+  } catch (error) {
+    console.error('Failed to verify OTP:', error);
+    return { success: false, message: 'Verification failed. Please try again.' };
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,15 +61,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Email and code are required' });
   }
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Validate code format (6 digits)
+  if (!/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error: 'Code must be 6 digits' });
+  }
+
   try {
     // Verify the OTP
-    const verification = await verifyOTP(email, code);
+    const result = await verifyOTP(email, code);
     
-    if (!verification.success) {
-      return res.status(400).json({ error: verification.message });
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
     }
 
-    // OTP verified successfully - now handle user creation/login
+    // OTP verified successfully - now create or update user
     let user = await prisma.user.findUnique({
       where: { email }
     });
@@ -32,55 +90,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       user = await prisma.user.create({
         data: {
           email,
-          emailVerified: new Date(),
           ufEmail: email,
           ufEmailVerified: true,
-          name: email.split('@')[0], // Use email prefix as initial name
+          trustScore: 10 // Initial trust score for verified UF email
         }
       });
     } else {
       // Update existing user
       user = await prisma.user.update({
-        where: { email },
+        where: { id: user.id },
         data: {
-          emailVerified: new Date(),
+          ufEmail: email,
           ufEmailVerified: true,
+          trustScore: { increment: 5 } // Bonus for re-verification
         }
       });
     }
 
-    // Create a simple JWT token for session
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        verified: true 
-      },
-      process.env.NEXTAUTH_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    );
-
-    // Set HTTP-only cookie
-    res.setHeader('Set-Cookie', [
-      `gatorex-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${
-        process.env.NODE_ENV === 'production' ? '; Secure' : ''
-      }`
-    ]);
+    // Determine redirect URL
+    let redirectTo = '/buy'; // Default
+    if (!user.profileCompleted) {
+      redirectTo = '/complete-profile';
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Login successful!',
+      message: 'Successfully signed in!',
+      redirectTo,
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        ufEmailVerified: user.ufEmailVerified,
         profileCompleted: user.profileCompleted
-      },
-      redirectTo: user.profileCompleted ? '/me' : '/complete-profile'
+      }
     });
 
   } catch (error) {
     console.error('Verify OTP error:', error);
     return res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    await prisma.$disconnect();
   }
 }
