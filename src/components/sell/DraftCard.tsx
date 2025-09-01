@@ -18,8 +18,8 @@ interface DraftCardProps {
 
 export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardProps) {
   const isComplete = () => {
-    return draft.title && draft.price && draft.images.length > 0 && 
-           draft.category && draft.condition && draft.meetingSpot && draft.description;
+    // Only check required fields for publishing
+    return draft.title && draft.price && draft.images.length > 0;
   };
 
   const getCompletionPercentage = () => {
@@ -49,7 +49,7 @@ export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardP
           </div>
           <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${getCompletionPercentage()}%` }}
             />
           </div>
@@ -89,7 +89,7 @@ export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardP
             {draft.title || 'Item Title'}
           </h3>
           {draft.price && (
-            <p className="text-2xl font-bold text-orange-600 mt-1">
+            <p className="text-2xl font-bold text-green-600 mt-1">
               ${draft.price.toFixed(2)}
             </p>
           )}
@@ -182,9 +182,9 @@ export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardP
         <button
           onClick={onPublish}
           disabled={!isComplete() || isPublishing}
-          className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+          className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
             isComplete() && !isPublishing
-              ? 'bg-green-500 text-white hover:bg-green-600'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

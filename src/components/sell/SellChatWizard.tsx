@@ -386,6 +386,14 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const handlePublish = async () => {
     if (!canPublish()) return;
     
+    // Validate draft before sending
+    if (!draft.title || !draft.price || draft.images.length === 0) {
+      addBotMessage("Missing required information. Please complete all fields before publishing.");
+      return;
+    }
+    
+    console.log('Publishing draft:', draft);
+    
     setIsPublishing(true);
     try {
       const response = await fetch('/api/sell/publish', {
@@ -403,7 +411,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           localStorage.removeItem(`gatorex_draft_step_${userId}`);
         }
         
-        addBotMessage(`🎉 Congratulations! Your listing "${draft.title}" is now live on GatorEx!\n\nListing ID: ${data.listing.id}\nYour item will automatically expire in 14 days.\n\nUF students can now see and contact you. Want to create another listing?`);
+        addBotMessage(`🎉 Congratulations! Your listing "${draft.title}" is now live on GatorEx!\n\nListing ID: ${data.listing.id}\nYour item will automatically expire in 14 days.\n\nRedirecting you to the marketplace to see your listing...`);
         
         // Reset for new listing
         setDraft({
@@ -417,10 +425,17 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
         });
         setStep(0);
         setShowPreview(false);
+        
+        // Redirect to buy page after 3 seconds
+        setTimeout(() => {
+          router.push('/buy');
+        }, 3000);
       } else {
+        console.error('Publish error:', data);
         addBotMessage(`Sorry, there was an error publishing your listing: ${data.error}. Please try again.`);
       }
     } catch (error) {
+      console.error('Network error:', error);
       addBotMessage("Network error. Please check your connection and try again.");
     } finally {
       setIsPublishing(false);
@@ -432,6 +447,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   };
 
   const isComplete = () => {
+    // For the main wizard, we can still show the enhanced publish button when all fields are complete
     return canPublish() && draft.category && draft.condition && draft.meetingSpot && draft.description;
   };
 
@@ -472,22 +488,22 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {canPublish() && (
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
               >
                 <Eye size={16} />
                 <span>Preview</span>
               </button>
             )}
             
-            {isComplete() && (
+            {canPublish() && (
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
+                className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-medium"
               >
                 <CheckCircle size={16} />
                 <span>{isPublishing ? 'Publishing...' : 'Publish'}</span>
@@ -497,7 +513,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -506,8 +522,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
               <div
                 className={`max-w-[80%] p-4 rounded-2xl ${
                   message.isBot
-                    ? 'bg-white text-gray-800 shadow-sm'
-                    : 'bg-orange-500 text-white'
+                    ? 'bg-white text-gray-800 shadow-md border border-gray-100'
+                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                 }`}
               >
                 <p className="whitespace-pre-line">{message.text}</p>
@@ -529,7 +545,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
                       <button
                         key={idx}
                         onClick={() => handleButtonClick(button.value)}
-                        className="px-3 py-2 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
+                        className="px-4 py-2 bg-white border-2 border-blue-500 text-blue-600 text-sm rounded-full hover:bg-blue-500 hover:text-white transition-all duration-200 font-medium shadow-sm hover:shadow-md"
                       >
                         {button.text}
                       </button>
@@ -548,11 +564,12 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-white p-4 rounded-2xl shadow-sm">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="bg-white p-4 rounded-2xl shadow-md border border-gray-100">
+                <div className="flex space-x-1 items-center">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <span className="text-xs text-gray-500 ml-2">GatorBot is typing...</span>
                 </div>
               </div>
             </div>
@@ -574,7 +591,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+              className="p-3 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-all duration-200 hover:shadow-sm"
             >
               <Upload size={20} />
             </button>
@@ -583,12 +600,12 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type your response..."
-              className="flex-1 p-3 border border-gray-200 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="flex-1 p-3 border border-gray-200 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm focus:shadow-md"
             />
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="p-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Send size={16} />
             </button>
