@@ -44,7 +44,7 @@ export default function BuyPage() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  const categories = ['all', 'electronics', 'textbooks', 'furniture', 'clothing', 'other'];
+  const categories = ['all', 'Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Other'];
 
   // Fetch listings with optimized API call
   const fetchListings = useCallback(async (category?: string, search?: string, pageNum = 1, append = false) => {
@@ -187,7 +187,7 @@ export default function BuyPage() {
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>
-                        {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                        {category === 'all' ? 'All Categories' : category}
                       </option>
                     ))}
                   </select>
