@@ -32,9 +32,13 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login-otp', req.url));
     }
 
+    // Allow access to /sell and /me regardless of profile completion
+    if (pathname === '/sell' || pathname === '/me') {
+      return NextResponse.next();
+    }
+
     // If user is UF verified but hasn't completed profile, redirect to complete-profile
-    // Exception: allow access to /me page so users can see their profile
-    if (token && token.ufEmailVerified && !token.profileCompleted && pathname !== '/complete-profile' && pathname !== '/me') {
+    if (token && token.ufEmailVerified && !token.profileCompleted && pathname !== '/complete-profile') {
       return NextResponse.redirect(new URL('/complete-profile', req.url));
     }
 
