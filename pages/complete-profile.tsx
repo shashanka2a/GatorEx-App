@@ -94,24 +94,18 @@ export default function CompleteProfile() {
         <meta name="description" content="Complete your profile to start buying and selling" />
       </Head>
       
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-orange-500 mb-2">🐊 GatorEx</h1>
-            <p className="text-gray-600">University of Florida Marketplace</p>
+            <p className="text-gray-600 mb-4">University of Florida Marketplace</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Complete Your Profile
+            </h2>
+            <p className="text-gray-600">
+              We need a few details so buyers and sellers can contact you
+            </p>
           </div>
-        </div>
-
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Complete Your Profile
-              </h2>
-              <p className="text-gray-600">
-                We need a few details so buyers and sellers can contact you
-              </p>
-            </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
