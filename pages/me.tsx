@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { 
   User, 
   Mail, 
@@ -10,63 +11,75 @@ import {
   AlertCircle,
   CheckCircle,
   RefreshCw,
-  Edit3
+  Edit3,
+  Loader2
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
-// Mock data - replace with actual user data
-const mockUser = {
-  id: '1',
-  name: 'Alex Johnson',
-  ufEmail: 'alex.johnson@ufl.edu',
-  verified: true,
-  trustLevel: 'TRUSTED',
-  trustScore: 85,
-  rating: 4.8,
-  totalSales: 12,
-  responseTime: '2h'
-};
-
-const mockListings = [
-  {
-    id: '1',
-    title: 'iPhone 13 Pro - Excellent Condition',
-    price: 650,
-    status: 'PUBLISHED',
-    createdAt: new Date('2024-01-15'),
-    expiresAt: new Date('2024-01-29'),
-    views: 45,
-    image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400'
-  },
-  {
-    id: '2',
-    title: 'Calculus Textbook - 8th Edition',
-    price: 120,
-    status: 'DRAFT',
-    createdAt: new Date('2024-01-20'),
-    expiresAt: new Date('2024-02-03'),
-    views: 0,
-    image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'
-  },
-  {
-    id: '3',
-    title: 'Gaming Chair - Like New',
-    price: 200,
-    status: 'EXPIRED',
-    createdAt: new Date('2023-12-01'),
-    expiresAt: new Date('2023-12-15'),
-    views: 23,
-    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'
-  }
-];
+interface UserProfile {
+  id: string;
+  name: string;
+  ufEmail: string;
+  verified: boolean;
+  profileCompleted: boolean;
+  trustLevel: string;
+  trustScore: number;
+  rating: number;
+  totalSales: number;
+  responseTime: string;
+  totalViews: number;
+  joinedAt: string;
+  listings: Array<{
+    id: string;
+    title: string;
+    price: number;
+    status: string;
+    createdAt: string;
+    expiresAt: string | null;
+    views: number;
+    image: string | null;
+  }>;
+}
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(mockUser);
-  const [listings, setListings] = useState(mockListings);
+  const { data: session, status } = useSession();
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired'>('active');
 
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session) {
+      setLoading(false);
+      return;
+    }
+
+    fetchUserProfile();
+  }, [session, status]);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/user/profile');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const profileData = await response.json();
+      setUser(profileData);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check if user is verified
-  const userVerified = user.verified;
+  const userVerified = user?.verified || false;
 
   const handleRenewListing = async (listingId: string) => {
     // TODO: Implement renewal logic
@@ -81,7 +94,7 @@ export default function ProfilePage() {
     }
   };
 
-  const filteredListings = listings.filter(listing => {
+  const filteredListings = user?.listings.filter(listing => {
     switch (activeTab) {
       case 'active':
         return listing.status === 'PUBLISHED';
@@ -92,7 +105,7 @@ export default function ProfilePage() {
       default:
         return true;
     }
-  });
+  }) || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -117,6 +130,46 @@ export default function ProfilePage() {
         return 'text-gray-600 bg-gray-100';
     }
   };
+
+  if (loading) {
+    return (
+      <Layout userVerified={false}>
+        <Head>
+          <title>Profile - GatorEx</title>
+        </Head>
+        <div className="max-w-2xl mx-auto px-4 py-12">
+          <div className="text-center bg-white rounded-lg p-8 shadow-sm">
+            <Loader2 size={48} className="mx-auto text-blue-500 mb-4 animate-spin" />
+            <h1 className="text-xl font-medium text-gray-900">Loading your profile...</h1>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !session) {
+    return (
+      <Layout userVerified={false}>
+        <Head>
+          <title>Profile - GatorEx</title>
+        </Head>
+        <div className="max-w-2xl mx-auto px-4 py-12">
+          <div className="text-center bg-white rounded-lg p-8 shadow-sm">
+            <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+            <h1 className="text-xl font-medium text-gray-900 mb-4">
+              {error || 'Please sign in to view your profile'}
+            </h1>
+            <Link
+              href="/verify"
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!userVerified) {
     return (
@@ -162,11 +215,11 @@ export default function ProfilePage() {
                 <User size={32} className="text-orange-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
                 <div className="flex items-center space-x-2 mt-1">
                   <Mail size={16} className="text-gray-400" />
-                  <span className="text-gray-600">{user.ufEmail}</span>
-                  {user.verified && (
+                  <span className="text-gray-600">{user?.ufEmail}</span>
+                  {user?.verified && (
                     <div className="flex items-center space-x-1">
                       <CheckCircle size={16} className="text-green-500" />
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
@@ -176,11 +229,14 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="flex items-center space-x-4 mt-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTrustLevelColor(user.trustLevel)}`}>
-                    {user.trustLevel}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTrustLevelColor(user?.trustLevel || 'BASIC')}`}>
+                    {user?.trustLevel}
                   </span>
                   <span className="text-sm text-gray-600">
-                    Trust Score: {user.trustScore}/100
+                    Trust Score: {user?.trustScore}/100
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    Joined {user?.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : ''}
                   </span>
                 </div>
               </div>
@@ -196,24 +252,24 @@ export default function ProfilePage() {
             <div className="text-center">
               <div className="flex items-center justify-center mb-1">
                 <Star size={16} className="text-yellow-500 mr-1" />
-                <span className="font-semibold text-gray-900">{user.rating}</span>
+                <span className="font-semibold text-gray-900">{user?.rating}</span>
               </div>
               <p className="text-xs text-gray-600">Rating</p>
             </div>
             
             <div className="text-center">
-              <div className="font-semibold text-gray-900 mb-1">{user.totalSales}</div>
-              <p className="text-xs text-gray-600">Total Sales</p>
+              <div className="font-semibold text-gray-900 mb-1">{user?.totalSales}</div>
+              <p className="text-xs text-gray-600">Total Listings</p>
             </div>
             
             <div className="text-center">
-              <div className="font-semibold text-gray-900 mb-1">{user.responseTime}</div>
-              <p className="text-xs text-gray-600">Avg Response</p>
+              <div className="font-semibold text-gray-900 mb-1">{user?.totalViews}</div>
+              <p className="text-xs text-gray-600">Total Views</p>
             </div>
             
             <div className="text-center">
               <div className="font-semibold text-gray-900 mb-1">
-                {listings.filter(l => l.status === 'PUBLISHED').length}
+                {user?.listings.filter(l => l.status === 'PUBLISHED').length}
               </div>
               <p className="text-xs text-gray-600">Active Listings</p>
             </div>
@@ -232,7 +288,7 @@ export default function ProfilePage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Active ({listings.filter(l => l.status === 'PUBLISHED').length})
+                Active ({user?.listings.filter(l => l.status === 'PUBLISHED').length || 0})
               </button>
               <button
                 onClick={() => setActiveTab('draft')}
@@ -242,7 +298,7 @@ export default function ProfilePage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Drafts ({listings.filter(l => l.status === 'DRAFT').length})
+                Drafts ({user?.listings.filter(l => l.status === 'DRAFT').length || 0})
               </button>
               <button
                 onClick={() => setActiveTab('expired')}
@@ -252,7 +308,7 @@ export default function ProfilePage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Expired ({listings.filter(l => l.status === 'EXPIRED').length})
+                Expired ({user?.listings.filter(l => l.status === 'EXPIRED').length || 0})
               </button>
             </div>
           </div>
@@ -283,11 +339,17 @@ export default function ProfilePage() {
                 {filteredListings.map((listing) => (
                   <div key={listing.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
                     <div className="flex items-start space-x-4">
-                      <img
-                        src={listing.image}
-                        alt={listing.title}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
+                      {listing.image ? (
+                        <img
+                          src={listing.image}
+                          alt={listing.title}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <Package size={24} className="text-gray-400" />
+                        </div>
+                      )}
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
@@ -300,9 +362,9 @@ export default function ProfilePage() {
                             </p>
                             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                               <span>{listing.views} views</span>
-                              <span>Created {listing.createdAt.toLocaleDateString()}</span>
-                              {listing.status === 'PUBLISHED' && (
-                                <span>Expires {listing.expiresAt.toLocaleDateString()}</span>
+                              <span>Created {new Date(listing.createdAt).toLocaleDateString()}</span>
+                              {listing.status === 'PUBLISHED' && listing.expiresAt && (
+                                <span>Expires {new Date(listing.expiresAt).toLocaleDateString()}</span>
                               )}
                             </div>
                           </div>
