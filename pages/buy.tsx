@@ -148,7 +148,7 @@ export default function BuyPage() {
         <WebNav userVerified={!!session?.user} onSearch={setSearchTerm} />
         <MobileNav userVerified={!!session?.user} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-8">
           {/* Hero Section */}
           <div className="bg-uf-gradient p-6 rounded-2xl text-white mb-8">
             <div className="flex items-center justify-between">

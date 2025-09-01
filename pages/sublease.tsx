@@ -30,7 +30,7 @@ export default function SubleasePage() {
         <meta name="description" content="Sublease marketplace for UF students - Coming Soon! Join the waitlist to be notified when we launch." />
       </Head>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-4xl mx-auto px-4 py-12 pb-24 md:pb-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="relative inline-block mb-6">

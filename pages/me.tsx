@@ -160,7 +160,7 @@ export default function ProfilePage() {
         <Head>
           <title>Profile - GatorEx</title>
         </Head>
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-8">
           {/* Loading Skeleton */}
           <div className="animate-pulse">
             {/* Profile Header Skeleton */}
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         <Head>
           <title>Profile - GatorEx</title>
         </Head>
-        <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="max-w-2xl mx-auto px-4 py-12 pb-24 md:pb-12">
           <div className="text-center bg-white rounded-lg p-8 shadow-sm">
             <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
             <h1 className="text-xl font-medium text-gray-900 mb-4">
@@ -234,7 +234,7 @@ export default function ProfilePage() {
           <title>Profile - GatorEx</title>
         </Head>
 
-        <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="max-w-2xl mx-auto px-4 py-12 pb-24 md:pb-12">
           <div className="text-center bg-white rounded-lg p-8 shadow-sm">
             <AlertCircle size={64} className="mx-auto text-orange-500 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -262,7 +262,7 @@ export default function ProfilePage() {
         <title>Profile - GatorEx</title>
       </Head>
 
-      <div className="max-w-6xl mx-auto px-4 py-4 md:py-8">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8">
         {/* User Card */}
         <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
           <div className="flex items-start justify-between">
