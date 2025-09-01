@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
+import { Logo } from '../src/components/ui/Logo';
 
 export default function OTPLogin() {
   const [step, setStep] = useState<'email' | 'code'>('email');
@@ -70,123 +72,120 @@ export default function OTPLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-orange-500 mb-2">🐊 GatorEx</h1>
-          <p className="text-gray-600">University of Florida Marketplace</p>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>Sign In - GatorEx</title>
+        <meta name="description" content="Sign in to GatorEx with your UF email" />
+      </Head>
+      
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <Logo className="mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {step === 'email' ? 'Sign In with Code' : 'Enter Verification Code'}
+            </h1>
+            <p className="text-gray-600">
+              {step === 'email' 
+                ? 'Enter your UF email to get started' 
+                : `We sent a 6-digit code to ${email}`
+              }
+            </p>
+          </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {step === 'email' ? (
             <form onSubmit={sendOTP} className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                  Sign In with Code
-                </h2>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   UF Email Address
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your-email@ufl.edu"
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your-email@ufl.edu"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be a valid @ufl.edu email address
+                </p>
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
-                </div>
-              )}
-
-              {message && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-                  {message}
-                </div>
-              )}
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
-                >
-                  {loading ? 'Sending...' : 'Send Verification Code'}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={loading || !email.includes('@ufl.edu')}
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Sending...' : 'Send Verification Code'}
+              </button>
             </form>
           ) : (
             <form onSubmit={verifyOTP} className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                  Enter Verification Code
-                </h2>
-                <p className="text-gray-600 text-center mb-6">
-                  We sent a 6-digit code to<br />
-                  <strong>{email}</strong>
-                </p>
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
                   6-Digit Code
                 </label>
-                <div className="mt-1">
-                  <input
-                    id="code"
-                    name="code"
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-center text-2xl font-mono tracking-widest"
-                  />
-                </div>
+                <input
+                  id="code"
+                  name="code"
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Check your email for the verification code
+                </p>
               </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
-                </div>
-              )}
-
-              {message && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-                  {message}
-                </div>
-              )}
 
               <div className="space-y-3">
                 <button
                   type="submit"
                   disabled={loading || code.length !== 6}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                  className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? 'Verifying...' : 'Verify Code'}
                 </button>
                 
                 <button
                   type="button"
-                  onClick={() => setStep('email')}
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                  onClick={() => {
+                    setStep('email');
+                    setCode('');
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
                   ← Back to Email
                 </button>
               </div>
             </form>
           )}
+          {(error || message) && (
+            <div className={`mt-4 p-3 rounded-lg text-sm ${
+              message && !error
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {error || message}
+            </div>
+          )}
+
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <strong>UF Students Only:</strong> This marketplace is exclusively for verified University of Florida students.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
