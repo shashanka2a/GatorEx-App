@@ -66,7 +66,19 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/user/profile');
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('/api/user/profile', {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'max-age=60' // Cache for 1 minute
+        }
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         if (response.status === 401) {
@@ -78,8 +90,12 @@ export default function ProfilePage() {
       const profileData = await response.json();
       setUser(profileData);
     } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load profile data');
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        console.error('Error fetching profile:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load profile data');
+      }
     } finally {
       setLoading(false);
     }
@@ -144,10 +160,44 @@ export default function ProfilePage() {
         <Head>
           <title>Profile - GatorEx</title>
         </Head>
-        <div className="max-w-2xl mx-auto px-4 py-12">
-          <div className="text-center bg-white rounded-lg p-8 shadow-sm">
-            <Loader2 size={48} className="mx-auto text-blue-500 mb-4 animate-spin" />
-            <h1 className="text-xl font-medium text-gray-900">Loading your profile...</h1>
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          {/* Loading Skeleton */}
+          <div className="animate-pulse">
+            {/* Profile Header Skeleton */}
+            <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-32"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Stats Skeleton */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="h-4 bg-gray-200 rounded w-16 mb-2"></div>
+                  <div className="h-6 bg-gray-200 rounded w-12"></div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Listings Skeleton */}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center space-x-4 p-4 border-b border-gray-100 last:border-b-0">
+                  <div className="w-20 h-20 bg-gray-200 rounded-lg"></div>
+                  <div className="flex-1">
+                    <div className="h-5 bg-gray-200 rounded w-48 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           </div>
         </div>
       </Layout>
