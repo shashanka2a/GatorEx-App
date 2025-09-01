@@ -25,7 +25,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
     analytics.trackSellCTA('mobile_bottom_nav');
 
     if (!userVerified) {
-      router.push('/verify');
+      router.push('/login-otp');
       return;
     }
 

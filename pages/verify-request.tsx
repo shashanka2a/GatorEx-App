@@ -21,12 +21,12 @@ export default function VerifyRequestPage() {
           </h1>
           
           <p className="text-gray-600 mb-6">
-            We've sent a magic link to your UF email address. Click the link in your email to sign in securely.
+            We've sent a 6-digit verification code to your UF email address. Enter the code to sign in securely.
           </p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-700">
-              <strong>Note:</strong> The magic link expires in 24 hours and can only be used once for security.
+              <strong>Note:</strong> The verification code expires in 10 minutes for security.
             </p>
           </div>
           
@@ -38,8 +38,15 @@ export default function VerifyRequestPage() {
               Try a Different Email
             </Link>
             
+            <button
+              onClick={() => window.location.href = '/login-otp'}
+              className="block w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors mb-4"
+            >
+              Enter Verification Code
+            </button>
+            
             <p className="text-sm text-gray-500">
-              Didn't receive the email? Check your spam folder or try again with a different UF email address.
+              Didn't receive the code? Check your spam folder or try again with a different UF email address.
             </p>
           </div>
         </div>

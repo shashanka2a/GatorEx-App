@@ -120,6 +120,17 @@ model VerificationAttempt {
   @@map("verification_attempts")
 }
 
+model OTP {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  attempts  Int?     @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("otp_codes")
+}
+
 enum ListingStatus {
   DRAFT
   PENDING_INFO

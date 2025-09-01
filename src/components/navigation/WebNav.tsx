@@ -29,7 +29,7 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
     analytics.trackSellCTA('web_top_nav');
 
     if (!userVerified) {
-      router.push('/verify');
+      router.push('/login-otp');
       return;
     }
 

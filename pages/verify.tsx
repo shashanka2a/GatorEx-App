@@ -29,16 +29,19 @@ export default function VerifyPage() {
     }
 
     try {
-      const result = await signIn('email', {
-        email: email.toLowerCase().trim(),
-        redirect: false,
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
 
-      if (result?.error) {
-        setMessage('Failed to send sign-in link. Please try again.');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || 'Failed to send verification code. Please try again.');
       } else {
         setEmailSent(true);
-        setMessage('Check your email for a sign-in link!');
+        setMessage('Check your email for a verification code!');
       }
     } catch (error) {
       setMessage('Network error. Please try again.');
@@ -62,7 +65,7 @@ export default function VerifyPage() {
               Sign In to GatorEx
             </h1>
             <p className="text-gray-600">
-              Enter your UF email to get a magic sign-in link
+              Enter your UF email to get a verification code
             </p>
           </div>
 
@@ -91,7 +94,7 @@ export default function VerifyPage() {
                 disabled={loading}
                 className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Sending...' : 'Send Magic Link'}
+                {loading ? 'Sending...' : 'Send Verification Code'}
               </button>
             </form>
           ) : (
@@ -99,11 +102,18 @@ export default function VerifyPage() {
               <div className="text-6xl mb-4">📧</div>
               <h2 className="text-xl font-semibold text-gray-900">Check Your Email</h2>
               <p className="text-gray-600">
-                We've sent a magic link to <strong>{email}</strong>
+                We've sent a 6-digit verification code to <strong>{email}</strong>
               </p>
               <p className="text-sm text-gray-500">
-                Click the link in your email to sign in. The link expires in 24 hours.
+                Enter the code to sign in. The code expires in 10 minutes.
               </p>
+              
+              <button
+                onClick={() => window.location.href = '/login-otp'}
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors mt-4"
+              >
+                Enter Verification Code
+              </button>
               
               <button
                 onClick={() => {

@@ -13,7 +13,7 @@ export default function Layout({ children, userVerified = false, onSearch }: Lay
   const router = useRouter();
 
   // Don't show navigation on certain pages
-  const hideNavigation = ['/verify', '/admin'].some(path => 
+  const hideNavigation = ['/verify', '/login-otp', '/admin'].some(path => 
     router.pathname.startsWith(path)
   );
 
