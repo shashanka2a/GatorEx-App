@@ -62,7 +62,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     if (!user?.ufEmailVerified) {
       return {
         redirect: {
-          destination: '/login-otp',
+          destination: '/verify',
           permanent: false,
         },
       };

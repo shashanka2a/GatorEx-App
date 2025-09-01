@@ -109,7 +109,13 @@ export default function VerifyPage() {
               </p>
               
               <button
-                onClick={() => window.location.href = '/login-otp'}
+                onClick={() => {
+                  // Pass the email to login-otp page
+                  const url = new URL('/login-otp', window.location.origin);
+                  url.searchParams.set('email', email);
+                  url.searchParams.set('step', 'code');
+                  window.location.href = url.toString();
+                }}
                 className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors mt-4"
               >
                 Enter Verification Code

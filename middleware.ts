@@ -24,12 +24,12 @@ export default withAuth(
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
     if (isProtectedRoute && !token) {
-      return NextResponse.redirect(new URL('/login-otp', req.url));
+      return NextResponse.redirect(new URL('/verify', req.url));
     }
 
-    // If user is signed in but not UF verified, redirect to login-otp
-    if (token && !token.ufEmailVerified && pathname !== '/login-otp') {
-      return NextResponse.redirect(new URL('/login-otp', req.url));
+    // If user is signed in but not UF verified, redirect to verify
+    if (token && !token.ufEmailVerified && pathname !== '/verify' && pathname !== '/login-otp') {
+      return NextResponse.redirect(new URL('/verify', req.url));
     }
 
     // If user is UF verified but hasn't completed profile, redirect to complete-profile

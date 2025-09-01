@@ -1,17 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { signIn } from 'next-auth/react';
 import Head from 'next/head';
 import { Logo } from '../src/components/ui/Logo';
 
 export default function OTPLogin() {
+  const router = useRouter();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
+
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    if (router.query.email && typeof router.query.email === 'string') {
+      setEmail(router.query.email);
+    }
+    if (router.query.step === 'code') {
+      setStep('code');
+    }
+  }, [router.query]);
 
   const sendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
