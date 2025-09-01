@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Head from 'next/head';
@@ -15,13 +15,9 @@ export default function EditListingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (id && session) {
-      fetchListing();
-    }
-  }, [id, session]);
-
-  const fetchListing = async () => {
+  const fetchListing = useCallback(async () => {
+    if (!id) return;
+    
     try {
       const response = await fetch(`/api/listings/${id}`);
       if (response.ok) {
@@ -31,11 +27,18 @@ export default function EditListingPage() {
         setError('Listing not found');
       }
     } catch (err) {
+      console.error('Error fetching listing:', err);
       setError('Failed to load listing');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id && session) {
+      fetchListing();
+    }
+  }, [id, session, fetchListing]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -52,6 +55,7 @@ export default function EditListingPage() {
         setError('Failed to save changes');
       }
     } catch (err) {
+      console.error('Error saving listing:', err);
       setError('Failed to save changes');
     } finally {
       setSaving(false);
@@ -72,6 +76,7 @@ export default function EditListingPage() {
         setError('Failed to delete listing');
       }
     } catch (err) {
+      console.error('Error deleting listing:', err);
       setError('Failed to delete listing');
     }
   };

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { 
   User, 
   Mail, 
@@ -12,11 +13,10 @@ import {
   CheckCircle,
   RefreshCw,
   Edit3,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
-import router from 'next/router';
-import router from 'next/router';
 
 interface UserProfile {
   id: string;
@@ -45,6 +45,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
