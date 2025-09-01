@@ -21,6 +21,7 @@ export default function App({
         <link rel="manifest" href="/manifest.json" />
       </Head>
       <Component {...pageProps} />
+      <Analytics />
     </SessionProvider>
   )
 }

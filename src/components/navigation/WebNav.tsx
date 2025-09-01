@@ -74,12 +74,12 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                 onClick={() => handleTabSwitch('buy')}
                 className={`
                   px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] min-w-[80px] flex items-center justify-center
-                  ${router.pathname === '/' 
+                  ${(router.pathname === '/' || router.pathname === '/buy')
                     ? 'text-orange-600 bg-white shadow-sm border border-orange-100' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                   }
                 `}
-                aria-current={router.pathname === '/' ? 'page' : undefined}
+                aria-current={(router.pathname === '/' || router.pathname === '/buy') ? 'page' : undefined}
               >
                 <ShoppingBag size={16} className="mr-2" />
                 Buy
@@ -152,12 +152,12 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                   onClick={() => handleTabSwitch('profile')}
                   className={`
                     px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] flex items-center border
-                    ${router.pathname === '/me' 
+                    ${(router.pathname === '/me' || router.pathname === '/complete-profile')
                       ? 'text-orange-600 bg-orange-50 border-orange-200 shadow-sm' 
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-gray-200'
                     }
                   `}
-                  aria-current={router.pathname === '/me' ? 'page' : undefined}
+                  aria-current={(router.pathname === '/me' || router.pathname === '/complete-profile') ? 'page' : undefined}
                 >
                   <User size={16} className="mr-2" />
                   Profile

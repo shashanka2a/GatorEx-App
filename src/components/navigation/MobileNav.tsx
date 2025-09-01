@@ -43,7 +43,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
       label: 'Buy',
       icon: ShoppingBag,
       href: '/',
-      active: router.pathname === '/'
+      active: router.pathname === '/' || router.pathname === '/buy'
     },
     {
       id: 'sell',
@@ -66,7 +66,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
       label: 'Profile',
       icon: User,
       href: '/me',
-      active: router.pathname === '/me'
+      active: router.pathname === '/me' || router.pathname === '/complete-profile'
     }
   ];
 
