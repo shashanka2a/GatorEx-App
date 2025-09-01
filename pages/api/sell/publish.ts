@@ -25,6 +25,15 @@ const moderateContent = (text: string): boolean => {
   return !BLOCKED_WORDS.some(word => lowerText.includes(word));
 };
 
+// Configure API route for larger payloads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+  },
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });

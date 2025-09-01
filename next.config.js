@@ -9,6 +9,11 @@ const nextConfig = {
   },
   experimental: {
     esmExternals: true
+  },
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb', // Increase API body size limit for image uploads
+    },
   }
 }
 

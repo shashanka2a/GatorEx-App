@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Upload, ArrowLeft, Eye, CheckCircle } from 'lucide-react';
 import DraftCard from './DraftCard';
 import { useRouter } from 'next/router';
+import { compressImage, getImageSize } from '../../lib/utils/imageCompression';
 
 interface Message {
   id: string;
@@ -332,7 +333,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     handleStepFlow(userInput);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -348,39 +349,65 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
 
     const filesToProcess = Array.from(files).slice(0, availableSlots);
     const newImages: string[] = [];
+    
+    addBotMessage(`Processing ${filesToProcess.length} image(s)... Please wait.`);
 
-    filesToProcess.forEach((file, index) => {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        addBotMessage(`Image ${index + 1} is too large. Please use images under 5MB.`);
-        return;
+    try {
+      for (let i = 0; i < filesToProcess.length; i++) {
+        const file = filesToProcess[i];
+        
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit for original file
+          addBotMessage(`Image ${i + 1} is too large (${Math.round(file.size / 1024 / 1024)}MB). Please use images under 10MB.`);
+          continue;
+        }
+
+        try {
+          // Compress the image
+          const compressedImage = await compressImage(file, 800, 600, 0.8);
+          const compressedSize = getImageSize(compressedImage);
+          
+          // Check if compressed image is still too large (500KB limit)
+          if (compressedSize > 500 * 1024) {
+            // Try with lower quality
+            const moreCompressed = await compressImage(file, 600, 450, 0.6);
+            const finalSize = getImageSize(moreCompressed);
+            
+            if (finalSize > 500 * 1024) {
+              addBotMessage(`Image ${i + 1} is still too large after compression. Please use a smaller image.`);
+              continue;
+            }
+            newImages.push(moreCompressed);
+          } else {
+            newImages.push(compressedImage);
+          }
+        } catch (compressionError) {
+          console.error('Image compression error:', compressionError);
+          addBotMessage(`Failed to process image ${i + 1}. Please try a different image.`);
+        }
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        newImages.push(result);
+      if (newImages.length > 0) {
+        setDraft(prev => ({ 
+          ...prev, 
+          images: [...prev.images, ...newImages] 
+        }));
         
-        if (newImages.length === filesToProcess.length) {
-          setDraft(prev => ({ 
-            ...prev, 
-            images: [...prev.images, ...newImages] 
-          }));
-          
-          addUserMessage(`Uploaded ${newImages.length} image(s)`, newImages);
-          
-          if (step === 2 && draft.images.length === 0) {
-            // First images uploaded, move to next step
-            setTimeout(() => {
-              addBotMessage(`Perfect! ${newImages.length} photo(s) uploaded. You now have all the required information. Let's add some optional details to make your listing even better!`);
-              handleOptionalFields();
-            }, 1000);
-          } else {
-            addBotMessage(`Great! ${draft.images.length + newImages.length} total photos. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
-          }
+        addUserMessage(`Uploaded ${newImages.length} image(s)`, newImages);
+        
+        if (step === 2 && draft.images.length === 0) {
+          // First images uploaded, move to next step
+          setTimeout(() => {
+            addBotMessage(`Perfect! ${newImages.length} photo(s) uploaded and compressed. You now have all the required information. Let's add some optional details to make your listing even better!`);
+            handleOptionalFields();
+          }, 1000);
+        } else {
+          addBotMessage(`Great! ${draft.images.length + newImages.length} total photos uploaded and compressed. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      addBotMessage("There was an error processing your images. Please try again.");
+    }
   };
 
   const handlePublish = async () => {
@@ -392,7 +419,16 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       return;
     }
     
-    console.log('Publishing draft:', draft);
+    // Check total payload size
+    const totalImageSize = draft.images.reduce((total, img) => total + getImageSize(img), 0);
+    const totalSizeMB = totalImageSize / (1024 * 1024);
+    
+    if (totalSizeMB > 2) { // 2MB total limit
+      addBotMessage(`Your images are too large (${totalSizeMB.toFixed(1)}MB total). Please remove some images or use smaller ones.`);
+      return;
+    }
+    
+    console.log('Publishing draft:', { ...draft, images: `${draft.images.length} images (${totalSizeMB.toFixed(1)}MB)` });
     
     setIsPublishing(true);
     try {
@@ -401,6 +437,11 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listing: draft })
       });
+
+      if (response.status === 413) {
+        addBotMessage("Your listing is too large. Please reduce the number of images or use smaller images.");
+        return;
+      }
 
       const data = await response.json();
       
@@ -411,7 +452,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           localStorage.removeItem(`gatorex_draft_step_${userId}`);
         }
         
-        addBotMessage(`🎉 Congratulations! Your listing "${draft.title}" is now live on GatorEx!\n\nListing ID: ${data.listing.id}\nYour item will automatically expire in 14 days.\n\nRedirecting you to the marketplace to see your listing...`);
+        addBotMessage(`�� Congratulations! Your listing "${draft.title}" is now live on GatorEx!\n\nListing ID: ${data.listing.id}\nYour item will automatically expire in 14 days.\n\nRedirecting you to the marketplace to see your listing...`);
         
         // Reset for new listing
         setDraft({
