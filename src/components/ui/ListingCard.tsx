@@ -44,12 +44,16 @@ export const ListingCard = memo(function ListingCard({
       {/* Image Section - Fixed Height */}
       <div className="relative h-48 flex-shrink-0 bg-gray-100">
         {listing.images.length > 0 ? (
-          <ImageWithFallback
-            src={listing.images[0].url}
-            alt={listing.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+          <>
+            <ImageWithFallback
+              src={listing.images[0].url}
+              alt={listing.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+            {/* Gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+          </>
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
             <span className="text-4xl text-gray-400">📦</span>
@@ -60,7 +64,7 @@ export const ListingCard = memo(function ListingCard({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-0 w-8 h-8 bg-white/90 hover:bg-white text-gray-600 hover:text-red-500 rounded-full shadow-sm"
+            className="p-0 w-8 h-8 bg-white/95 hover:bg-white text-gray-600 hover:text-red-500 rounded-full shadow-lg backdrop-blur-sm border border-white/20"
             onClick={(e) => {
               e.stopPropagation();
               // Handle favorite logic here
@@ -71,14 +75,14 @@ export const ListingCard = memo(function ListingCard({
         </div>
         
         <div className="absolute bottom-3 left-3">
-          <Badge variant="secondary" className="bg-black/80 text-white text-xs">
+          <Badge variant="secondary" className="bg-black/90 text-white text-xs font-medium shadow-lg backdrop-blur-sm">
             {listing.condition}
           </Badge>
         </div>
 
         {listing.images.length > 1 && (
           <div className="absolute bottom-3 right-3">
-            <Badge variant="secondary" className="bg-black/80 text-white text-xs">
+            <Badge variant="secondary" className="bg-black/90 text-white text-xs font-medium shadow-lg backdrop-blur-sm">
               +{listing.images.length - 1} more
             </Badge>
           </div>
