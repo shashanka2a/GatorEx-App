@@ -311,7 +311,7 @@ export default function GiveawayPage() {
               <Button
                 onClick={handleGiveawayEntry}
                 disabled={submitting}
-                className="bg-white text-blue-600 hover:bg-gray-100 font-bold px-8 py-3"
+                className="bg-white text-gray-900 hover:bg-gray-50 font-bold px-8 py-3 shadow-lg border-2 border-white/20"
               >
                 {submitting ? 'Entering...' : 'Verify & Enter Giveaway'}
               </Button>
