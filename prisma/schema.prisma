@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")   // pooled 6543
-  directUrl = env("DIRECT_URL")     // direct 5432
+  provider = "postgresql"
+  url      = env("DATABASE_URL")    // Pooled connection
 }
 
 model Account {
@@ -62,6 +61,7 @@ model User {
   accounts           Account[]
   sessions           Session[]
   listings           Listing[]
+  giveawayEntries    GiveawayEntry[]
   
   @@map("users")
 }
@@ -139,5 +139,41 @@ enum ListingStatus {
   EXPIRED
   BLOCKED
   SHADOW_BANNED
+}
+
+model Giveaway {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  prize       String
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  entries     GiveawayEntry[]
+  
+  @@map("giveaways")
+}
+
+model GiveawayEntry {
+  id                    String   @id @default(cuid())
+  userId                String
+  giveawayId            String
+  instagramFollowed     Boolean  @default(false)
+  ufEmailVerified       Boolean  @default(false)
+  hasPostedListing      Boolean  @default(false)
+  isEligible            Boolean  @default(false)
+  instagramUsername     String?
+  verifiedAt            DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giveaway              Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, giveawayId])
+  @@map("giveaway_entries")
 }
 
