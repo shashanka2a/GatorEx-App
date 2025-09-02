@@ -60,9 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         user: {
           select: { 
-            email: true,
-            name: true,
-            phoneNumber: true
+            name: true
+            // Contact details hidden for privacy - only shown to authenticated users
           }
         }
       },

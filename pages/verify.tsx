@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
 import { GetServerSideProps } from 'next';
 import { Logo } from '../src/components/ui/Logo';
 
@@ -10,6 +11,8 @@ export default function VerifyPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const router = useRouter();
 
   const validateUFEmail = (email: string): boolean => {
@@ -28,11 +31,21 @@ export default function VerifyPage() {
       return;
     }
 
+    if (!termsAccepted || !privacyAccepted) {
+      setMessage('Please accept the Terms of Service and Privacy Policy to continue');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+        body: JSON.stringify({ 
+          email: email.toLowerCase().trim(),
+          termsAccepted: true,
+          privacyAccepted: true
+        }),
       });
 
       const data = await response.json();
@@ -89,9 +102,44 @@ export default function VerifyPage() {
                 </p>
               </div>
 
+              {/* Terms and Privacy Acceptance */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="terms" className="text-sm text-gray-700">
+                    I agree to the{' '}
+                    <Link href="/terms" target="_blank" className="text-orange-500 hover:text-orange-600 underline">
+                      Terms of Service
+                    </Link>
+                  </label>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="privacy"
+                    checked={privacyAccepted}
+                    onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="privacy" className="text-sm text-gray-700">
+                    I agree to the{' '}
+                    <Link href="/privacy" target="_blank" className="text-orange-500 hover:text-orange-600 underline">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !termsAccepted || !privacyAccepted}
                 className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Sending...' : 'Send Verification Code'}

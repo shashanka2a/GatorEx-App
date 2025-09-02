@@ -328,7 +328,15 @@ export default function GiveawayPage() {
 
           {/* Footer */}
           <div className="text-center mt-8 text-sm text-gray-500">
-            <p>By entering, you agree to GatorEx's Terms of Service and Privacy Policy.</p>
+            <p>By entering, you agree to GatorEx's{' '}
+              <a href="/terms" target="_blank" className="text-orange-500 hover:text-orange-600 underline">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" target="_blank" className="text-orange-500 hover:text-orange-600 underline">
+                Privacy Policy
+              </a>.
+            </p>
             <p>Winner will be announced on our Instagram page.</p>
           </div>
         </div>

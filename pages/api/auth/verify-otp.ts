@@ -86,25 +86,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: { email }
     });
 
+    const now = new Date();
+    
     if (!user) {
-      // Create new user
+      // Create new user with terms acceptance
       user = await prisma.user.create({
         data: {
           email,
           ufEmail: email,
           ufEmailVerified: true,
+          termsAccepted: true,
+          termsAcceptedAt: now,
+          privacyAccepted: true,
+          privacyAcceptedAt: now,
           trustScore: 10 // Initial trust score for verified UF email
         }
       });
     } else {
-      // Update existing user
+      // Update existing user - only update terms if not already accepted
+      const updateData: any = {
+        ufEmail: email,
+        ufEmailVerified: true,
+        trustScore: { increment: 5 } // Bonus for re-verification
+      };
+      
+      // Update terms acceptance if not already accepted
+      if (!user.termsAccepted) {
+        updateData.termsAccepted = true;
+        updateData.termsAcceptedAt = now;
+      }
+      if (!user.privacyAccepted) {
+        updateData.privacyAccepted = true;
+        updateData.privacyAcceptedAt = now;
+      }
+      
       user = await prisma.user.update({
         where: { id: user.id },
-        data: {
-          ufEmail: email,
-          ufEmailVerified: true,
-          trustScore: { increment: 5 } // Bonus for re-verification
-        }
+        data: updateData
       });
     }
 

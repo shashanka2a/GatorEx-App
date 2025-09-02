@@ -164,10 +164,18 @@ export default function CompleteProfile() {
             </div>
           )}
 
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-700">
-              <strong>Privacy:</strong> Your contact info is only shown to verified UF students when you list items for sale.
-            </p>
+          <div className="mt-6 space-y-3">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <strong>Privacy:</strong> Your contact info is only shown to verified UF students when you list items for sale.
+              </p>
+            </div>
+            
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-xs text-green-700">
+                <strong>Legal:</strong> By completing your profile, you confirm acceptance of our Terms of Service and Privacy Policy during sign-in.
+              </p>
+            </div>
           </div>
         </div>
       </div>

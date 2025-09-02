@@ -25,9 +25,7 @@ interface Listing {
   createdAt: string;
   images: { url: string }[];
   user: { 
-    email: string;
     name: string | null;
-    phoneNumber: string | null;
   };
 }
 
@@ -109,15 +107,16 @@ export default function BuyPage() {
     return listings; // API already handles filtering
   }, [listings]);
 
-  const handleContactSeller = (action: 'sms' | 'email', listing: Listing) => {
+  const handleContactSeller = (action: 'sms' | 'email', listing: any) => {
     if (!session) {
       router.push('/verify');
       return;
     }
 
+    // This function now handles contact from the modal where contact details are available
     if (action === 'sms' && listing.user.phoneNumber) {
       window.open(`sms:${listing.user.phoneNumber}?body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`);
-    } else if (action === 'email') {
+    } else if (action === 'email' && listing.user.email) {
       window.open(`mailto:${listing.user.email}?subject=GatorEx: ${listing.title}&body=Hi! I'm interested in your "${listing.title}" listing on GatorEx.`);
     }
   };

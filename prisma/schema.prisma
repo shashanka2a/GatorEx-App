@@ -55,6 +55,10 @@ model User {
   verifyToken        String?
   verifyTokenExpiry  DateTime?
   trustScore         Int        @default(0)
+  termsAccepted      Boolean    @default(false)
+  termsAcceptedAt    DateTime?
+  privacyAccepted    Boolean    @default(false)
+  privacyAcceptedAt  DateTime?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   

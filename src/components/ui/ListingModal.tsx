@@ -15,10 +15,14 @@ interface Listing {
   createdAt: string;
   images: { url: string }[];
   user: { 
-    email: string;
     name: string | null;
-    phoneNumber: string | null;
   };
+}
+
+interface ContactDetails {
+  email: string;
+  phoneNumber: string | null;
+  name: string | null;
 }
 
 interface ListingModalProps {
@@ -31,6 +35,29 @@ interface ListingModalProps {
 
 export default function ListingModal({ listing, isOpen, onClose, onContact, isAuthenticated }: ListingModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [contactDetails, setContactDetails] = useState<ContactDetails | null>(null);
+  const [loadingContact, setLoadingContact] = useState(false);
+  const [showContactDetails, setShowContactDetails] = useState(false);
+
+  const fetchContactDetails = async () => {
+    if (!isAuthenticated || contactDetails) return;
+    
+    setLoadingContact(true);
+    try {
+      const response = await fetch(`/api/listings/${listing.id}/contact`);
+      if (response.ok) {
+        const data = await response.json();
+        setContactDetails(data.seller);
+        setShowContactDetails(true);
+      } else {
+        console.error('Failed to fetch contact details');
+      }
+    } catch (error) {
+      console.error('Error fetching contact details:', error);
+    } finally {
+      setLoadingContact(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -189,24 +216,66 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
               <div className="border-t pt-6">
                 {isAuthenticated ? (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {listing.user.phoneNumber && (
-                        <Button
-                          onClick={() => onContact('sms', listing)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                          <Phone size={16} className="mr-2" />
-                          Text Seller
-                        </Button>
-                      )}
+                    {!showContactDetails ? (
                       <Button
-                        onClick={() => onContact('email', listing)}
-                        className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                        onClick={fetchContactDetails}
+                        disabled={loadingContact}
+                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
                       >
-                        <Mail size={16} className="mr-2" />
-                        Email Seller
+                        {loadingContact ? 'Loading...' : '📞 View Contact Details'}
                       </Button>
-                    </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                          <h4 className="font-semibold text-blue-900 mb-2">Contact Information</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Mail size={14} className="text-blue-600" />
+                              <span className="text-blue-800">{contactDetails?.email}</span>
+                            </div>
+                            {contactDetails?.phoneNumber && (
+                              <div className="flex items-center gap-2">
+                                <Phone size={14} className="text-blue-600" />
+                                <span className="text-blue-800">{contactDetails.phoneNumber}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {contactDetails?.phoneNumber && (
+                            <Button
+                              onClick={() => onContact('sms', { 
+                                ...listing, 
+                                user: { 
+                                  name: listing.user.name,
+                                  phoneNumber: contactDetails.phoneNumber, 
+                                  email: contactDetails.email 
+                                } 
+                              } as any)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white"
+                            >
+                              <Phone size={16} className="mr-2" />
+                              Text Seller
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => onContact('email', { 
+                              ...listing, 
+                              user: { 
+                                name: listing.user.name,
+                                phoneNumber: contactDetails?.phoneNumber || null, 
+                                email: contactDetails?.email || '' 
+                              } 
+                            } as any)}
+                            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                          >
+                            <Mail size={16} className="mr-2" />
+                            Email Seller
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     <p className="text-xs text-gray-500 text-center">
                       Be respectful and follow UF community guidelines
                     </p>

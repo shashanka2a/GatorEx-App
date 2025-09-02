@@ -18,9 +18,7 @@ interface Listing {
   createdAt: string;
   images: { url: string }[];
   user: { 
-    email: string;
     name: string | null;
-    phoneNumber: string | null;
   };
 }
 
@@ -138,46 +136,16 @@ export const ListingCard = memo(function ListingCard({
         
         {/* Action Buttons - Fixed at Bottom */}
         <div className="mt-auto">
-          {session ? (
-            <div className="flex gap-2">
-              {listing.user.phoneNumber && (
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onContactSeller('sms', listing);
-                  }}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                  size="sm"
-                >
-                  <Phone className="w-4 h-4 mr-1" />
-                  Text
-                </Button>
-              )}
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onContactSeller('email', listing);
-                }}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                size="sm"
-              >
-                <Mail className="w-4 h-4 mr-1" />
-                Email
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push('/verify');
-              }}
-              variant="outline"
-              className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50"
-              size="sm"
-            >
-              🔐 Sign in to contact seller
-            </Button>
-          )}
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onListingClick(listing);
+            }}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+            size="sm"
+          >
+            {session ? '📞 Contact Seller' : '🔐 Sign in to contact'}
+          </Button>
         </div>
       </div>
     </Card>

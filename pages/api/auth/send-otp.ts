@@ -106,10 +106,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email } = req.body;
+  const { email, termsAccepted, privacyAccepted } = req.body;
 
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
+  }
+
+  if (!termsAccepted || !privacyAccepted) {
+    return res.status(400).json({ error: 'Terms of Service and Privacy Policy must be accepted' });
   }
 
   // Validate email format
