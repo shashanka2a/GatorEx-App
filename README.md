@@ -1,65 +1,186 @@
-# GatorEx - UF Student Marketplace
+# GatorEx - University of Florida Student Marketplace
 
-A production-ready Next.js 14 application for University of Florida students to buy and sell items within the campus community.
+A secure, verified marketplace exclusively for University of Florida students to buy, sell, and trade items within the campus community. Built with enterprise-level architecture supporting real-time interactions, comprehensive analytics, and advanced user management.
 
-## 🚀 Features
+## 🚀 **Core Features**
 
-- **Student Verification**: UF email verification ensures a trusted community
-- **Secure Marketplace**: Buy and sell textbooks, furniture, electronics, and more
-- **Direct Communication**: Email integration for seamless seller-buyer communication
-- **Mobile-First Design**: Optimized for mobile devices with responsive UI
-- **Category Browsing**: Easy navigation through different item categories
-- **User Profiles**: Seller ratings and verification badges for trust
-- **Static Export**: Optimized for deployment to any static hosting service
-- **SEO Optimized**: Proper meta tags and structured data
-- **PWA Ready**: Manifest file and mobile app capabilities
+### **🔐 Authentication & Security**
+- **UF Email Verification**: Exclusive access for verified UF students
+- **Multi-factor Authentication**: Google OAuth + OTP verification system
+- **Privacy Controls**: Two-step contact detail access with authentication gates
+- **Terms & Privacy Compliance**: Legal compliance with database tracking
+- **Rate Limiting**: OTP attempts and daily listing limits with security monitoring
 
-## 🛠 Tech Stack
+### **📱 Marketplace Platform**
+- **Advanced Listing Management**: Full CRUD with status workflow (Draft → Published → Expired/Sold)
+- **Enhanced Photo Carousel**: Multi-input navigation (click, keyboard, swipe, dots) with accessibility
+- **Real-time Favorites System**: Instant sync across components with larger heart icons (24-28px)
+- **Contact Analytics**: Comprehensive interaction tracking and seller insights
+- **Mobile-First Design**: Progressive Web App with touch optimizations
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom UF branding
-- **UI Components**: Radix UI primitives
-- **Icons**: Lucide React
-- **Build**: Static export for universal deployment
+### **💬 Communication & Tracking**
+- **Contact Event System**: Track all user interactions (email, SMS, phone, views)
+- **Seller Analytics Dashboard**: View who contacted you with interaction history
+- **WhatsApp Integration**: AI-powered bot for automated responses
+- **Real-time Notifications**: Instant updates for favorites, contacts, and status changes
 
-## 📦 Getting Started
+### **🎯 Advanced User Management**
+- **Trust System**: User ratings, verification badges, and trust scores
+- **Profile Management**: Current & past listings with action buttons
+- **Giveaway System**: Contest management with Instagram verification
+- **Usage Analytics**: View tracking, engagement metrics, and performance insights
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd gatorex-mobile-app
-   ```
+## 🏗️ **Technical Architecture**
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### **Frontend Stack**
+- **Framework**: Next.js 14 with React 18 and TypeScript
+- **Styling**: Tailwind CSS with responsive design system
+- **State Management**: React Hooks with optimistic UI updates
+- **Performance**: Code splitting, lazy loading, and image optimization
+- **Accessibility**: ARIA labels, keyboard navigation, screen reader support
 
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
+### **Backend Infrastructure**
+- **API Architecture**: RESTful APIs with Next.js API Routes
+- **Database**: PostgreSQL with Prisma ORM and connection pooling
+- **Authentication**: NextAuth.js with custom UF verification flow
+- **File Storage**: Cloudinary integration with optimized image handling
+- **Email System**: Nodemailer with Gmail SMTP and template engine
 
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+### **Database Schema**
+```sql
+-- Core Models
+Users (auth, profiles, trust scores, terms acceptance)
+Listings (CRUD, status management, view tracking)
+Images (Cloudinary integration, lazy loading)
+Favorites (many-to-many relationships, real-time sync)
+ContactEvents (interaction tracking, analytics)
+Giveaways (contest management, verification)
+```
 
-## 🏗 Project Structure
+## 📊 **API Documentation**
+
+### **Authentication Endpoints**
+```bash
+POST /api/auth/send-otp          # OTP generation & email sending
+POST /api/auth/verify-otp        # OTP verification with rate limiting
+POST /api/auth/complete-profile  # Profile completion workflow
+GET  /api/auth/[...nextauth]     # NextAuth OAuth handlers
+```
+
+### **Listing Management**
+```bash
+GET    /api/listings             # Paginated listings with advanced filters
+GET    /api/listings/[id]        # Individual listing with view tracking
+POST   /api/listings/[id]/view   # Automatic view counting
+GET    /api/listings/[id]/contact # Protected contact details (auth required)
+POST   /api/listings/[id]/mark-sold # Status update with timestamp
+```
+
+### **Favorites System**
+```bash
+GET    /api/favorites            # User's favorited listings
+POST   /api/favorites            # Toggle favorite with real-time sync
+POST   /api/favorites/check      # Batch favorite status checking
+```
+
+### **Contact Analytics**
+```bash
+POST   /api/listings/[id]/contact-event  # Log contact interactions
+GET    /api/listings/[id]/contacts       # Seller analytics dashboard
+```
+
+### **Publishing & Media**
+```bash
+POST   /api/sell/draft          # Save draft with validation
+POST   /api/sell/publish        # Publish with image processing
+POST   /api/upload/images       # Cloudinary upload with optimization
+```
+
+## 🛠️ **Setup & Installation**
+
+### **Prerequisites**
+- Node.js 18+
+- PostgreSQL database (Supabase recommended)
+- Google OAuth credentials
+- Cloudinary account
+- Gmail account with app password
+
+### **Quick Start**
+```bash
+# Clone and install
+git clone https://github.com/yourusername/gatorex.git
+cd gatorex
+npm install
+
+# Environment setup
+cp .env.example .env.local
+# Fill in your environment variables (see below)
+
+# Database setup
+npx prisma generate
+npx prisma db push
+node scripts/migrate-favorites.js
+node scripts/migrate-listing-updates.js
+
+# Development server
+npm run dev
+```
+
+### **Environment Variables**
+```env
+# Database (Supabase)
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+
+# Authentication
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Media Storage
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+
+# Email System
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# WhatsApp (Optional)
+WHATSAPP_TOKEN="your-whatsapp-token"
+WHATSAPP_PHONE_ID="your-phone-id"
+```
+
+## 📁 **Project Structure**
 
 ```
-├── pages/                  # Next.js pages
-│   ├── _app.tsx           # App wrapper with global styles
-│   ├── _document.tsx      # HTML document structure
-│   └── index.tsx          # Main application page
+gatorex/
+├── pages/                    # Next.js pages & API routes
+│   ├── api/                 # RESTful API endpoints
+│   │   ├── auth/           # Authentication system
+│   │   ├── listings/       # Listing management
+│   │   ├── favorites/      # Favorites system
+│   │   └── user/           # User management
+│   ├── listing/[id]/       # Dynamic listing pages
+│   ├── favorites.tsx       # Favorites page
+│   ├── me.tsx             # Profile management
+│   └── ...                # Core application pages
 ├── src/
-│   ├── components/        # React components
-│   │   ├── ui/           # Reusable UI components (Radix-based)
-│   │   └── figma/        # Custom components
-│   └── styles/           # Global CSS and Tailwind config
-├── public/               # Static assets
-├── next.config.js        # Next.js configuration
-├── tailwind.config.js    # Tailwind CSS configuration
-└── tsconfig.json         # TypeScript configuration
+│   ├── components/         # React component library
+│   │   ├── ui/            # Reusable UI components
+│   │   ├── navigation/    # Navigation systems
+│   │   └── sell/          # Selling workflow
+│   ├── lib/               # Utility functions
+│   │   ├── auth/          # Authentication helpers
+│   │   ├── db/            # Database utilities
+│   │   └── whatsapp/      # WhatsApp integration
+│   └── styles/            # Global styles
+├── prisma/                # Database schema & migrations
+├── scripts/               # Utility & migration scripts
+└── public/                # Static assets
 ```
 
 ## 📜 Available Scripts
