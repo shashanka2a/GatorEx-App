@@ -41,6 +41,7 @@ export default function BuyPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
+  const [favoriteStatuses, setFavoriteStatuses] = useState<Record<string, boolean>>({});
 
   const categories = ['all', 'Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Other'];
 
@@ -78,10 +79,42 @@ export default function BuyPage() {
     }
   }, []);
 
+  // Check favorite statuses for authenticated users
+  const checkFavoriteStatuses = useCallback(async (listingIds: string[]) => {
+    if (!session || listingIds.length === 0) return;
+    
+    try {
+      const response = await fetch('/api/favorites/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingIds })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const statuses: Record<string, boolean> = {};
+        listingIds.forEach(id => {
+          statuses[id] = data.favoritedIds.includes(id);
+        });
+        setFavoriteStatuses(prev => ({ ...prev, ...statuses }));
+      }
+    } catch (error) {
+      console.error('Error checking favorite statuses:', error);
+    }
+  }, [session]);
+
   // Initial load
   useEffect(() => {
     fetchListings();
   }, [fetchListings]);
+
+  // Check favorites when listings change
+  useEffect(() => {
+    if (listings.length > 0) {
+      const listingIds = listings.map(listing => listing.id);
+      checkFavoriteStatuses(listingIds);
+    }
+  }, [listings, checkFavoriteStatuses]);
 
   // Debounced search and category filtering
   useEffect(() => {
@@ -133,6 +166,13 @@ export default function BuyPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedListing(null);
+  };
+
+  const handleFavoriteChange = (listingId: string, favorited: boolean) => {
+    setFavoriteStatuses(prev => ({
+      ...prev,
+      [listingId]: favorited
+    }));
   };
 
   return (
@@ -240,6 +280,8 @@ export default function BuyPage() {
                   listing={listing}
                   onListingClick={handleListingClick}
                   onContactSeller={handleContactSeller}
+                  isFavorited={favoriteStatuses[listing.id] || false}
+                  onFavoriteChange={handleFavoriteChange}
                 />
               ))}
             </div>

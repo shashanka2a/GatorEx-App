@@ -39,6 +39,8 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
   const [loadingContact, setLoadingContact] = useState(false);
   const [showContactDetails, setShowContactDetails] = useState(false);
   const [viewTracked, setViewTracked] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
 
   const trackView = async () => {
     if (viewTracked) return;
@@ -73,10 +75,52 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
     }
   };
 
-  // Track view when modal opens
+  const checkFavoriteStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await fetch('/api/favorites/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingIds: [listing.id] })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsFavorited(data.favoritedIds.includes(listing.id));
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!isAuthenticated || loadingFavorite) return;
+    
+    setLoadingFavorite(true);
+    try {
+      const response = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: listing.id })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsFavorited(data.favorited);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setLoadingFavorite(false);
+    }
+  };
+
+  // Track view and check favorite status when modal opens
   useEffect(() => {
     if (isOpen && !viewTracked) {
       trackView();
+      checkFavoriteStatus();
     }
   }, [isOpen, viewTracked]);
 
@@ -87,6 +131,7 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
       setContactDetails(null);
       setShowContactDetails(false);
       setCurrentImageIndex(0);
+      setIsFavorited(false);
     }
   }, [isOpen]);
 
@@ -257,9 +302,29 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 pr-4">
                       {listing.title}
                     </h1>
-                    <Button variant="ghost" size="sm" className="p-2 text-gray-400 hover:text-red-500">
-                      <Heart size={20} />
-                    </Button>
+                    {isAuthenticated ? (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`p-3 transition-all ${
+                          isFavorited 
+                            ? 'text-red-500 hover:text-red-600' 
+                            : 'text-gray-400 hover:text-red-500'
+                        }`}
+                        onClick={toggleFavorite}
+                        disabled={loadingFavorite}
+                      >
+                        <Heart 
+                          size={28} 
+                          fill={isFavorited ? 'currentColor' : 'none'}
+                          className={loadingFavorite ? 'animate-pulse' : ''}
+                        />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="p-3 text-gray-300 cursor-not-allowed">
+                        <Heart size={28} />
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-3 mb-4">

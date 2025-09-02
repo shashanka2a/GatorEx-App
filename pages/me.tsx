@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Edit3,
   Loader2,
-  Eye
+  Eye,
+  Heart
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
@@ -330,6 +331,39 @@ export default function ProfilePage() {
               <p className="text-xs text-gray-600">Active Listings</p>
             </div>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 md:mb-8">
+          <Link
+            href="/favorites"
+            className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border border-gray-200 group"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="bg-red-50 p-3 rounded-full group-hover:bg-red-100 transition-colors">
+                <Heart className="w-6 h-6 text-red-500" fill="currentColor" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">My Favorites</h3>
+                <p className="text-sm text-gray-600">View your saved listings</p>
+              </div>
+            </div>
+          </Link>
+          
+          <Link
+            href="/sell"
+            className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border border-gray-200 group"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="bg-orange-50 p-3 rounded-full group-hover:bg-orange-100 transition-colors">
+                <Package className="w-6 h-6 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Create Listing</h3>
+                <p className="text-sm text-gray-600">Sell something new</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Listings Section */}

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { Card } from './card';
@@ -26,15 +26,50 @@ interface ListingCardProps {
   listing: Listing;
   onListingClick: (listing: Listing) => void;
   onContactSeller: (action: 'sms' | 'email', listing: Listing) => void;
+  isFavorited?: boolean;
+  onFavoriteChange?: (listingId: string, favorited: boolean) => void;
 }
 
 export const ListingCard = memo(function ListingCard({ 
   listing, 
   onListingClick, 
-  onContactSeller 
+  onContactSeller,
+  isFavorited = false,
+  onFavoriteChange
 }: ListingCardProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const [favorited, setFavorited] = useState(isFavorited);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
+
+  useEffect(() => {
+    setFavorited(isFavorited);
+  }, [isFavorited]);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!session || loadingFavorite) return;
+    
+    setLoadingFavorite(true);
+    try {
+      const response = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: listing.id })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFavorited(data.favorited);
+        onFavoriteChange?.(listing.id, data.favorited);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setLoadingFavorite(false);
+    }
+  };
 
   return (
     <Card 
@@ -63,17 +98,33 @@ export const ListingCard = memo(function ListingCard({
         )}
         
         <div className="absolute top-3 right-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-0 w-9 h-9 bg-white hover:bg-white text-gray-800 hover:text-red-500 rounded-full shadow-2xl backdrop-blur-lg border-2 border-white/50 transition-all duration-200"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Handle favorite logic here
-            }}
-          >
-            <Heart className="w-4 h-4 drop-shadow-xl" />
-          </Button>
+          {session ? (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`p-0 w-10 h-10 rounded-full shadow-2xl backdrop-blur-lg border-2 border-white/50 transition-all duration-200 ${
+                favorited 
+                  ? 'bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600' 
+                  : 'bg-white hover:bg-white text-gray-600 hover:text-red-500'
+              }`}
+              onClick={toggleFavorite}
+              disabled={loadingFavorite}
+            >
+              <Heart 
+                className={`w-5 h-5 drop-shadow-xl ${loadingFavorite ? 'animate-pulse' : ''}`}
+                fill={favorited ? 'currentColor' : 'none'}
+              />
+            </Button>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-0 w-10 h-10 bg-white/80 text-gray-400 rounded-full shadow-2xl backdrop-blur-lg border-2 border-white/50 cursor-not-allowed"
+              disabled
+            >
+              <Heart className="w-5 h-5 drop-shadow-xl" />
+            </Button>
+          )}
         </div>
         
         <div className="absolute bottom-3 left-3">

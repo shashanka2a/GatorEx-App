@@ -67,6 +67,7 @@ model User {
   sessions           Session[]
   listings           Listing[]
   giveawayEntries    GiveawayEntry[]
+  favorites          Favorite[]
   
   @@map("users")
 }
@@ -98,6 +99,7 @@ model Listing {
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   images      Image[]
+  favorites   Favorite[]
   
   @@map("listings")
 }
@@ -181,5 +183,18 @@ model GiveawayEntry {
   
   @@unique([userId, giveawayId])
   @@map("giveaway_entries")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, listingId])
+  @@map("favorites")
 }
 
