@@ -91,6 +91,7 @@ model Listing {
   meetingSpot String?
   status      ListingStatus @default(DRAFT)
   views       Int           @default(0)
+  soldAt      DateTime?
   expiresAt   DateTime
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -100,6 +101,7 @@ model Listing {
   
   images      Image[]
   favorites   Favorite[]
+  contacts    ContactEvent[]
   
   @@map("listings")
 }
@@ -145,6 +147,7 @@ enum ListingStatus {
   READY
   PUBLISHED
   EXPIRED
+  SOLD
   BLOCKED
   SHADOW_BANNED
 }
