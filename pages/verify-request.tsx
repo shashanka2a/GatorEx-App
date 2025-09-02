@@ -12,7 +12,7 @@ export default function VerifyRequestPage() {
       
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <Logo className="mx-auto mb-6" />
+          <Logo variant="svg" className="mx-auto mb-6" />
           
           <div className="text-6xl mb-6">📧</div>
           
