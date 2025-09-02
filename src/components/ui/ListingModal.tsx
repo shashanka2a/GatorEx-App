@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Heart, MapPin, Clock, Shield, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './button';
 import { Badge } from './badge';
@@ -92,17 +92,67 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
 
   if (!isOpen) return null;
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     setCurrentImageIndex((prev) => 
       prev === listing.images.length - 1 ? 0 : prev + 1
     );
-  };
+  }, [listing.images.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setCurrentImageIndex((prev) => 
       prev === 0 ? listing.images.length - 1 : prev - 1
     );
+  }, [listing.images.length]);
+
+  // Touch/swipe support
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
   };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      nextImage();
+    } else if (isRightSwipe) {
+      prevImage();
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevImage();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nextImage();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, nextImage, prevImage, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -127,37 +177,64 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
             {/* Image Section */}
             <div className="relative bg-gray-100">
               {listing.images.length > 0 ? (
-                <div className="relative h-96 lg:h-full min-h-[400px]">
+                <div 
+                  className="relative h-96 lg:h-full min-h-[400px] group"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   <ImageWithFallback
                     src={listing.images[currentImageIndex].url}
-                    alt={listing.title}
-                    className="w-full h-full object-cover"
+                    alt={`${listing.title} - Image ${currentImageIndex + 1} of ${listing.images.length}`}
+                    className="w-full h-full object-cover cursor-pointer select-none"
+                    onClick={nextImage}
+                    draggable={false}
                   />
                   
                   {listing.images.length > 1 && (
                     <>
+                      {/* Navigation buttons */}
                       <button
-                        onClick={prevImage}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          prevImage();
+                        }}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+                        aria-label="Previous image"
                       >
-                        <ChevronLeft size={20} />
+                        <ChevronLeft size={24} />
                       </button>
                       <button
-                        onClick={nextImage}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          nextImage();
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+                        aria-label="Next image"
                       >
-                        <ChevronRight size={20} />
+                        <ChevronRight size={24} />
                       </button>
+                      
+                      {/* Image counter */}
+                      <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {currentImageIndex + 1} / {listing.images.length}
+                      </div>
                       
                       {/* Image indicators */}
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
                         {listing.images.map((_, index) => (
                           <button
                             key={index}
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                              index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex(index);
+                            }}
+                            className={`w-3 h-3 rounded-full transition-all hover:scale-110 ${
+                              index === currentImageIndex 
+                                ? 'bg-white shadow-lg' 
+                                : 'bg-white/60 hover:bg-white/80'
                             }`}
+                            aria-label={`Go to image ${index + 1}`}
                           />
                         ))}
                       </div>
