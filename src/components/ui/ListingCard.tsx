@@ -52,7 +52,9 @@ export const ListingCard = memo(function ListingCard({
               loading="lazy"
             />
             {/* Gradient overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+            {/* Additional bottom overlay for text elements */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
           </>
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -64,26 +66,26 @@ export const ListingCard = memo(function ListingCard({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-0 w-8 h-8 bg-white/98 hover:bg-white text-gray-700 hover:text-red-500 rounded-full shadow-xl backdrop-blur-md border border-white/30 transition-all duration-200"
+            className="p-0 w-9 h-9 bg-white hover:bg-white text-gray-800 hover:text-red-500 rounded-full shadow-2xl backdrop-blur-lg border-2 border-white/50 transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               // Handle favorite logic here
             }}
           >
-            <Heart className="w-4 h-4 drop-shadow-sm" />
+            <Heart className="w-4 h-4 drop-shadow-xl" />
           </Button>
         </div>
         
         <div className="absolute bottom-3 left-3">
-          <Badge variant="secondary" className="bg-black/95 text-white text-xs font-semibold shadow-xl backdrop-blur-md border border-white/20">
-            {listing.condition}
+          <Badge variant="secondary" className="bg-black text-white text-xs font-bold shadow-2xl backdrop-blur-lg border-2 border-white/40 px-2 py-1">
+            <span className="drop-shadow-lg">{listing.condition}</span>
           </Badge>
         </div>
 
         {listing.images.length > 1 && (
           <div className="absolute bottom-3 right-3">
-            <Badge variant="secondary" className="bg-black/95 text-white text-xs font-semibold shadow-xl backdrop-blur-md border border-white/20">
-              +{listing.images.length - 1} more
+            <Badge variant="secondary" className="bg-black text-white text-xs font-bold shadow-2xl backdrop-blur-lg border-2 border-white/40 px-2 py-1">
+              <span className="drop-shadow-lg">+{listing.images.length - 1} more</span>
             </Badge>
           </div>
         )}
