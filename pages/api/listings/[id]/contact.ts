@@ -48,8 +48,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Listing not found or expired' });
     }
 
-    // Log the contact access for analytics/security
-    console.log(`Contact details accessed: User ${session.user.id} viewed contact for listing ${id}`);
+    // Track contact event
+    try {
+      await prisma.contactEvent.create({
+        data: {
+          listingId: listing.id,
+          contacterId: session.user.id,
+          contactType: 'VIEW_CONTACT'
+        }
+      });
+    } catch (contactError) {
+      console.error('Error tracking contact event:', contactError);
+      // Don't fail the request if contact tracking fails
+    }
 
     return res.status(200).json({
       listingId: listing.id,

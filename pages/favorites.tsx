@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Heart, ArrowLeft } from 'lucide-react';
 import { ListingCard } from '../src/components/ui/ListingCard';
-import { ListingModal } from '../src/components/ui/ListingModal';
+import ListingModal from '../src/components/ui/ListingModal';
 import { Button } from '../src/components/ui/button';
 
 interface Listing {
@@ -74,7 +74,21 @@ export default function FavoritesPage() {
     }
   };
 
-  const handleContact = (action: 'sms' | 'email', listing: any) => {
+  const handleContact = async (action: 'sms' | 'email', listing: any) => {
+    // Track contact event
+    try {
+      await fetch(`/api/listings/${listing.id}/contact-event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contactType: action === 'sms' ? 'SMS' : 'EMAIL',
+          message: `Contacted via ${action}`
+        })
+      });
+    } catch (error) {
+      console.error('Error tracking contact event:', error);
+    }
+
     if (action === 'sms' && listing.user.phoneNumber) {
       const message = `Hi! I'm interested in your ${listing.title} listed for $${listing.price}. Is it still available?`;
       window.open(`sms:${listing.user.phoneNumber}?body=${encodeURIComponent(message)}`);

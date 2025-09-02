@@ -15,7 +15,10 @@ import {
   Edit3,
   Loader2,
   Eye,
-  Heart
+  Heart,
+  DollarSign,
+  Users,
+  MessageSquare
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
@@ -50,7 +53,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired' | 'sold'>('active');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -118,6 +121,35 @@ export default function ProfilePage() {
     }
   };
 
+  const handleMarkAsSold = async (listingId: string) => {
+    if (!confirm('Are you sure you want to mark this listing as sold? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/listings/${listingId}/mark-sold`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        // Refresh profile data
+        fetchUserProfile();
+        alert('Listing marked as sold successfully!');
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to mark listing as sold');
+      }
+    } catch (error) {
+      console.error('Error marking listing as sold:', error);
+      alert('Failed to mark listing as sold');
+    }
+  };
+
+  const viewListingContacts = (listingId: string) => {
+    // Navigate to contacts page for this listing
+    router.push(`/listing/${listingId}/contacts`);
+  };
+
   const filteredListings = user?.listings.filter(listing => {
     switch (activeTab) {
       case 'active':
@@ -126,6 +158,8 @@ export default function ProfilePage() {
         return listing.status === 'DRAFT';
       case 'expired':
         return listing.status === 'EXPIRED';
+      case 'sold':
+        return listing.status === 'SOLD';
       default:
         return true;
     }
@@ -139,6 +173,8 @@ export default function ProfilePage() {
         return 'text-yellow-600 bg-yellow-100';
       case 'EXPIRED':
         return 'text-gray-600 bg-gray-100';
+      case 'SOLD':
+        return 'text-blue-600 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -326,9 +362,9 @@ export default function ProfilePage() {
             
             <div className="text-center p-2">
               <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">
-                {user?.listings.filter(l => l.status === 'PUBLISHED').length}
+                {user?.listings.filter(l => l.status === 'SOLD').length}
               </div>
-              <p className="text-xs text-gray-600">Active Listings</p>
+              <p className="text-xs text-gray-600">Items Sold</p>
             </div>
           </div>
         </div>
@@ -400,6 +436,16 @@ export default function ProfilePage() {
               >
                 Expired ({user?.listings.filter(l => l.status === 'EXPIRED').length || 0})
               </button>
+              <button
+                onClick={() => setActiveTab('sold')}
+                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
+                  activeTab === 'sold'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Sold ({user?.listings.filter(l => l.status === 'SOLD').length || 0})
+              </button>
             </div>
           </div>
 
@@ -414,6 +460,7 @@ export default function ProfilePage() {
                   {activeTab === 'active' && "You don't have any active listings yet."}
                   {activeTab === 'draft' && "No draft listings to complete."}
                   {activeTab === 'expired' && "No expired listings to renew."}
+                  {activeTab === 'sold' && "No sold listings yet."}
                 </p>
                 {activeTab === 'active' && (
                   <Link
@@ -475,6 +522,13 @@ export default function ProfilePage() {
                               {listing.status === 'PUBLISHED' && (
                                 <>
                                   <button
+                                    onClick={() => viewListingContacts(listing.id)}
+                                    className="text-purple-600 hover:text-purple-700 p-1 rounded hover:bg-purple-50 transition-colors"
+                                    title="View contacts"
+                                  >
+                                    <Users size={16} />
+                                  </button>
+                                  <button
                                     onClick={() => {
                                       // Copy listing link to clipboard
                                       navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
@@ -495,7 +549,24 @@ export default function ProfilePage() {
                                   >
                                     <Edit3 size={16} />
                                   </button>
+                                  <button
+                                    onClick={() => handleMarkAsSold(listing.id)}
+                                    className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors"
+                                    title="Mark as sold"
+                                  >
+                                    <DollarSign size={16} />
+                                  </button>
                                 </>
+                              )}
+                              
+                              {listing.status === 'SOLD' && (
+                                <button
+                                  onClick={() => viewListingContacts(listing.id)}
+                                  className="text-purple-600 hover:text-purple-700 p-1 rounded hover:bg-purple-50 transition-colors"
+                                  title="View contacts"
+                                >
+                                  <Users size={16} />
+                                </button>
                               )}
                               
                               {listing.status === 'EXPIRED' && (

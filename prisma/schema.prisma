@@ -68,6 +68,7 @@ model User {
   listings           Listing[]
   giveawayEntries    GiveawayEntry[]
   favorites          Favorite[]
+  contactEvents      ContactEvent[]
   
   @@map("users")
 }
@@ -199,5 +200,26 @@ model Favorite {
   
   @@unique([userId, listingId])
   @@map("favorites")
+}
+
+model ContactEvent {
+  id          String      @id @default(cuid())
+  listingId   String
+  contacterId String
+  contactType ContactType
+  message     String?
+  createdAt   DateTime    @default(now())
+  
+  listing     Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  contacter   User        @relation(fields: [contacterId], references: [id], onDelete: Cascade)
+  
+  @@map("contact_events")
+}
+
+enum ContactType {
+  EMAIL
+  SMS
+  PHONE
+  VIEW_CONTACT
 }
 

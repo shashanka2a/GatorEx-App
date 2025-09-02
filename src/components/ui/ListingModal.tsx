@@ -41,21 +41,14 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
   const [viewTracked, setViewTracked] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
+  
+  // Touch/swipe support
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const trackView = async () => {
-    if (viewTracked) return;
-    
-    try {
-      await fetch(`/api/listings/${listing.id}/view`, {
-        method: 'POST'
-      });
-      setViewTracked(true);
-    } catch (error) {
-      console.error('Error tracking view:', error);
-    }
-  };
+  const minSwipeDistance = 50;
 
-  const fetchContactDetails = async () => {
+  const fetchContactDetails = useCallback(async () => {
     if (!isAuthenticated || contactDetails) return;
     
     setLoadingContact(true);
@@ -73,28 +66,9 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
     } finally {
       setLoadingContact(false);
     }
-  };
+  }, [isAuthenticated, contactDetails, listing.id]);
 
-  const checkFavoriteStatus = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      const response = await fetch('/api/favorites/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingIds: [listing.id] })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIsFavorited(data.favoritedIds.includes(listing.id));
-      }
-    } catch (error) {
-      console.error('Error checking favorite status:', error);
-    }
-  };
-
-  const toggleFavorite = async () => {
+  const toggleFavorite = useCallback(async () => {
     if (!isAuthenticated || loadingFavorite) return;
     
     setLoadingFavorite(true);
@@ -114,28 +88,39 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
     } finally {
       setLoadingFavorite(false);
     }
-  };
+  }, [isAuthenticated, loadingFavorite, listing.id]);
 
-  // Track view and check favorite status when modal opens
-  useEffect(() => {
-    if (isOpen && !viewTracked) {
-      trackView();
-      checkFavoriteStatus();
+  const trackView = useCallback(async () => {
+    if (viewTracked) return;
+    
+    try {
+      await fetch(`/api/listings/${listing.id}/view`, {
+        method: 'POST'
+      });
+      setViewTracked(true);
+    } catch (error) {
+      console.error('Error tracking view:', error);
     }
-  }, [isOpen, viewTracked]);
+  }, [listing.id, viewTracked]);
 
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setViewTracked(false);
-      setContactDetails(null);
-      setShowContactDetails(false);
-      setCurrentImageIndex(0);
-      setIsFavorited(false);
+  const checkFavoriteStatus = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await fetch('/api/favorites/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingIds: [listing.id] })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsFavorited(data.favoritedIds.includes(listing.id));
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
     }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+  }, [isAuthenticated, listing.id]);
 
   const nextImage = useCallback(() => {
     setCurrentImageIndex((prev) => 
@@ -149,11 +134,47 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
     );
   }, [listing.images.length]);
 
-  // Touch/swipe support
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // Track view and check favorite status when modal opens
+  useEffect(() => {
+    if (isOpen && !viewTracked) {
+      trackView();
+      checkFavoriteStatus();
+    }
+  }, [isOpen, viewTracked, trackView, checkFavoriteStatus]);
 
-  const minSwipeDistance = 50;
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setViewTracked(false);
+      setContactDetails(null);
+      setShowContactDetails(false);
+      setCurrentImageIndex(0);
+      setIsFavorited(false);
+    }
+  }, [isOpen]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevImage();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nextImage();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, nextImage, prevImage, onClose]);
+
+  if (!isOpen) return null;
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -177,27 +198,6 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
       prevImage();
     }
   };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen) return;
-      
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        prevImage();
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        nextImage();
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, nextImage, prevImage, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -418,14 +418,30 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {contactDetails?.phoneNumber && (
                             <Button
-                              onClick={() => onContact('sms', { 
-                                ...listing, 
-                                user: { 
-                                  name: listing.user.name,
-                                  phoneNumber: contactDetails.phoneNumber, 
-                                  email: contactDetails.email 
-                                } 
-                              } as any)}
+                              onClick={async () => {
+                                // Track contact event
+                                try {
+                                  await fetch(`/api/listings/${listing.id}/contact-event`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      contactType: 'SMS',
+                                      message: 'Contacted via SMS'
+                                    })
+                                  });
+                                } catch (error) {
+                                  console.error('Error tracking contact event:', error);
+                                }
+                                
+                                onContact('sms', { 
+                                  ...listing, 
+                                  user: { 
+                                    name: listing.user.name,
+                                    phoneNumber: contactDetails.phoneNumber, 
+                                    email: contactDetails.email 
+                                  } 
+                                } as any);
+                              }}
                               className="bg-blue-500 hover:bg-blue-600 text-white"
                             >
                               <Phone size={16} className="mr-2" />
@@ -433,14 +449,30 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                             </Button>
                           )}
                           <Button
-                            onClick={() => onContact('email', { 
-                              ...listing, 
-                              user: { 
-                                name: listing.user.name,
-                                phoneNumber: contactDetails?.phoneNumber || null, 
-                                email: contactDetails?.email || '' 
-                              } 
-                            } as any)}
+                            onClick={async () => {
+                              // Track contact event
+                              try {
+                                await fetch(`/api/listings/${listing.id}/contact-event`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ 
+                                    contactType: 'EMAIL',
+                                    message: 'Contacted via email'
+                                  })
+                                });
+                              } catch (error) {
+                                console.error('Error tracking contact event:', error);
+                              }
+                              
+                              onContact('email', { 
+                                ...listing, 
+                                user: { 
+                                  name: listing.user.name,
+                                  phoneNumber: contactDetails?.phoneNumber || null, 
+                                  email: contactDetails?.email || '' 
+                                } 
+                              } as any);
+                            }}
                             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
                           >
                             <Mail size={16} className="mr-2" />
