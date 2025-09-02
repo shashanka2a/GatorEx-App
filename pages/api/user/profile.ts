@@ -35,6 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             title: true,
             price: true,
             status: true,
+            views: true,
             createdAt: true,
             expiresAt: true,
             images: {

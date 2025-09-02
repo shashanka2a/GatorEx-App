@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Heart, MapPin, Clock, Shield, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './button';
 import { Badge } from './badge';
@@ -38,6 +38,20 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
   const [contactDetails, setContactDetails] = useState<ContactDetails | null>(null);
   const [loadingContact, setLoadingContact] = useState(false);
   const [showContactDetails, setShowContactDetails] = useState(false);
+  const [viewTracked, setViewTracked] = useState(false);
+
+  const trackView = async () => {
+    if (viewTracked) return;
+    
+    try {
+      await fetch(`/api/listings/${listing.id}/view`, {
+        method: 'POST'
+      });
+      setViewTracked(true);
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  };
 
   const fetchContactDetails = async () => {
     if (!isAuthenticated || contactDetails) return;
@@ -58,6 +72,23 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
       setLoadingContact(false);
     }
   };
+
+  // Track view when modal opens
+  useEffect(() => {
+    if (isOpen && !viewTracked) {
+      trackView();
+    }
+  }, [isOpen, viewTracked]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setViewTracked(false);
+      setContactDetails(null);
+      setShowContactDetails(false);
+      setCurrentImageIndex(0);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -53,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         category: true,
         condition: true,
         meetingSpot: true,
+        views: true,
         createdAt: true,
         images: {
           select: { url: true },
