@@ -52,7 +52,7 @@ export const ListingCard = memo(function ListingCard({
               loading="lazy"
             />
             {/* Gradient overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none" />
           </>
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -64,25 +64,25 @@ export const ListingCard = memo(function ListingCard({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-0 w-8 h-8 bg-white/95 hover:bg-white text-gray-600 hover:text-red-500 rounded-full shadow-lg backdrop-blur-sm border border-white/20"
+            className="p-0 w-8 h-8 bg-white/98 hover:bg-white text-gray-700 hover:text-red-500 rounded-full shadow-xl backdrop-blur-md border border-white/30 transition-all duration-200"
             onClick={(e) => {
               e.stopPropagation();
               // Handle favorite logic here
             }}
           >
-            <Heart className="w-4 h-4" />
+            <Heart className="w-4 h-4 drop-shadow-sm" />
           </Button>
         </div>
         
         <div className="absolute bottom-3 left-3">
-          <Badge variant="secondary" className="bg-black/90 text-white text-xs font-medium shadow-lg backdrop-blur-sm">
+          <Badge variant="secondary" className="bg-black/95 text-white text-xs font-semibold shadow-xl backdrop-blur-md border border-white/20">
             {listing.condition}
           </Badge>
         </div>
 
         {listing.images.length > 1 && (
           <div className="absolute bottom-3 right-3">
-            <Badge variant="secondary" className="bg-black/90 text-white text-xs font-medium shadow-lg backdrop-blur-sm">
+            <Badge variant="secondary" className="bg-black/95 text-white text-xs font-semibold shadow-xl backdrop-blur-md border border-white/20">
               +{listing.images.length - 1} more
             </Badge>
           </div>
