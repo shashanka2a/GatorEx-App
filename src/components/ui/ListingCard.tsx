@@ -77,15 +77,15 @@ export const ListingCard = memo(function ListingCard({
         </div>
         
         <div className="absolute bottom-3 left-3">
-          <Badge variant="secondary" className="bg-black text-white text-xs font-bold shadow-2xl backdrop-blur-lg border-2 border-white/40 px-2 py-1">
-            <span className="drop-shadow-lg">{listing.condition}</span>
+          <Badge variant="secondary" className="bg-white text-black text-xs font-semibold shadow-lg border border-gray-200 px-2 py-1">
+            {listing.condition}
           </Badge>
         </div>
 
         {listing.images.length > 1 && (
           <div className="absolute bottom-3 right-3">
-            <Badge variant="secondary" className="bg-black text-white text-xs font-bold shadow-2xl backdrop-blur-lg border-2 border-white/40 px-2 py-1">
-              <span className="drop-shadow-lg">+{listing.images.length - 1} more</span>
+            <Badge variant="secondary" className="bg-white text-black text-xs font-semibold shadow-lg border border-gray-200 px-2 py-1">
+              +{listing.images.length - 1} more
             </Badge>
           </div>
         )}
