@@ -1,5 +1,8 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { Logo } from '../src/components/ui/Logo';
 
 export default function TermsOfService() {
@@ -91,17 +94,129 @@ export default function TermsOfService() {
               </p>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-              <Link 
-                href="/verify" 
-                className="text-orange-500 hover:text-orange-600 font-medium"
-              >
-                ← Back to Sign In
-              </Link>
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <TermsAcceptanceForm />
             </div>
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+function TermsAcceptanceForm() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAccept = async () => {
+    if (!termsAccepted || !privacyAccepted) {
+      setError('Please accept both Terms of Service and Privacy Policy to continue');
+      return;
+    }
+
+    if (!session?.user?.email) {
+      router.push('/verify');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/accept-terms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          termsAccepted: true,
+          privacyAccepted: true,
+        }),
+      });
+
+      if (response.ok) {
+        // Redirect back to where they came from or to sell page
+        const returnUrl = router.query.returnUrl as string || '/sell';
+        router.push(returnUrl);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to accept terms');
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!session) {
+    return (
+      <div className="text-center">
+        <Link 
+          href="/verify" 
+          className="text-orange-500 hover:text-orange-600 font-medium"
+        >
+          ← Back to Sign In
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+            id="terms"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+          />
+          <label htmlFor="terms" className="text-sm text-gray-700">
+            I have read and agree to the <strong>Terms of Service</strong>
+          </label>
+        </div>
+
+        <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+            id="privacy"
+            checked={privacyAccepted}
+            onChange={(e) => setPrivacyAccepted(e.target.checked)}
+            className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+          />
+          <label htmlFor="privacy" className="text-sm text-gray-700">
+            I have read and agree to the <strong>Privacy Policy</strong>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Go Back
+        </button>
+        <button
+          onClick={handleAccept}
+          disabled={loading || !termsAccepted || !privacyAccepted}
+          className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? 'Accepting...' : 'Accept and Continue'}
+        </button>
+      </div>
+    </div>
   );
 }

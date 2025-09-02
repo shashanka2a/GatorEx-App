@@ -55,6 +55,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
       select: { 
         ufEmailVerified: true, 
         profileCompleted: true,
+        termsAccepted: true,
         id: true
       }
     });
@@ -63,6 +64,15 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
       return {
         redirect: {
           destination: '/verify',
+          permanent: false,
+        },
+      };
+    }
+
+    if (!user?.termsAccepted) {
+      return {
+        redirect: {
+          destination: '/terms?returnUrl=/sell',
           permanent: false,
         },
       };
