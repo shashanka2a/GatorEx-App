@@ -7,25 +7,29 @@ const prisma = new PrismaClient();
 export async function createReferralCode(userId: string) {
   const code = generateReferralCode();
   
-  const data = await prisma.$executeRaw`
-    INSERT INTO referral_codes (user_id, code) 
-    VALUES (${userId}::uuid, ${code})
-    ON CONFLICT (user_id) DO UPDATE SET code = ${code}
-    RETURNING *;
-  `;
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO referral_codes (user_id, code) 
+      VALUES (${userId}, ${code})
+      ON CONFLICT (user_id) DO UPDATE SET code = ${code};
+    `;
 
-  // Get the created record
-  const result = await prisma.$queryRaw`
-    SELECT * FROM referral_codes WHERE user_id = ${userId}::uuid;
-  `;
+    // Get the created record
+    const result = await prisma.$queryRaw`
+      SELECT * FROM referral_codes WHERE user_id = ${userId};
+    `;
 
-  return Array.isArray(result) ? result[0] : result;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error creating referral code:', error);
+    throw error;
+  }
 }
 
 export async function getReferralCode(userId: string) {
   try {
     const result = await prisma.$queryRaw`
-      SELECT * FROM referral_codes WHERE user_id = ${userId}::uuid LIMIT 1;
+      SELECT * FROM referral_codes WHERE user_id = ${userId} LIMIT 1;
     `;
     
     return Array.isArray(result) && result.length > 0 ? result[0] : null;
@@ -58,10 +62,10 @@ export async function createReferral(
   try {
     const result = await prisma.$queryRaw`
       INSERT INTO referrals (code, referrer_user_id, referee_user_id, status) 
-      VALUES (${code}, ${referrerUserId}::uuid, ${refereeUserId}::uuid, ${status})
+      VALUES (${code}, ${referrerUserId}, ${refereeUserId}, ${status})
       ON CONFLICT (referee_user_id) DO UPDATE SET 
         code = ${code}, 
-        referrer_user_id = ${referrerUserId}::uuid, 
+        referrer_user_id = ${referrerUserId}, 
         status = ${status}
       RETURNING *;
     `;
@@ -81,7 +85,7 @@ export async function updateReferralStatus(
     const result = await prisma.$queryRaw`
       UPDATE referrals 
       SET status = ${status}, reason = ${reason || null}
-      WHERE referee_user_id = ${refereeUserId}::uuid
+      WHERE referee_user_id = ${refereeUserId}
       RETURNING *;
     `;
     return Array.isArray(result) ? result[0] : result;
@@ -105,14 +109,14 @@ export async function getReferralSummary(userId: string) {
     // Get verified referrals
     const verified = await prisma.$queryRaw<Array<{ count: number }>>`
       SELECT COUNT(*) as count FROM referrals 
-      WHERE referrer_user_id = ${userId}::uuid AND status = ${REFERRAL_STATUS.verified};
+      WHERE referrer_user_id = ${userId} AND status = ${REFERRAL_STATUS.verified};
     `;
-    const verifiedCount = verified[0]?.count || 0;
+    const verifiedCount = Number(verified[0]?.count || 0);
 
     // Get earned rewards
     const rewards = await prisma.$queryRaw<Array<{ amount_cents: number }>>`
       SELECT amount_cents FROM rewards 
-      WHERE user_id = ${userId}::uuid AND status = ${REWARD_STATUS.approved};
+      WHERE user_id = ${userId} AND status = ${REWARD_STATUS.approved};
     `;
     const earned = rewards?.reduce((sum: number, r: any) => sum + (r.amount_cents || 0), 0) || 0;
 
@@ -120,7 +124,7 @@ export async function getReferralSummary(userId: string) {
     const weekId = getISOWeek();
     const weekData = await prisma.$queryRaw<Array<{ points: number }>>`
       SELECT points FROM leaderboard_week 
-      WHERE user_id = ${userId}::uuid AND week_id = ${weekId} LIMIT 1;
+      WHERE user_id = ${userId} AND week_id = ${weekId} LIMIT 1;
     `;
     const thisWeekPoints = weekData[0]?.points || 0;
 
@@ -203,7 +207,7 @@ export async function createReward(
   try {
     const result = await prisma.$queryRaw`
       INSERT INTO rewards (user_id, type, amount_cents, tier, source, status) 
-      VALUES (${userId}::uuid, ${type}, ${amountCents}, ${tier}, 'referral', ${REWARD_STATUS.pending})
+      VALUES (${userId}, ${type}, ${amountCents}, ${tier}, 'referral', ${REWARD_STATUS.pending})
       RETURNING *;
     `;
     return Array.isArray(result) ? result[0] : result;
@@ -219,7 +223,7 @@ export async function updateLeaderboardPoints(userId: string, points: number) {
     
     const result = await prisma.$queryRaw`
       INSERT INTO leaderboard_week (week_id, user_id, points, rank, updated_at) 
-      VALUES (${weekId}, ${userId}::uuid, ${points}, 0, NOW())
+      VALUES (${weekId}, ${userId}, ${points}, 0, NOW())
       ON CONFLICT (week_id, user_id) DO UPDATE SET 
         points = ${points}, 
         rank = 0, 
@@ -236,7 +240,7 @@ export async function updateLeaderboardPoints(userId: string, points: number) {
 async function getUserReferralCode(userId: string): Promise<string> {
   try {
     const result = await prisma.$queryRaw<Array<{ code: string }>>`
-      SELECT code FROM referral_codes WHERE user_id = ${userId}::uuid LIMIT 1;
+      SELECT code FROM referral_codes WHERE user_id = ${userId} LIMIT 1;
     `;
     
     return result[0]?.code || '';
