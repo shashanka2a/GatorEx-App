@@ -257,22 +257,35 @@ export default function EnhancedReferralsPage() {
 
   const fetchData = async () => {
     try {
+      console.log('🔄 Fetching referral data...');
+      
       const [summaryRes, leaderboardRes] = await Promise.all([
         fetch('/api/referrals/summary'),
         fetch('/api/referrals/leaderboard?period=week')
       ]);
 
+      console.log('📊 Summary response:', summaryRes.status, summaryRes.ok);
+      console.log('🏆 Leaderboard response:', leaderboardRes.status, leaderboardRes.ok);
+
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json();
+        console.log('✅ Summary data:', summaryData);
         setSummary(summaryData);
+      } else {
+        const errorData = await summaryRes.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Summary API error:', summaryRes.status, errorData);
       }
 
       if (leaderboardRes.ok) {
         const leaderboardData = await leaderboardRes.json();
+        console.log('✅ Leaderboard data:', leaderboardData);
         setLeaderboard(leaderboardData.leaderboard || []);
+      } else {
+        const errorData = await leaderboardRes.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Leaderboard API error:', leaderboardRes.status, errorData);
       }
     } catch (error) {
-      console.error('Failed to fetch referral data:', error);
+      console.error('❌ Failed to fetch referral data:', error);
     } finally {
       setLoading(false);
     }
@@ -563,9 +576,15 @@ export default function EnhancedReferralsPage() {
                   </div>
                   
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      console.log('🔘 Generate button clicked');
                       setLoading(true);
-                      fetchData();
+                      try {
+                        await fetchData();
+                        console.log('✅ Fetch completed');
+                      } catch (error) {
+                        console.error('❌ Button click error:', error);
+                      }
                     }}
                     disabled={loading}
                     className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:transform-none disabled:cursor-not-allowed"

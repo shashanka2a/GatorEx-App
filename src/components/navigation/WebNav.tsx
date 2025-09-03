@@ -173,9 +173,11 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                   aria-current={router.pathname === '/referrals' ? 'page' : undefined}
                 >
                   🎁 Referrals
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
-                    New
-                  </span>
+                  {router.pathname !== '/referrals' && (
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                      New
+                    </span>
+                  )}
                 </button>
                 
                 <button
