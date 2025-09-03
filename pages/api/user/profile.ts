@@ -4,9 +4,61 @@ import { authOptions } from '../auth/[...nextauth]';
 import { prisma } from '../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
+  if (req.method === 'GET') {
+    return handleGetProfile(req, res);
+  } else if (req.method === 'PUT') {
+    return handleUpdateProfile(req, res);
+  } else {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+}
+
+async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    
+    if (!session?.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name, phoneNumber } = req.body;
+
+    // Validate input
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    if (name.trim().length > 100) {
+      return res.status(400).json({ error: 'Name must be less than 100 characters' });
+    }
+
+    // Update user profile
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        name: name.trim(),
+        phoneNumber: phoneNumber?.trim() || null,
+        profileCompleted: true // Mark profile as completed when user updates it
+      },
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        profileCompleted: true
+      }
+    });
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
 
   // Add cache headers for better performance
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
@@ -25,6 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         ufEmailVerified: true,
         profileCompleted: true,
         trustScore: true,
@@ -47,6 +100,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           orderBy: { createdAt: 'desc' },
           take: 50 // Limit to recent 50 listings for performance
+        },
+        favorites: {
+          select: {
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                images: {
+                  select: {
+                    url: true
+                  },
+                  take: 1
+                }
+              }
+            }
+          },
+          take: 10 // Limit to recent 10 favorites for performance
         },
         _count: {
           select: {
@@ -78,6 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const profileData = {
       id: user.id,
       name: user.name || 'Gator Student',
+      phoneNumber: user.phoneNumber,
       ufEmail: user.email,
       verified: user.ufEmailVerified,
       profileCompleted: user.profileCompleted,
@@ -88,6 +159,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       responseTime: '2h', // Mock - implement messaging system later
       totalViews,
       joinedAt: user.createdAt,
+      favorites: user.favorites?.map(fav => ({
+        id: fav.listing.id,
+        title: fav.listing.title,
+        image: fav.listing.images && fav.listing.images.length > 0 ? fav.listing.images[0].url : null
+      })) || [],
       listings: listings.map(listing => ({
         ...listing,
         views: 0, // Mock for now

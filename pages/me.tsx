@@ -18,13 +18,16 @@ import {
   Heart,
   DollarSign,
   Users,
-  MessageSquare
+  MessageSquare,
+  X,
+  Save
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
 interface UserProfile {
   id: string;
   name: string;
+  phoneNumber?: string;
   ufEmail: string;
   verified: boolean;
   profileCompleted: boolean;
@@ -45,6 +48,11 @@ interface UserProfile {
     views: number;
     image: string | null;
   }>;
+  favorites?: Array<{
+    id: string;
+    title: string;
+    image?: string;
+  }>;
 }
 
 export default function ProfilePage() {
@@ -54,6 +62,12 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired' | 'sold'>('active');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phoneNumber: ''
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -93,6 +107,12 @@ export default function ProfilePage() {
       
       const profileData = await response.json();
       setUser(profileData);
+      
+      // Initialize edit form with current data
+      setEditForm({
+        name: profileData.name || '',
+        phoneNumber: profileData.phoneNumber || ''
+      });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
@@ -102,6 +122,41 @@ export default function ProfilePage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editForm)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+      
+      // Refresh profile data
+      await fetchUserProfile();
+      setShowEditModal(false);
+      
+      // Show success message (you could add a toast notification here)
+      alert('Profile updated successfully!');
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -342,7 +397,11 @@ export default function ProfilePage() {
               >
                 🎁 Referrals
               </Link>
-              <button className="text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={handleEditProfile}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Edit Profile"
+              >
                 <Edit3 size={20} />
               </button>
             </div>
@@ -412,7 +471,9 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">My Favorites</h3>
-                    <p className="text-sm text-gray-600">3 saved items</p>
+                    <p className="text-sm text-gray-600">
+                      {user?.favorites?.length || 0} saved items
+                    </p>
                   </div>
                 </div>
                 <div className="text-gray-400 group-hover:text-gray-600">
@@ -422,12 +483,38 @@ export default function ProfilePage() {
                 </div>
               </div>
               {/* Mini preview carousel */}
-              <div className="flex space-x-2 overflow-x-auto">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Package size={20} className="text-gray-400" />
+              <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
+                {/* Show actual favorite items or placeholders */}
+                {user?.favorites && user.favorites.length > 0 ? (
+                  user.favorites.slice(0, 5).map((favorite, index) => (
+                    <div key={favorite.id || index} className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden">
+                      {favorite.image ? (
+                        <img
+                          src={favorite.image}
+                          alt={favorite.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <Package size={16} className="text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  // Show placeholder items when no favorites
+                  Array.from({ length: 3 }, (_, i) => (
+                    <div key={`placeholder-${i}`} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Heart size={16} className="text-gray-300" />
+                    </div>
+                  ))
+                )}
+                {/* Show "View All" indicator if there are more favorites */}
+                {user?.favorites && user.favorites.length > 5 && (
+                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg flex items-center justify-center border-2 border-dashed border-red-200">
+                    <span className="text-xs font-medium text-red-600">+{user.favorites.length - 5}</span>
                   </div>
-                ))}
+                )}
               </div>
             </Link>
           </div>
@@ -451,7 +538,7 @@ export default function ProfilePage() {
         {/* Listings Section */}
         <div className="bg-white rounded-lg shadow-sm">
           <div className="border-b border-gray-200">
-            <div className="flex space-x-4 md:space-x-8 px-4 md:px-6 overflow-x-auto">
+            <div className="flex space-x-4 md:space-x-8 px-4 md:px-6 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('active')}
                 className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
@@ -698,6 +785,84 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Profile</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your display name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phoneNumber}
+                  onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your phone number"
+                />
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> Your UF email cannot be changed as it's used for verification.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} className="mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

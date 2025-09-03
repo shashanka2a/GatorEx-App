@@ -211,7 +211,7 @@ export function PostListing({ onComplete }: PostListingProps) {
             <Card className="p-4">
               <div className="space-y-3">
                 {photos.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                     {photos.map((photo, index) => (
                       <div key={index} className="w-16 h-16 flex-shrink-0">
                         <ImageWithFallback
