@@ -69,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('❌ Database error:', dbError);
       return res.status(500).json({ 
         error: 'Database error',
-        details: dbError.message,
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
         debug: { environment: envCheck }
       });
     }
@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('❌ Test API error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }

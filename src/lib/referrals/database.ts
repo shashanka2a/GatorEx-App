@@ -1,40 +1,52 @@
-import { supabase } from '../supabase';
+import { PrismaClient } from '@prisma/client';
 import { REFERRAL_CONFIG, REFERRAL_STATUS, REWARD_STATUS } from './config';
 import { generateReferralCode, getISOWeek } from './utils';
+
+const prisma = new PrismaClient();
 
 export async function createReferralCode(userId: string) {
   const code = generateReferralCode();
   
-  const { data, error } = await supabase
-    .from('referral_codes')
-    .insert({ user_id: userId, code })
-    .select()
-    .single();
+  const data = await prisma.$executeRaw`
+    INSERT INTO referral_codes (user_id, code) 
+    VALUES (${userId}::uuid, ${code})
+    ON CONFLICT (user_id) DO UPDATE SET code = ${code}
+    RETURNING *;
+  `;
 
-  if (error) throw error;
-  return data;
+  // Get the created record
+  const result = await prisma.$queryRaw`
+    SELECT * FROM referral_codes WHERE user_id = ${userId}::uuid;
+  `;
+
+  return Array.isArray(result) ? result[0] : result;
 }
 
 export async function getReferralCode(userId: string) {
-  const { data, error } = await supabase
-    .from('referral_codes')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error;
-  return data;
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT * FROM referral_codes WHERE user_id = ${userId}::uuid LIMIT 1;
+    `;
+    
+    return Array.isArray(result) && result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error('Error getting referral code:', error);
+    return null;
+  }
 }
 
 export async function logReferralClick(code: string, ipHash: string, uaHash: string) {
-  const { data, error } = await supabase
-    .from('referral_clicks')
-    .insert({ code, ip_hash: ipHash, ua_hash: uaHash })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const result = await prisma.$queryRaw`
+      INSERT INTO referral_clicks (code, ip_hash, ua_hash) 
+      VALUES (${code}, ${ipHash}, ${uaHash})
+      RETURNING *;
+    `;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error logging referral click:', error);
+    throw error;
+  }
 }
 
 export async function createReferral(
@@ -43,21 +55,21 @@ export async function createReferral(
   refereeUserId: string, 
   status: string = REFERRAL_STATUS.clicked
 ) {
-  const { data, error } = await supabase
-    .from('referrals')
-    .upsert({ 
-      code, 
-      referrer_user_id: referrerUserId, 
-      referee_user_id: refereeUserId, 
-      status 
-    }, { 
-      onConflict: 'referee_user_id' 
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const result = await prisma.$queryRaw`
+      INSERT INTO referrals (code, referrer_user_id, referee_user_id, status) 
+      VALUES (${code}, ${referrerUserId}::uuid, ${refereeUserId}::uuid, ${status})
+      ON CONFLICT (referee_user_id) DO UPDATE SET 
+        code = ${code}, 
+        referrer_user_id = ${referrerUserId}::uuid, 
+        status = ${status}
+      RETURNING *;
+    `;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error creating referral:', error);
+    throw error;
+  }
 }
 
 export async function updateReferralStatus(
@@ -65,109 +77,120 @@ export async function updateReferralStatus(
   status: string, 
   reason?: string
 ) {
-  const { data, error } = await supabase
-    .from('referrals')
-    .update({ status, reason })
-    .eq('referee_user_id', refereeUserId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE referrals 
+      SET status = ${status}, reason = ${reason || null}
+      WHERE referee_user_id = ${refereeUserId}::uuid
+      RETURNING *;
+    `;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error updating referral status:', error);
+    throw error;
+  }
 }
 
 export async function getReferralSummary(userId: string) {
-  // Get user's referral code first
-  const userCode = await getUserReferralCode(userId);
-  
-  // Get total clicks
-  const { count: clicks } = await supabase
-    .from('referral_clicks')
-    .select('*', { count: 'exact', head: true })
-    .eq('code', userCode);
+  try {
+    // Get user's referral code first
+    const userCode = await getUserReferralCode(userId);
+    
+    // Get total clicks
+    const clicks = await prisma.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(*) as count FROM referral_clicks WHERE code = ${userCode};
+    `;
+    const clickCount = clicks[0]?.count || 0;
 
-  // Get verified referrals
-  const { data: verified, count: verifiedCount } = await supabase
-    .from('referrals')
-    .select('*', { count: 'exact' })
-    .eq('referrer_user_id', userId)
-    .eq('status', REFERRAL_STATUS.verified);
+    // Get verified referrals
+    const verified = await prisma.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(*) as count FROM referrals 
+      WHERE referrer_user_id = ${userId}::uuid AND status = ${REFERRAL_STATUS.verified};
+    `;
+    const verifiedCount = verified[0]?.count || 0;
 
-  // Get earned rewards
-  const { data: rewards } = await supabase
-    .from('rewards')
-    .select('amount_cents')
-    .eq('user_id', userId)
-    .eq('status', REWARD_STATUS.approved);
+    // Get earned rewards
+    const rewards = await prisma.$queryRaw<Array<{ amount_cents: number }>>`
+      SELECT amount_cents FROM rewards 
+      WHERE user_id = ${userId}::uuid AND status = ${REWARD_STATUS.approved};
+    `;
+    const earned = rewards?.reduce((sum: number, r: any) => sum + (r.amount_cents || 0), 0) || 0;
 
-  const earned = rewards?.reduce((sum, r) => sum + r.amount_cents, 0) || 0;
+    // Get this week points
+    const weekId = getISOWeek();
+    const weekData = await prisma.$queryRaw<Array<{ points: number }>>`
+      SELECT points FROM leaderboard_week 
+      WHERE user_id = ${userId}::uuid AND week_id = ${weekId} LIMIT 1;
+    `;
+    const thisWeekPoints = weekData[0]?.points || 0;
 
-  // Get this week points
-  const weekId = getISOWeek();
-  const { data: weekData } = await supabase
-    .from('leaderboard_week')
-    .select('points')
-    .eq('user_id', userId)
-    .eq('week_id', weekId)
-    .single();
+    // Calculate next tier
+    const currentRefs = verifiedCount || 0;
+    const nextTier = REFERRAL_CONFIG.tiers.find(t => t.refs > currentRefs);
 
-  // Calculate next tier
-  const currentRefs = verifiedCount || 0;
-  const nextTier = REFERRAL_CONFIG.tiers.find(t => t.refs > currentRefs);
-
-  return {
-    clicks: clicks || 0,
-    verified: verifiedCount || 0,
-    earned,
-    thisWeekPoints: weekData?.points || 0,
-    nextTier: nextTier ? { refs: nextTier.refs, reward: nextTier.reward } : null
-  };
+    return {
+      clicks: clickCount,
+      verified: verifiedCount,
+      earned,
+      thisWeekPoints,
+      nextTier: nextTier ? { refs: nextTier.refs, reward: nextTier.reward } : null
+    };
+  } catch (error) {
+    console.error('Error getting referral summary:', error);
+    throw error;
+  }
 }
 
 export async function getLeaderboard(period: 'week' | 'all' = 'week', limit = 100) {
-  if (period === 'week') {
-    const weekId = getISOWeek();
-    const { data, error } = await supabase
-      .from('leaderboard_week')
-      .select(`
-        user_id,
-        points,
-        rank,
-        users:user_id (email)
-      `)
-      .eq('week_id', weekId)
-      .order('rank')
-      .limit(limit);
+  try {
+    if (period === 'week') {
+      const weekId = getISOWeek();
+      const result = await prisma.$queryRaw<Array<{
+        user_id: string;
+        points: number;
+        rank: number;
+        email: string;
+      }>>`
+        SELECT lw.user_id, lw.points, lw.rank, u.email
+        FROM leaderboard_week lw
+        JOIN users u ON lw.user_id = u.id
+        WHERE lw.week_id = ${weekId}
+        ORDER BY lw.rank
+        LIMIT ${limit};
+      `;
+      
+      return result.map(row => ({
+        user_id: row.user_id,
+        points: row.points,
+        rank: row.rank,
+        users: { email: row.email }
+      }));
+    } else {
+      // All-time leaderboard from referrals table
+      const result = await prisma.$queryRaw<Array<{
+        referrer_user_id: string;
+        email: string;
+        count: number;
+      }>>`
+        SELECT r.referrer_user_id, u.email, COUNT(*) as count
+        FROM referrals r
+        JOIN users u ON r.referrer_user_id = u.id
+        WHERE r.status = ${REFERRAL_STATUS.verified}
+        GROUP BY r.referrer_user_id, u.email
+        ORDER BY count DESC
+        LIMIT ${limit};
+      `;
 
-    if (error) throw error;
-    return data;
-  } else {
-    // All-time leaderboard from referrals table
-    const { data, error } = await supabase
-      .from('referrals')
-      .select(`
-        referrer_user_id,
-        users:referrer_user_id (email)
-      `)
-      .eq('status', REFERRAL_STATUS.verified);
-
-    if (error) throw error;
-
-    // Group by user and count
-    const counts = data.reduce((acc, ref) => {
-      acc[ref.referrer_user_id] = (acc[ref.referrer_user_id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(counts)
-      .map(([userId, points]) => ({
-        user_id: userId,
-        points,
-        users: data.find(d => d.referrer_user_id === userId)?.users
-      }))
-      .sort((a, b) => b.points - a.points)
-      .slice(0, limit)
-      .map((item, index) => ({ ...item, rank: index + 1 }));
+      return result.map((row, index) => ({
+        user_id: row.referrer_user_id,
+        points: row.count,
+        rank: index + 1,
+        users: { email: row.email }
+      }));
+    }
+  } catch (error) {
+    console.error('Error getting leaderboard:', error);
+    throw error;
   }
 }
 
@@ -177,48 +200,48 @@ export async function createReward(
   amountCents: number, 
   tier: number
 ) {
-  const { data, error } = await supabase
-    .from('rewards')
-    .insert({
-      user_id: userId,
-      type,
-      amount_cents: amountCents,
-      tier,
-      source: 'referral',
-      status: REWARD_STATUS.pending
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const result = await prisma.$queryRaw`
+      INSERT INTO rewards (user_id, type, amount_cents, tier, source, status) 
+      VALUES (${userId}::uuid, ${type}, ${amountCents}, ${tier}, 'referral', ${REWARD_STATUS.pending})
+      RETURNING *;
+    `;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error creating reward:', error);
+    throw error;
+  }
 }
 
 export async function updateLeaderboardPoints(userId: string, points: number) {
-  const weekId = getISOWeek();
-  
-  const { data, error } = await supabase
-    .from('leaderboard_week')
-    .upsert({
-      week_id: weekId,
-      user_id: userId,
-      points,
-      rank: 0, // Will be updated by rebuild job
-      updated_at: new Date().toISOString()
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  try {
+    const weekId = getISOWeek();
+    
+    const result = await prisma.$queryRaw`
+      INSERT INTO leaderboard_week (week_id, user_id, points, rank, updated_at) 
+      VALUES (${weekId}, ${userId}::uuid, ${points}, 0, NOW())
+      ON CONFLICT (week_id, user_id) DO UPDATE SET 
+        points = ${points}, 
+        rank = 0, 
+        updated_at = NOW()
+      RETURNING *;
+    `;
+    return Array.isArray(result) ? result[0] : result;
+  } catch (error) {
+    console.error('Error updating leaderboard points:', error);
+    throw error;
+  }
 }
 
 async function getUserReferralCode(userId: string): Promise<string> {
-  const { data } = await supabase
-    .from('referral_codes')
-    .select('code')
-    .eq('user_id', userId)
-    .single();
-  
-  return data?.code || '';
+  try {
+    const result = await prisma.$queryRaw<Array<{ code: string }>>`
+      SELECT code FROM referral_codes WHERE user_id = ${userId}::uuid LIMIT 1;
+    `;
+    
+    return result[0]?.code || '';
+  } catch (error) {
+    console.error('Error getting user referral code:', error);
+    return '';
+  }
 }
