@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json({
       ...summary,
       referralCode: referralCode?.code || null,
-      referralLink: referralCode?.code ? `${process.env.NEXTAUTH_URL}/signup?ref=${referralCode.code}` : null
+      referralLink: referralCode?.code ? `${process.env.NEXTAUTH_URL}/login-otp?ref=${referralCode.code}` : null
     });
 
   } catch (error) {
