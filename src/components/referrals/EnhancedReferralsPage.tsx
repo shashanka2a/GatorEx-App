@@ -6,7 +6,8 @@ import AchievementBadges from './AchievementBadges';
 import StickyReferralBar from './StickyReferralBar';
 import SuccessStories from './SuccessStories';
 import { REFERRAL_CONFIG } from '../../lib/referrals/config';
-import { Logo } from '../ui/Logo';
+import WebNav from '../navigation/WebNav';
+import MobileNav from '../navigation/MobileNav';
 
 interface ReferralSummary {
   clicks: number;
@@ -335,24 +336,15 @@ export default function EnhancedReferralsPage() {
         <meta name="description" content="Share GatorEx with your friends and earn amazing rewards. The more you refer, the more you earn!" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-red-500 relative overflow-hidden">
+      {/* Navigation */}
+      <WebNav userVerified={!!session} />
+      <MobileNav userVerified={!!session} />
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-red-500 relative overflow-hidden pt-16 md:pt-0">
         <FloatingParticles />
         <Confetti show={showConfetti} />
-        
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 text-white relative z-10">
-          <div className="flex items-center space-x-2">
-            <Logo size="md" variant="svg" white={true} />
-            <span className="font-semibold">GatorEx</span>
-          </div>
-          <div className="flex space-x-4 text-sm">
-            <button onClick={() => router.push('/buy')} className="hover:text-orange-200 transition-colors">Dashboard</button>
-            <button onClick={() => router.push('/me')} className="hover:text-orange-200 transition-colors">Marketplace</button>
-            <button className="bg-white/20 px-3 py-1 rounded backdrop-blur-sm">Referrals</button>
-          </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+        <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10 pb-24 md:pb-8">
           {/* Hero Section with Social Proof */}
           <div className="text-center text-white mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
@@ -484,10 +476,10 @@ export default function EnhancedReferralsPage() {
           </div>
 
           {/* Recent Activity */}
-          {session && <RecentActivity />}
+          {/* {session && <RecentActivity />} */}
 
           {/* Success Stories */}
-          <SuccessStories />
+          {/* <SuccessStories /> */}
 
           {/* Referral Link Section */}
           <div className="bg-white rounded-2xl p-6 mb-8 shadow-xl backdrop-blur-sm">
@@ -498,65 +490,90 @@ export default function EnhancedReferralsPage() {
               Share your unique link and get rewarded for every successful referral
             </p>
             
-            {session && summary ? (
-              <>
-                <div className="flex items-center space-x-3 mb-4">
-                  <input
-                    type="text"
-                    value={summary.referralLink}
-                    readOnly
-                    className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                  />
+            {session ? (
+              summary ? (
+                <>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <input
+                      type="text"
+                      value={summary.referralLink}
+                      readOnly
+                      className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      onClick={copyReferralLink}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 ${
+                        copied 
+                          ? 'bg-green-500 text-white scale-105' 
+                          : 'bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg'
+                      }`}
+                    >
+                      {copied ? (
+                        <span className="flex items-center">
+                          <span className="mr-2">✓</span>
+                          Copied!
+                        </span>
+                      ) : 'Copy'}
+                    </button>
+                  </div>
+                  
+                  {/* Social Share Buttons */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      onClick={() => shareToSocial('twitter')}
+                      className="flex items-center px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+                    >
+                      🐦 Twitter
+                    </button>
+                    <button
+                      onClick={() => shareToSocial('facebook')}
+                      className="flex items-center px-3 py-2 bg-blue-700 text-white rounded-lg text-sm hover:bg-blue-800 transition-colors"
+                    >
+                      📘 Facebook
+                    </button>
+                    <button
+                      onClick={() => shareToSocial('whatsapp')}
+                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+                    >
+                      💬 WhatsApp
+                    </button>
+                    <button
+                      onClick={() => shareToSocial('native')}
+                      className="flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
+                    >
+                      📱 More
+                    </button>
+                  </div>
+                  
+                  <p className="text-sm text-green-600 flex items-center">
+                    <span className="mr-2">🎯</span>
+                    Start earning $5 per successful referral
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                      <span className="text-orange-600 text-2xl">🔗</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Generate Your Referral Link</h3>
+                    <p className="text-gray-600 mb-6">
+                      Click below to generate your unique referral link and start earning rewards
+                    </p>
+                  </div>
+                  
                   <button
-                    onClick={copyReferralLink}
-                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 ${
-                      copied 
-                        ? 'bg-green-500 text-white scale-105' 
-                        : 'bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg'
-                    }`}
+                    onClick={fetchData}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
                   >
-                    {copied ? (
-                      <span className="flex items-center">
-                        <span className="mr-2">✓</span>
-                        Copied!
-                      </span>
-                    ) : 'Copy'}
+                    Generate My Referral Link
                   </button>
+                  
+                  <p className="text-sm text-gray-500 mt-4">
+                    🎯 Earn $5 for every successful referral
+                  </p>
                 </div>
-                
-                {/* Social Share Buttons */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <button
-                    onClick={() => shareToSocial('twitter')}
-                    className="flex items-center px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
-                  >
-                    🐦 Twitter
-                  </button>
-                  <button
-                    onClick={() => shareToSocial('facebook')}
-                    className="flex items-center px-3 py-2 bg-blue-700 text-white rounded-lg text-sm hover:bg-blue-800 transition-colors"
-                  >
-                    📘 Facebook
-                  </button>
-                  <button
-                    onClick={() => shareToSocial('whatsapp')}
-                    className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
-                  >
-                    💬 WhatsApp
-                  </button>
-                  <button
-                    onClick={() => shareToSocial('native')}
-                    className="flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
-                  >
-                    📱 More
-                  </button>
-                </div>
-                
-                <p className="text-sm text-green-600 flex items-center">
-                  <span className="mr-2">🎯</span>
-                  Start earning $5 per successful referral
-                </p>
-              </>
+              )
             ) : (
               <div className="text-center py-8">
                 <div className="mb-4">
