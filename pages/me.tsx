@@ -335,68 +335,114 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <button className="text-gray-400 hover:text-gray-600">
-              <Edit3 size={20} />
-            </button>
+            <div className="flex items-center space-x-2">
+              <Link
+                href="/referrals"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
+              >
+                🎁 Referrals
+              </Link>
+              <button className="text-gray-400 hover:text-gray-600">
+                <Edit3 size={20} />
+              </button>
+            </div>
           </div>
 
-          {/* Stats */}
+          {/* Profile Completeness Meter */}
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
+              <span className="text-sm font-bold text-blue-600">
+                {Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + (user?.listings.length > 0 ? 1 : 0)) / 4 * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + (user?.listings.length > 0 ? 1 : 0)) / 4 * 100)}%` }}
+              ></div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {!user?.name && <span className="text-gray-600">• Add profile picture</span>}
+              {!user?.verified && <span className="text-gray-600">• Verify UF email</span>}
+              {user?.listings.length === 0 && <span className="text-gray-600">• Create your first listing</span>}
+              {user?.name && user?.verified && user?.listings.length > 0 && (
+                <span className="text-green-600 font-medium">🎉 Profile complete!</span>
+              )}
+            </div>
+          </div>
+
+          {/* Key Stats - Highlighted */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-            <div className="text-center p-2">
-              <div className="flex items-center justify-center mb-1">
-                <Star size={14} className="text-yellow-500 mr-1" />
-                <span className="font-semibold text-gray-900 text-sm md:text-base">{user?.rating}</span>
+            <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+              <div className="flex items-center justify-center mb-2">
+                <Star size={16} className="text-yellow-500 mr-1" />
+                <span className="font-bold text-gray-900 text-lg">{user?.rating}</span>
               </div>
-              <p className="text-xs text-gray-600">Rating</p>
+              <p className="text-xs text-gray-600 font-medium">Rating</p>
             </div>
             
-            <div className="text-center p-2">
-              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">{user?.totalSales}</div>
-              <p className="text-xs text-gray-600">Total Listings</p>
+            <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
+              <div className="font-bold text-gray-900 mb-2 text-lg">{user?.totalSales}</div>
+              <p className="text-xs text-gray-600 font-medium">Total Listings</p>
             </div>
             
-            <div className="text-center p-2">
-              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">{user?.totalViews}</div>
-              <p className="text-xs text-gray-600">Total Views</p>
+            <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="font-bold text-gray-900 mb-2 text-lg">{user?.totalViews || 0}</div>
+              <p className="text-xs text-gray-600 font-medium">Total Views</p>
             </div>
             
-            <div className="text-center p-2">
-              <div className="font-semibold text-gray-900 mb-1 text-sm md:text-base">
+            <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
+              <div className="font-bold text-gray-900 mb-2 text-lg">
                 {user?.listings.filter(l => l.status === 'SOLD').length}
               </div>
-              <p className="text-xs text-gray-600">Items Sold</p>
+              <p className="text-xs text-gray-600 font-medium">Items Sold</p>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 md:mb-8">
-          <Link
-            href="/favorites"
-            className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border border-gray-200 group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-red-50 p-3 rounded-full group-hover:bg-red-100 transition-colors">
-                <Heart className="w-6 h-6 text-red-500" fill="currentColor" />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <Link href="/favorites" className="block p-4 hover:bg-gray-50 transition-colors group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-red-50 p-3 rounded-full group-hover:bg-red-100 transition-colors">
+                    <Heart className="w-6 h-6 text-red-500" fill="currentColor" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">My Favorites</h3>
+                    <p className="text-sm text-gray-600">3 saved items</p>
+                  </div>
+                </div>
+                <div className="text-gray-400 group-hover:text-gray-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">My Favorites</h3>
-                <p className="text-sm text-gray-600">View your saved listings</p>
+              {/* Mini preview carousel */}
+              <div className="flex space-x-2 overflow-x-auto">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <Package size={20} className="text-gray-400" />
+                  </div>
+                ))}
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
           
           <Link
             href="/sell"
-            className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border border-gray-200 group"
+            className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-sm p-4 hover:shadow-md transition-all border border-orange-200 group"
           >
             <div className="flex items-center space-x-3">
-              <div className="bg-orange-50 p-3 rounded-full group-hover:bg-orange-100 transition-colors">
-                <Package className="w-6 h-6 text-orange-500" />
+              <div className="bg-orange-500 p-3 rounded-full group-hover:bg-orange-600 transition-colors">
+                <Package className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Create Listing</h3>
-                <p className="text-sm text-gray-600">Sell something new</p>
+                <p className="text-sm text-orange-700">Start selling today 🚀</p>
               </div>
             </div>
           </Link>
@@ -452,35 +498,80 @@ export default function ProfilePage() {
           <div className="p-4 md:p-6">
             {filteredListings.length === 0 ? (
               <div className="text-center py-12">
-                <Package size={48} className="mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No {activeTab} listings
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {activeTab === 'active' && "You don't have any active listings yet."}
-                  {activeTab === 'draft' && "No draft listings to complete."}
-                  {activeTab === 'expired' && "No expired listings to renew."}
-                  {activeTab === 'sold' && "No sold listings yet."}
-                </p>
                 {activeTab === 'active' && (
-                  <Link
-                    href="/sell"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
-                  >
-                    Create Your First Listing
-                  </Link>
+                  <div className="mb-6">
+                    <div className="text-6xl mb-4">🚀</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Ready to start selling?
+                    </h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Create your first listing and start earning! The GatorEx community is waiting to see what you have to offer.
+                    </p>
+                    <Link
+                      href="/sell"
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium inline-flex items-center"
+                    >
+                      <Package size={20} className="mr-2" />
+                      Create Your First Listing
+                    </Link>
+                  </div>
+                )}
+                
+                {activeTab === 'draft' && (
+                  <div className="mb-6">
+                    <div className="text-6xl mb-4">✏️</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No drafts yet
+                    </h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Draft listings are automatically saved when you start creating a listing. Come back anytime to finish them!
+                    </p>
+                  </div>
+                )}
+                
+                {activeTab === 'expired' && (
+                  <div className="mb-6">
+                    <div className="text-6xl mb-4">⏰</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      All listings are fresh!
+                    </h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Great job keeping your listings active! Expired listings will appear here when they need renewal.
+                    </p>
+                  </div>
+                )}
+                
+                {activeTab === 'sold' && (
+                  <div className="mb-6">
+                    <div className="text-6xl mb-4">🎉</div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Your first sale awaits!
+                    </h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Once you make your first sale, you'll see it here. Keep promoting your listings to increase visibility!
+                    </p>
+                    {user?.listings.filter(l => l.status === 'PUBLISHED').length === 0 && (
+                      <Link
+                        href="/sell"
+                        className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-medium inline-flex items-center"
+                      >
+                        <DollarSign size={20} className="mr-2" />
+                        Start Selling Now
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
             ) : (
               <div className="grid gap-4">
                 {filteredListings.map((listing) => (
-                  <div key={listing.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all hover:border-gray-300">
                     <div className="flex items-start space-x-4">
                       {listing.image ? (
                         <img
                           src={listing.image}
                           alt={listing.title}
-                          className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-24 h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
                           onClick={() => {
                             // Open image in modal or new tab
                             if (listing.image) {
@@ -489,72 +580,76 @@ export default function ProfilePage() {
                           }}
                         />
                       ) : (
-                        <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
-                          <Package size={24} className="text-gray-400" />
+                        <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center shadow-sm">
+                          <Package size={28} className="text-gray-400" />
                         </div>
                       )}
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors">
+                            <h3 className="font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors text-lg">
                               {listing.title}
                             </h3>
-                            <p className="text-lg font-semibold text-green-600 mt-1">
+                            <p className="text-2xl font-bold text-green-600 mt-1">
                               ${listing.price}
                             </p>
-                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                              <span>{listing.views} views</span>
+                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-600">
+                              <div className="flex items-center space-x-1">
+                                <Eye size={14} />
+                                <span className="font-medium">{listing.views} views</span>
+                              </div>
                               <span>Created {new Date(listing.createdAt).toLocaleDateString()}</span>
                               {listing.status === 'PUBLISHED' && listing.expiresAt && (
-                                <span>Expires {new Date(listing.expiresAt).toLocaleDateString()}</span>
+                                <span className="text-orange-600 font-medium">
+                                  Expires {new Date(listing.expiresAt).toLocaleDateString()}
+                                </span>
                               )}
                             </div>
                           </div>
                           
-                          <div className="flex items-center space-x-2 flex-shrink-0">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
+                          <div className="flex flex-col items-end space-y-2 flex-shrink-0">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(listing.status)}`}>
                               {listing.status}
                             </span>
                             
-                            {/* Action Buttons */}
-                            <div className="flex items-center space-x-1">
+                            {/* Quick Action Buttons */}
+                            <div className="flex items-center space-x-2">
                               {listing.status === 'PUBLISHED' && (
                                 <>
                                   <button
                                     onClick={() => viewListingContacts(listing.id)}
-                                    className="text-purple-600 hover:text-purple-700 p-1 rounded hover:bg-purple-50 transition-colors"
+                                    className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center space-x-1"
                                     title="View contacts"
                                   >
-                                    <Users size={16} />
+                                    <Users size={12} />
+                                    <span>Contacts</span>
                                   </button>
                                   <button
                                     onClick={() => {
-                                      // Copy listing link to clipboard
                                       navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
-                                      // You could add a toast notification here
                                     }}
-                                    className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors"
-                                    title="Copy listing link"
+                                    className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center space-x-1"
+                                    title="Share listing"
                                   >
-                                    <Eye size={16} />
+                                    <MessageSquare size={12} />
+                                    <span>Share</span>
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      // Navigate to edit page (you'll need to create this)
-                                      router.push(`/edit-listing/${listing.id}`);
-                                    }}
-                                    className="text-gray-600 hover:text-gray-700 p-1 rounded hover:bg-gray-50 transition-colors"
+                                    onClick={() => router.push(`/edit-listing/${listing.id}`)}
+                                    className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors flex items-center space-x-1"
                                     title="Edit listing"
                                   >
-                                    <Edit3 size={16} />
+                                    <Edit3 size={12} />
+                                    <span>Edit</span>
                                   </button>
                                   <button
                                     onClick={() => handleMarkAsSold(listing.id)}
-                                    className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors"
+                                    className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors flex items-center space-x-1"
                                     title="Mark as sold"
                                   >
-                                    <DollarSign size={16} />
+                                    <DollarSign size={12} />
+                                    <span>Sold</span>
                                   </button>
                                 </>
                               )}
@@ -562,33 +657,33 @@ export default function ProfilePage() {
                               {listing.status === 'SOLD' && (
                                 <button
                                   onClick={() => viewListingContacts(listing.id)}
-                                  className="text-purple-600 hover:text-purple-700 p-1 rounded hover:bg-purple-50 transition-colors"
+                                  className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center space-x-1"
                                   title="View contacts"
                                 >
-                                  <Users size={16} />
+                                  <Users size={12} />
+                                  <span>Contacts</span>
                                 </button>
                               )}
                               
                               {listing.status === 'EXPIRED' && (
                                 <button
                                   onClick={() => handleRenewListing(listing.id)}
-                                  className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50 transition-colors"
+                                  className="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-orange-200 transition-colors flex items-center space-x-1"
                                   title="Renew listing"
                                 >
-                                  <RefreshCw size={16} />
+                                  <RefreshCw size={12} />
+                                  <span>Renew</span>
                                 </button>
                               )}
                               
                               {listing.status === 'DRAFT' && (
                                 <button
-                                  onClick={() => {
-                                    // Navigate to complete listing
-                                    router.push('/sell');
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition-colors"
+                                  onClick={() => router.push('/sell')}
+                                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center space-x-1"
                                   title="Complete listing"
                                 >
-                                  <Edit3 size={16} />
+                                  <Edit3 size={12} />
+                                  <span>Complete</span>
                                 </button>
                               )}
                             </div>

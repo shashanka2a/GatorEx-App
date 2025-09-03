@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import ChatBot from '../chat/ChatBot';
 import { useLoading } from '../../contexts/LoadingContext';
+import { Logo } from '../ui/Logo';
 
 interface WebNavProps {
   userVerified?: boolean;
@@ -71,7 +72,7 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
               href="/" 
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             >
-              <span className="text-2xl font-bold text-orange-600">🐊</span>
+              <Logo size="sm" variant="svg" className="text-orange-600" />
               <span className="text-xl font-bold text-gray-900">GatorEx</span>
             </Link>
 
