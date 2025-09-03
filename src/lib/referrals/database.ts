@@ -77,11 +77,14 @@ export async function updateReferralStatus(
 }
 
 export async function getReferralSummary(userId: string) {
+  // Get user's referral code first
+  const userCode = await getUserReferralCode(userId);
+  
   // Get total clicks
   const { count: clicks } = await supabase
     .from('referral_clicks')
     .select('*', { count: 'exact', head: true })
-    .eq('code', await getUserReferralCode(userId));
+    .eq('code', userCode);
 
   // Get verified referrals
   const { data: verified, count: verifiedCount } = await supabase
