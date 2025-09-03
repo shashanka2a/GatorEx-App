@@ -157,6 +157,26 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
                     <span className="font-medium">Verified</span>
                   </div>
                 )}
+
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleTabSwitch('referrals', '/referrals');
+                  }}
+                  className={`
+                    px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] flex items-center border relative
+                    ${router.pathname === '/referrals'
+                      ? 'text-purple-600 bg-purple-50 border-purple-200 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-gray-200'
+                    }
+                  `}
+                  aria-current={router.pathname === '/referrals' ? 'page' : undefined}
+                >
+                  🎁 Referrals
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                    New
+                  </span>
+                </button>
                 
                 <button
                   onClick={(e) => {

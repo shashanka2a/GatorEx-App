@@ -62,6 +62,14 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
       onClick: handleSellClick
     },
     {
+      id: 'referrals',
+      label: 'Referrals',
+      icon: () => <span className="text-lg">🎁</span>,
+      href: '/referrals',
+      active: router.pathname === '/referrals',
+      badge: 'New'
+    },
+    {
       id: 'sublease',
       label: 'Sublease',
       icon: HomeIcon,
@@ -139,8 +147,10 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
                 <Icon size={20} />
                 <span className="text-xs mt-1 font-medium">{item.label}</span>
                 {item.badge && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                    Soon
+                  <span className={`absolute -top-1 -right-1 text-white text-xs px-1.5 py-0.5 rounded-full ${
+                    item.badge === 'New' ? 'bg-green-500' : 'bg-blue-500'
+                  }`}>
+                    {item.badge}
                   </span>
                 )}
               </button>

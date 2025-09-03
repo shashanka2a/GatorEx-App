@@ -88,12 +88,37 @@ module.exports = {
             transform: "translateY(0)",
           },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '50%': { transform: 'translateY(-20px) rotate(180deg)' },
+        },
+        confetti: {
+          '0%': { transform: 'translateY(-100vh) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(100vh) rotate(720deg)', opacity: '0' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         fadeInUp: "fadeInUp 0.6s ease-out forwards",
         slideInUp: "slideInUp 0.8s ease-out forwards",
+        float: "float 6s ease-in-out infinite",
+        confetti: "confetti 3s linear forwards",
+        shimmer: "shimmer 2s infinite",
+        'fade-in': "fade-in 1s ease-out",
+        'pulse-slow': "pulse 3s ease-in-out infinite",
       },
       backgroundImage: {
         'uf-gradient': 'linear-gradient(135deg, #FF7A00 0%, #0021FF 100%)',

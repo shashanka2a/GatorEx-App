@@ -3,6 +3,26 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const response = NextResponse.next();
+
+  // Handle referral tracking
+  const ref = req.nextUrl.searchParams.get('ref');
+  if (ref) {
+    // Set referral cookie with 30-day expiry
+    response.cookies.set('gex_ref', ref, {
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    });
+    
+    // Log the click (fire and forget)
+    fetch(`${req.nextUrl.origin}/api/referrals/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: ref })
+    }).catch(() => {}); // Ignore errors
+  }
 
   // Check if user has a session cookie
   const sessionToken = req.cookies.get('next-auth.session-token')?.value ||
@@ -23,9 +43,10 @@ export function middleware(req: NextRequest) {
     pathname.includes('.') ||
     pathname === '/' ||
     pathname === '/buy' ||
-    pathname === '/sublease'
+    pathname === '/sublease' ||
+    pathname === '/referrals'
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   // Protected routes that require authentication
@@ -38,7 +59,7 @@ export function middleware(req: NextRequest) {
 
   // For now, if user has a session token, let them through
   // The individual pages will handle more specific checks
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

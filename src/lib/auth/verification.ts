@@ -163,6 +163,14 @@ export async function verifyOTP(email: string, otpCode: string, ipAddress: strin
       },
       data: { success: true }
     });
+
+    // Process referral if exists (fire and forget)
+    try {
+      const { processReferralAfterVerification } = await import('../referrals/verification-hook');
+      processReferralAfterVerification(user.id, email).catch(console.error);
+    } catch (error) {
+      console.error('Referral processing error:', error);
+    }
     
     return { 
       success: true, 

@@ -145,6 +145,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `__Secure-next-auth.session-token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=${expires.toUTCString()}`
     ]);
 
+    // Process referral if exists
+    try {
+      const referralCode = req.cookies.gex_ref;
+      if (referralCode) {
+        // Process referral completion
+        const referralResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/referrals/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            refereeUserId: user.id,
+            refereeEmail: email,
+            referralCode,
+            ipHash: require('crypto').createHash('sha256').update((req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '127.0.0.1') + (process.env.REFERRAL_SALT || 'salt')).digest('hex'),
+            uaHash: require('crypto').createHash('sha256').update((req.headers['user-agent'] || '') + (process.env.REFERRAL_SALT || 'salt')).digest('hex')
+          })
+        });
+
+        if (referralResponse.ok) {
+          // Clear referral cookie after processing
+          const existingCookies = res.getHeaders()['set-cookie'];
+          const cookieArray = Array.isArray(existingCookies) ? existingCookies : existingCookies ? [existingCookies] : [];
+          res.setHeader('Set-Cookie', [
+            ...cookieArray,
+            'gex_ref=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax'
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error('Referral processing error:', error);
+      // Don't fail the verification if referral processing fails
+    }
+
     // Determine redirect URL
     let redirectTo = '/buy'; // Default
     if (!user.profileCompleted) {
