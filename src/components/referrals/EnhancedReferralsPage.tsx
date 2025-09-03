@@ -369,6 +369,120 @@ export default function EnhancedReferralsPage() {
             </div>
           </div>
 
+          {/* Enhanced Rewards Tiers */}
+          <div className="bg-white rounded-2xl p-6 mb-8 shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-800 text-center mb-2">
+              Unlock Amazing Rewards
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              See what you can earn as you build your referral network
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {REFERRAL_CONFIG.tiers.map((tier, index) => {
+                const getRewardIcon = (description: string) => {
+                  if (description.includes('Amazon')) return '🎁';
+                  if (description.includes('Best Buy') && description.includes('Gift Card')) return '🛒';
+                  if (description.includes('ChatGPT')) return '🤖';
+                  if (description.includes('Totaltech')) return '⭐';
+                  if (description.includes('AirPods')) return '🎧';
+                  if (description.includes('iPhone')) return '📱';
+                  if (description.includes('Marketing Lead')) return '🏢';
+                  return '🎁';
+                };
+
+                const getRewardDetails = (description: string) => {
+                  if (description.includes('$10 Amazon')) {
+                    return {
+                      bgColor: 'bg-orange-50',
+                      iconBg: 'bg-orange-500',
+                      textColor: 'text-orange-600',
+                      desc: 'Gift card reward'
+                    };
+                  }
+                  if (description.includes('$25 Amazon')) {
+                    return {
+                      bgColor: 'bg-orange-50',
+                      iconBg: 'bg-orange-600',
+                      textColor: 'text-orange-600',
+                      desc: 'Gift card reward'
+                    };
+                  }
+                  if (description.includes('ChatGPT')) {
+                    return {
+                      bgColor: 'bg-green-50',
+                      iconBg: 'bg-green-600',
+                      textColor: 'text-green-600',
+                      desc: 'Subscription service'
+                    };
+                  }
+                  if (description.includes('$100 Best Buy')) {
+                    return {
+                      bgColor: 'bg-blue-50',
+                      iconBg: 'bg-blue-600',
+                      textColor: 'text-blue-600',
+                      desc: 'Gift card reward'
+                    };
+                  }
+                  if (description.includes('Totaltech')) {
+                    return {
+                      bgColor: 'bg-blue-50',
+                      iconBg: 'bg-blue-700',
+                      textColor: 'text-blue-700',
+                      desc: 'Subscription service'
+                    };
+                  }
+                  if (description.includes('AirPods')) {
+                    return {
+                      bgColor: 'bg-gray-50',
+                      iconBg: 'bg-gray-600',
+                      textColor: 'text-gray-700',
+                      desc: 'Premium tech reward'
+                    };
+                  }
+                  if (description.includes('iPhone')) {
+                    return {
+                      bgColor: 'bg-gray-50',
+                      iconBg: 'bg-gray-800',
+                      textColor: 'text-gray-800',
+                      desc: 'Premium tech reward'
+                    };
+                  }
+                  if (description.includes('Marketing Lead')) {
+                    return {
+                      bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
+                      iconBg: 'bg-gradient-to-r from-purple-600 to-pink-600',
+                      textColor: 'text-purple-700',
+                      desc: 'Company equity reward'
+                    };
+                  }
+                  return {
+                    bgColor: 'bg-gray-50',
+                    iconBg: 'bg-gray-500',
+                    textColor: 'text-gray-600',
+                    desc: 'Reward'
+                  };
+                };
+
+                const rewardDetails = getRewardDetails(tier.reward.description);
+                
+                return (
+                  <RewardCard
+                    key={index}
+                    icon={getRewardIcon(tier.reward.description)}
+                    title={tier.reward.description}
+                    description={rewardDetails.desc}
+                    refs={tier.refs}
+                    bgColor={rewardDetails.bgColor}
+                    iconBg={rewardDetails.iconBg}
+                    textColor={rewardDetails.textColor}
+                    achieved={session && summary ? summary.verified >= tier.refs : false}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
           {/* Recent Activity */}
           {session && <RecentActivity />}
 
@@ -517,119 +631,7 @@ export default function EnhancedReferralsPage() {
             </div>
           )}
 
-          {/* Enhanced Rewards Tiers */}
-          <div className="bg-white rounded-2xl p-6 mb-8 shadow-xl">
-            <h2 className="text-xl font-semibold text-gray-800 text-center mb-2">
-              Unlock Amazing Rewards
-            </h2>
-            <p className="text-gray-600 text-center mb-6">
-              See what you can earn as you build your referral network
-            </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {REFERRAL_CONFIG.tiers.map((tier, index) => {
-                const getRewardIcon = (description: string) => {
-                  if (description.includes('Amazon')) return '🎁';
-                  if (description.includes('Best Buy') && description.includes('Gift Card')) return '🛒';
-                  if (description.includes('ChatGPT')) return '🤖';
-                  if (description.includes('Totaltech')) return '⭐';
-                  if (description.includes('AirPods')) return '🎧';
-                  if (description.includes('iPhone')) return '📱';
-                  if (description.includes('Marketing Lead')) return '🏢';
-                  return '🎁';
-                };
-
-                const getRewardDetails = (description: string) => {
-                  if (description.includes('$10 Amazon')) {
-                    return {
-                      bgColor: 'bg-orange-50',
-                      iconBg: 'bg-orange-500',
-                      textColor: 'text-orange-600',
-                      desc: 'Gift card reward'
-                    };
-                  }
-                  if (description.includes('$25 Amazon')) {
-                    return {
-                      bgColor: 'bg-orange-50',
-                      iconBg: 'bg-orange-600',
-                      textColor: 'text-orange-600',
-                      desc: 'Gift card reward'
-                    };
-                  }
-                  if (description.includes('ChatGPT')) {
-                    return {
-                      bgColor: 'bg-green-50',
-                      iconBg: 'bg-green-600',
-                      textColor: 'text-green-600',
-                      desc: 'Subscription service'
-                    };
-                  }
-                  if (description.includes('$100 Best Buy')) {
-                    return {
-                      bgColor: 'bg-blue-50',
-                      iconBg: 'bg-blue-600',
-                      textColor: 'text-blue-600',
-                      desc: 'Gift card reward'
-                    };
-                  }
-                  if (description.includes('Totaltech')) {
-                    return {
-                      bgColor: 'bg-blue-50',
-                      iconBg: 'bg-blue-700',
-                      textColor: 'text-blue-700',
-                      desc: 'Subscription service'
-                    };
-                  }
-                  if (description.includes('AirPods')) {
-                    return {
-                      bgColor: 'bg-gray-50',
-                      iconBg: 'bg-gray-600',
-                      textColor: 'text-gray-700',
-                      desc: 'Premium tech reward'
-                    };
-                  }
-                  if (description.includes('iPhone')) {
-                    return {
-                      bgColor: 'bg-gray-50',
-                      iconBg: 'bg-gray-800',
-                      textColor: 'text-gray-800',
-                      desc: 'Premium tech reward'
-                    };
-                  }
-                  if (description.includes('Marketing Lead')) {
-                    return {
-                      bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
-                      iconBg: 'bg-gradient-to-r from-purple-600 to-pink-600',
-                      textColor: 'text-purple-700',
-                      desc: 'Company equity reward'
-                    };
-                  }
-                  return {
-                    bgColor: 'bg-gray-50',
-                    iconBg: 'bg-gray-500',
-                    textColor: 'text-gray-600',
-                    desc: 'Reward'
-                  };
-                };
-
-                const rewardDetails = getRewardDetails(tier.reward.description);
-                
-                return (
-                  <RewardCard
-                    key={index}
-                    icon={getRewardIcon(tier.reward.description)}
-                    title={tier.reward.description}
-                    description={rewardDetails.desc}
-                    refs={tier.refs}
-                    bgColor={rewardDetails.bgColor}
-                    iconBg={rewardDetails.iconBg}
-                    textColor={rewardDetails.textColor}
-                    achieved={session && summary ? summary.verified >= tier.refs : false}
-                  />
-                );
-              })}
-            </div>
-          </div>
 
           {/* Performance Stats with Animations */}
           {session && summary && (
