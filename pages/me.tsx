@@ -353,20 +353,20 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
               <span className="text-sm font-bold text-blue-600">
-                {Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + (user?.listings.length > 0 ? 1 : 0)) / 4 * 100)}%
+                {Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0)) / 4 * 100)}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
               <div 
                 className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + (user?.listings.length > 0 ? 1 : 0)) / 4 * 100)}%` }}
+                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0)) / 4 * 100)}%` }}
               ></div>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               {!user?.name && <span className="text-gray-600">• Add profile picture</span>}
               {!user?.verified && <span className="text-gray-600">• Verify UF email</span>}
-              {user?.listings.length === 0 && <span className="text-gray-600">• Create your first listing</span>}
-              {user?.name && user?.verified && user?.listings.length > 0 && (
+              {(user?.listings?.length || 0) === 0 && <span className="text-gray-600">• Create your first listing</span>}
+              {user?.name && user?.verified && (user?.listings?.length || 0) > 0 && (
                 <span className="text-green-600 font-medium">🎉 Profile complete!</span>
               )}
             </div>
