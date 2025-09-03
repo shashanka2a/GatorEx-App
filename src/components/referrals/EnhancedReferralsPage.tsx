@@ -244,6 +244,17 @@ export default function EnhancedReferralsPage() {
   const [copied, setCopied] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [totalUsers] = useState(257); // Mock data - replace with real API
+  
+  // New state for email-based referral lookup
+  const [email, setEmail] = useState('');
+  const [publicReferralInfo, setPublicReferralInfo] = useState<{
+    hasAccount: boolean;
+    referralCode: string;
+    referralLink: string;
+    userName: string;
+  } | null>(null);
+  const [emailLookupLoading, setEmailLookupLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -292,10 +303,11 @@ export default function EnhancedReferralsPage() {
   };
 
   const copyReferralLink = async () => {
-    if (!summary?.referralLink) return;
+    const linkToCopy = summary?.referralLink;
+    if (!linkToCopy) return;
     
     try {
-      await navigator.clipboard.writeText(summary.referralLink);
+      await navigator.clipboard.writeText(linkToCopy);
       setCopied(true);
       setShowConfetti(true);
       
@@ -305,6 +317,58 @@ export default function EnhancedReferralsPage() {
       }, 3000);
     } catch (error) {
       console.error('Failed to copy link:', error);
+    }
+  };
+
+  const copyPublicReferralLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setShowConfetti(true);
+      
+      setTimeout(() => {
+        setCopied(false);
+        setShowConfetti(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+    }
+  };
+
+  const fetchReferralByEmail = async () => {
+    if (!email.trim()) {
+      setEmailError('Please enter your email address');
+      return;
+    }
+
+    setEmailLookupLoading(true);
+    setEmailError('');
+
+    try {
+      const response = await fetch('/api/referrals/public-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPublicReferralInfo(data);
+      } else {
+        const errorData = await response.json();
+        if (response.status === 404) {
+          setEmailError('No account found with this email address. Sign up to get your referral link!');
+        } else {
+          setEmailError(errorData.error || 'Failed to fetch referral information');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching referral info:', error);
+      setEmailError('Something went wrong. Please try again.');
+    } finally {
+      setEmailLookupLoading(false);
     }
   };
 
@@ -601,27 +665,118 @@ export default function EnhancedReferralsPage() {
                 </div>
               )
             ) : (
-              <div className="text-center py-8">
-                <div className="mb-4">
+              <div className="py-8">
+                <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                     <span className="text-orange-600 text-2xl">🔗</span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Get Your Referral Link</h3>
                   <p className="text-gray-600 mb-6">
-                    Sign in with your UF email to generate your unique referral link and start earning rewards
+                    Already have an account? Enter your email to get your referral link instantly!
                   </p>
                 </div>
-                
-                <button
-                  onClick={() => router.push('/login-otp')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                >
-                  Sign In to Get Started
-                </button>
-                
-                <p className="text-sm text-gray-500 mt-4">
-                  🎯 Start earning amazing rewards today
-                </p>
+
+                {!publicReferralInfo ? (
+                  <div className="max-w-md mx-auto">
+                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setEmailError('');
+                        }}
+                        placeholder="Enter your email address"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                        onKeyPress={(e) => e.key === 'Enter' && fetchReferralByEmail()}
+                      />
+                      <button
+                        onClick={fetchReferralByEmail}
+                        disabled={emailLookupLoading}
+                        className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                      >
+                        {emailLookupLoading ? (
+                          <span className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Finding...
+                          </span>
+                        ) : (
+                          'Get My Link'
+                        )}
+                      </button>
+                    </div>
+                    
+                    {emailError && (
+                      <div className="text-red-600 text-sm mb-4 p-3 bg-red-50 rounded-lg">
+                        {emailError}
+                      </div>
+                    )}
+                    
+                    <div className="text-center">
+                      <p className="text-gray-500 text-sm mb-4">
+                        Don't have an account yet?
+                      </p>
+                      <button
+                        onClick={() => router.push('/login-otp')}
+                        className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                      >
+                        Sign Up to Get Started
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="max-w-md mx-auto">
+                    <div className="text-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-green-600 text-xl">✓</span>
+                      </div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                        Welcome back, {publicReferralInfo.userName}!
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        Here's your referral link:
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 mb-4">
+                      <input
+                        type="text"
+                        value={publicReferralInfo.referralLink}
+                        readOnly
+                        className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
+                      <button
+                        onClick={() => copyPublicReferralLink(publicReferralInfo.referralLink)}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 ${
+                          copied 
+                            ? 'bg-green-500 text-white scale-105' 
+                            : 'bg-orange-500 hover:bg-orange-600 text-white hover:shadow-lg'
+                        }`}
+                      >
+                        {copied ? (
+                          <span className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            Copied!
+                          </span>
+                        ) : 'Copy'}
+                      </button>
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-green-600 flex items-center justify-center mb-4">
+                        <span className="mr-2">🎯</span>
+                        Share this link to start earning rewards!
+                      </p>
+                      
+                      <button
+                        onClick={() => router.push('/login-otp')}
+                        className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                      >
+                        Sign In for Full Dashboard Access
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
