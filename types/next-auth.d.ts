@@ -9,6 +9,8 @@ declare module 'next-auth' {
       image?: string | null;
       ufEmailVerified?: boolean;
       profileCompleted?: boolean;
+      termsAccepted?: boolean;
+      privacyAccepted?: boolean;
     };
   }
 
@@ -19,6 +21,8 @@ declare module 'next-auth' {
     image?: string | null;
     ufEmailVerified?: boolean;
     profileCompleted?: boolean;
+    termsAccepted?: boolean;
+    privacyAccepted?: boolean;
   }
 }
 
@@ -27,5 +31,7 @@ declare module 'next-auth/jwt' {
     id: string;
     ufEmailVerified?: boolean;
     profileCompleted?: boolean;
+    termsAccepted?: boolean;
+    privacyAccepted?: boolean;
   }
 }

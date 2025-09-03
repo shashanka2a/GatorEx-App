@@ -89,40 +89,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     
     if (!user) {
-      // Create new user with terms acceptance
+      // Create new user without automatic terms acceptance
       user = await prisma.user.create({
         data: {
           email,
           ufEmail: email,
           ufEmailVerified: true,
-          termsAccepted: true,
-          termsAcceptedAt: now,
-          privacyAccepted: true,
-          privacyAcceptedAt: now,
+          termsAccepted: false, // Let user explicitly accept terms
+          privacyAccepted: false, // Let user explicitly accept privacy policy
           trustScore: 10 // Initial trust score for verified UF email
         }
       });
     } else {
-      // Update existing user - only update terms if not already accepted
-      const updateData: any = {
-        ufEmail: email,
-        ufEmailVerified: true,
-        trustScore: { increment: 5 } // Bonus for re-verification
-      };
-      
-      // Update terms acceptance if not already accepted
-      if (!user.termsAccepted) {
-        updateData.termsAccepted = true;
-        updateData.termsAcceptedAt = now;
-      }
-      if (!user.privacyAccepted) {
-        updateData.privacyAccepted = true;
-        updateData.privacyAcceptedAt = now;
-      }
-      
+      // Update existing user verification status
       user = await prisma.user.update({
         where: { id: user.id },
-        data: updateData
+        data: {
+          ufEmail: email,
+          ufEmailVerified: true,
+          trustScore: { increment: 5 } // Bonus for re-verification
+        }
       });
     }
 
@@ -177,9 +163,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Don't fail the verification if referral processing fails
     }
 
-    // Determine redirect URL
+    // Determine redirect URL based on user status
     let redirectTo = '/buy'; // Default
-    if (!user.profileCompleted) {
+    
+    // Check if user needs to accept terms first
+    if (!user.termsAccepted || !user.privacyAccepted) {
+      redirectTo = '/terms';
+    } else if (!user.profileCompleted) {
       redirectTo = '/complete-profile';
     }
 

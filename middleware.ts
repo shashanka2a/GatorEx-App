@@ -33,6 +33,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith('/verify') ||
     pathname.startsWith('/verify-request') ||
     pathname.startsWith('/login-otp') ||
+    pathname.startsWith('/terms') ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/_next') ||

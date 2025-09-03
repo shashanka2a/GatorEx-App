@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -10,6 +10,13 @@ export default function CompleteProfile() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
+
+  // Redirect to terms if not accepted
+  useEffect(() => {
+    if (session && (!session.user?.termsAccepted || !session.user?.privacyAccepted)) {
+      router.push('/terms?returnUrl=/complete-profile');
+    }
+  }, [session, router]);
 
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits

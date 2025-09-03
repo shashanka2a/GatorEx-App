@@ -139,9 +139,14 @@ function TermsAcceptanceForm() {
       });
 
       if (response.ok) {
-        // Redirect back to where they came from or to sell page
-        const returnUrl = router.query.returnUrl as string || '/sell';
-        router.push(returnUrl);
+        // After accepting terms, check if profile needs completion
+        if (session?.user?.profileCompleted === false) {
+          router.push('/complete-profile');
+        } else {
+          // Redirect back to where they came from or to buy page
+          const returnUrl = router.query.returnUrl as string || '/buy';
+          router.push(returnUrl);
+        }
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to accept terms');

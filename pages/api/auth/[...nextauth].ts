@@ -68,12 +68,20 @@ export const authOptions: NextAuthOptions = {
         // Fetch fresh user data from database
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { id: true, ufEmailVerified: true, profileCompleted: true }
+          select: { 
+            id: true, 
+            ufEmailVerified: true, 
+            profileCompleted: true,
+            termsAccepted: true,
+            privacyAccepted: true
+          }
         });
         
         session.user.id = user.id;
         session.user.ufEmailVerified = dbUser?.ufEmailVerified || false;
         session.user.profileCompleted = dbUser?.profileCompleted || false;
+        session.user.termsAccepted = dbUser?.termsAccepted || false;
+        session.user.privacyAccepted = dbUser?.privacyAccepted || false;
       }
       return session;
     },
