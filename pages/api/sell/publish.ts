@@ -120,7 +120,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create images - ensure no duplicates
     if (listing.images && listing.images.length > 0) {
       // Remove duplicate image URLs
-      const uniqueImages = [...new Set(listing.images)];
+      const uniqueImages = listing.images.filter((image, index, self) => 
+        self.indexOf(image) === index
+      );
       
       const imageData = uniqueImages.map((imageUrl, index) => ({
         url: imageUrl,

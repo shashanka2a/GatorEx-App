@@ -426,7 +426,9 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     if (!canPublish()) return;
     
     // Deduplicate images before publishing
-    const uniqueImages = [...new Set(draft.images)];
+    const uniqueImages = draft.images.filter((image, index, self) => 
+      self.indexOf(image) === index
+    );
     
     // Validate draft before sending
     if (!draft.title || !draft.price || uniqueImages.length === 0) {
@@ -499,7 +501,9 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   };
 
   const canPublish = () => {
-    const uniqueImages = [...new Set(draft.images)];
+    const uniqueImages = draft.images.filter((image, index, self) => 
+      self.indexOf(image) === index
+    );
     return draft.title && draft.price && uniqueImages.length > 0;
   };
 
