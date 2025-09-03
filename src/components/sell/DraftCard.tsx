@@ -17,16 +17,21 @@ interface DraftCardProps {
 }
 
 export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardProps) {
+  // Deduplicate images to handle any upload issues
+  const uniqueImages = draft.images.filter((image, index, self) => 
+    index === self.findIndex(img => img === image)
+  );
+
   const isComplete = () => {
     // Only check required fields for publishing
-    return draft.title && draft.price && draft.images.length > 0;
+    return draft.title && draft.price && uniqueImages.length > 0;
   };
 
   const getCompletionPercentage = () => {
     const fields = [
       draft.title,
       draft.price,
-      draft.images.length > 0,
+      uniqueImages.length > 0,
       draft.category,
       draft.condition,
       draft.meetingSpot,
@@ -59,21 +64,21 @@ export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardP
       {/* Preview Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Images */}
-        {draft.images.length > 0 && (
+        {uniqueImages.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Photos ({draft.images.length})</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Photos ({uniqueImages.length})</h3>
             <div className="grid grid-cols-2 gap-2">
-              {draft.images.slice(0, 4).map((img, idx) => (
+              {uniqueImages.slice(0, 4).map((img, idx) => (
                 <div key={idx} className="relative">
                   <img
                     src={img}
                     alt={`Preview ${idx + 1}`}
                     className="w-full h-20 object-cover rounded-lg"
                   />
-                  {idx === 3 && draft.images.length > 4 && (
+                  {idx === 3 && uniqueImages.length > 4 && (
                     <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
-                        +{draft.images.length - 4} more
+                        +{uniqueImages.length - 4} more
                       </span>
                     </div>
                   )}
@@ -146,8 +151,8 @@ export default function DraftCard({ draft, onPublish, isPublishing }: DraftCardP
               <CheckCircle size={14} className={draft.price ? 'text-green-500' : 'text-gray-300'} />
               <span>Price</span>
             </div>
-            <div className={`flex items-center space-x-2 ${draft.images.length > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-              <CheckCircle size={14} className={draft.images.length > 0 ? 'text-green-500' : 'text-gray-300'} />
+            <div className={`flex items-center space-x-2 ${uniqueImages.length > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+              <CheckCircle size={14} className={uniqueImages.length > 0 ? 'text-green-500' : 'text-gray-300'} />
               <span>At least 1 photo</span>
             </div>
           </div>

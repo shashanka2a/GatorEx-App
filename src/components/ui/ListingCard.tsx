@@ -42,6 +42,11 @@ export const ListingCard = memo(function ListingCard({
   const [favorited, setFavorited] = useState(isFavorited);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
 
+  // Deduplicate images to handle any database issues
+  const uniqueImages = listing.images.filter((image, index, self) => 
+    index === self.findIndex(img => img.url === image.url)
+  );
+
   useEffect(() => {
     setFavorited(isFavorited);
   }, [isFavorited]);
@@ -78,10 +83,10 @@ export const ListingCard = memo(function ListingCard({
     >
       {/* Image Section - Fixed Height */}
       <div className="relative h-48 flex-shrink-0 bg-gray-100">
-        {listing.images.length > 0 ? (
+        {uniqueImages.length > 0 ? (
           <>
             <ImageWithFallback
-              src={listing.images[0].url}
+              src={uniqueImages[0].url}
               alt={listing.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
@@ -133,10 +138,10 @@ export const ListingCard = memo(function ListingCard({
           </Badge>
         </div>
 
-        {listing.images.length > 1 && (
+        {uniqueImages.length > 1 && (
           <div className="absolute bottom-3 right-3">
             <Badge variant="secondary" className="bg-white text-black text-xs font-semibold shadow-lg border border-gray-200 px-2 py-1">
-              +{listing.images.length - 1} more
+              +{uniqueImages.length - 1} more
             </Badge>
           </div>
         )}

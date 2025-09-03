@@ -387,10 +387,22 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       }
 
       if (newImages.length > 0) {
-        setDraft(prev => ({ 
-          ...prev, 
-          images: [...prev.images, ...newImages] 
-        }));
+        setDraft(prev => {
+          // Filter out any duplicate images by comparing data URLs
+          const existingImages = prev.images;
+          const uniqueNewImages = newImages.filter(newImg => 
+            !existingImages.some(existingImg => existingImg === newImg)
+          );
+          
+          return { 
+            ...prev, 
+            images: [...existingImages, ...uniqueNewImages] 
+          };
+        });
+        
+        // Debug log to check for duplicates
+        console.log('New images being added:', newImages.length);
+        console.log('Total images after upload:', draft.images.length + newImages.length);
         
         addUserMessage(`Uploaded ${newImages.length} image(s)`, newImages);
         
@@ -413,14 +425,17 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const handlePublish = async () => {
     if (!canPublish()) return;
     
+    // Deduplicate images before publishing
+    const uniqueImages = [...new Set(draft.images)];
+    
     // Validate draft before sending
-    if (!draft.title || !draft.price || draft.images.length === 0) {
+    if (!draft.title || !draft.price || uniqueImages.length === 0) {
       addBotMessage("Missing required information. Please complete all fields before publishing.");
       return;
     }
     
     // Check total payload size
-    const totalImageSize = draft.images.reduce((total, img) => total + getImageSize(img), 0);
+    const totalImageSize = uniqueImages.reduce((total, img) => total + getImageSize(img), 0);
     const totalSizeMB = totalImageSize / (1024 * 1024);
     
     if (totalSizeMB > 2) { // 2MB total limit
@@ -428,14 +443,14 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       return;
     }
     
-    console.log('Publishing draft:', { ...draft, images: `${draft.images.length} images (${totalSizeMB.toFixed(1)}MB)` });
+    console.log('Publishing draft:', { ...draft, images: `${uniqueImages.length} unique images (${totalSizeMB.toFixed(1)}MB)` });
     
     setIsPublishing(true);
     try {
       const response = await fetch('/api/sell/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing: draft })
+        body: JSON.stringify({ listing: { ...draft, images: uniqueImages } })
       });
 
       if (response.status === 413) {
@@ -484,7 +499,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   };
 
   const canPublish = () => {
-    return draft.title && draft.price && draft.images.length > 0;
+    const uniqueImages = [...new Set(draft.images)];
+    return draft.title && draft.price && uniqueImages.length > 0;
   };
 
   const isComplete = () => {
@@ -514,8 +530,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     <div className="min-h-screen flex">
       {/* Chat Interface */}
       <div className="flex-1 flex flex-col max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b p-4 flex items-center justify-between">
+        {/* Header - Made Sticky */}
+        <div className="sticky top-0 z-10 bg-white shadow-sm border-b p-4 flex items-center justify-between backdrop-blur-sm bg-white/95">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => router.push('/buy')}
@@ -533,7 +549,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             {canPublish() && (
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <Eye size={16} />
                 <span>Preview</span>
@@ -554,7 +570,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white pt-6">
           {messages.map((message) => (
             <div
               key={message.id}

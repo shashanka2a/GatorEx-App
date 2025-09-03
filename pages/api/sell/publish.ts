@@ -117,13 +117,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    // Create images
+    // Create images - ensure no duplicates
     if (listing.images && listing.images.length > 0) {
-      const imageData = listing.images.map((imageUrl, index) => ({
+      // Remove duplicate image URLs
+      const uniqueImages = [...new Set(listing.images)];
+      
+      const imageData = uniqueImages.map((imageUrl, index) => ({
         url: imageUrl,
         filename: `image_${index + 1}`,
         listingId: newListing.id
       }));
+
+      console.log(`Creating ${imageData.length} unique images for listing ${newListing.id}`);
 
       await prisma.image.createMany({
         data: imageData

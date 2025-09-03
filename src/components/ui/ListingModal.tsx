@@ -42,6 +42,11 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
   const [isFavorited, setIsFavorited] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
   
+  // Deduplicate images to handle any database issues
+  const uniqueImages = listing.images.filter((image, index, self) => 
+    index === self.findIndex(img => img.url === image.url)
+  );
+  
   // Touch/swipe support
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -124,15 +129,15 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
 
   const nextImage = useCallback(() => {
     setCurrentImageIndex((prev) => 
-      prev === listing.images.length - 1 ? 0 : prev + 1
+      prev === uniqueImages.length - 1 ? 0 : prev + 1
     );
-  }, [listing.images.length]);
+  }, [uniqueImages.length]);
 
   const prevImage = useCallback(() => {
     setCurrentImageIndex((prev) => 
-      prev === 0 ? listing.images.length - 1 : prev - 1
+      prev === 0 ? uniqueImages.length - 1 : prev - 1
     );
-  }, [listing.images.length]);
+  }, [uniqueImages.length]);
 
   // Track view and check favorite status when modal opens
   useEffect(() => {
@@ -221,7 +226,7 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             {/* Image Section */}
             <div className="relative bg-gray-100">
-              {listing.images.length > 0 ? (
+              {uniqueImages.length > 0 ? (
                 <div 
                   className="relative h-96 lg:h-full min-h-[400px] group"
                   onTouchStart={onTouchStart}
@@ -229,14 +234,14 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                   onTouchEnd={onTouchEnd}
                 >
                   <ImageWithFallback
-                    src={listing.images[currentImageIndex].url}
-                    alt={`${listing.title} - Image ${currentImageIndex + 1} of ${listing.images.length}`}
+                    src={uniqueImages[currentImageIndex].url}
+                    alt={`${listing.title} - Image ${currentImageIndex + 1} of ${uniqueImages.length}`}
                     className="w-full h-full object-cover cursor-pointer select-none"
                     onClick={nextImage}
                     draggable={false}
                   />
                   
-                  {listing.images.length > 1 && (
+                  {uniqueImages.length > 1 && (
                     <>
                       {/* Navigation buttons */}
                       <button
@@ -262,12 +267,12 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                       
                       {/* Image counter */}
                       <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {currentImageIndex + 1} / {listing.images.length}
+                        {currentImageIndex + 1} / {uniqueImages.length}
                       </div>
                       
                       {/* Image indicators */}
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                        {listing.images.map((_, index) => (
+                        {uniqueImages.map((_, index) => (
                           <button
                             key={index}
                             onClick={(e) => {
