@@ -547,7 +547,7 @@ export default function EnhancedReferralsPage() {
                   
                   <p className="text-sm text-green-600 flex items-center">
                     <span className="mr-2">🎯</span>
-                    Start earning $5 per successful referral
+                    Start earning rewards for every successful referral
                   </p>
                 </>
               ) : (
@@ -563,15 +563,22 @@ export default function EnhancedReferralsPage() {
                   </div>
                   
                   <button
-                    onClick={fetchData}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                    onClick={() => {
+                      setLoading(true);
+                      fetchData();
+                    }}
+                    disabled={loading}
+                    className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:transform-none disabled:cursor-not-allowed"
                   >
-                    Generate My Referral Link
+                    {loading ? (
+                      <span className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate My Referral Link'
+                    )}
                   </button>
-                  
-                  <p className="text-sm text-gray-500 mt-4">
-                    🎯 Earn $5 for every successful referral
-                  </p>
                 </div>
               )
             ) : (
@@ -594,7 +601,7 @@ export default function EnhancedReferralsPage() {
                 </button>
                 
                 <p className="text-sm text-gray-500 mt-4">
-                  🎯 Earn $5 for every successful referral
+                  🎯 Start earning amazing rewards today
                 </p>
               </div>
             )}
