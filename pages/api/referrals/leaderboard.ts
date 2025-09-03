@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid period. Use "week" or "all"' });
     }
 
-    let leaderboard;
+    let leaderboard: any[] = [];
     try {
       leaderboard = await getLeaderboard(period as 'week' | 'all');
     } catch (leaderboardError) {
