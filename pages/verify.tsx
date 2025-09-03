@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -13,7 +13,15 @@ export default function VerifyPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // Get referral code from URL
+    if (router.query.ref && typeof router.query.ref === 'string') {
+      setReferralCode(router.query.ref);
+    }
+  }, [router.query]);
 
   const validateUFEmail = (email: string): boolean => {
     const ufDomains = ['@ufl.edu', '@gators.ufl.edu'];
@@ -75,12 +83,23 @@ export default function VerifyPage() {
           <div className="text-center mb-8">
             <Logo variant="svg" className="mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Sign In to GatorEx
+              {referralCode ? 'Join GatorEx! 🐊' : 'Sign In to GatorEx'}
             </h1>
             <p className="text-gray-600">
-              Enter your UF email to get a verification code
+              {referralCode 
+                ? "You've been invited to join the UF student marketplace" 
+                : 'Enter your UF email to get a verification code'
+              }
             </p>
           </div>
+
+          {referralCode && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-700 text-center">
+                🎉 <strong>You're invited!</strong> Join through this referral and start buying and selling with fellow Gators.
+              </p>
+            </div>
+          )}
 
           {!emailSent ? (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -158,10 +177,13 @@ export default function VerifyPage() {
               
               <button
                 onClick={() => {
-                  // Pass the email to login-otp page
+                  // Pass the email and referral code to login-otp page
                   const url = new URL('/login-otp', window.location.origin);
                   url.searchParams.set('email', email);
                   url.searchParams.set('step', 'code');
+                  if (referralCode) {
+                    url.searchParams.set('ref', referralCode);
+                  }
                   window.location.href = url.toString();
                 }}
                 className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors mt-4"
@@ -192,10 +214,20 @@ export default function VerifyPage() {
             </div>
           )}
 
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-700">
-              <strong>UF Students Only:</strong> GatorEx is exclusively for verified University of Florida students. Your email domain confirms your student status.
-            </p>
+          <div className="mt-6 space-y-3">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <strong>UF Students Only:</strong> GatorEx is exclusively for verified University of Florida students. Your email domain confirms your student status.
+              </p>
+            </div>
+            
+            {referralCode && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-700">
+                  <strong>Referral Bonus:</strong> By joining through this invitation, you and your friend will both earn rewards when you complete your first transaction!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json({
       hasAccount: true,
       referralCode: user.code,
-      referralLink: `${process.env.NEXTAUTH_URL || 'https://gatorex.com'}/login-otp?ref=${user.code}`,
+      referralLink: `${process.env.NEXTAUTH_URL || 'https://gatorex.com'}/verify?ref=${user.code}`,
       userName: user.name || 'User'
     });
 

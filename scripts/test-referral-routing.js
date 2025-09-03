@@ -21,7 +21,7 @@ async function testReferralRouting() {
     // Mock a referral code for testing
     const testCode = 'TEST123';
     const expectedBaseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const expectedRoute = '/login-otp';
+    const expectedRoute = '/verify';
     const expectedLink = `${expectedBaseUrl}${expectedRoute}?ref=${testCode}`;
     
     console.log(`✅ Expected referral link format: ${expectedLink}`);

@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('✅ Created referral code:', referralCode?.code);
       }
 
-      const referralLink = `${process.env.NEXTAUTH_URL}/login-otp?ref=${referralCode.code}`;
+      const referralLink = `${process.env.NEXTAUTH_URL}/verify?ref=${referralCode.code}`;
       
       return res.status(200).json({
         success: true,
