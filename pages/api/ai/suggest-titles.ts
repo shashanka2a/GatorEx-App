@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/server-auth-check';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -15,8 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const authResult = await checkApiAuthAndTerms(req, res);
     if (authResult.error) {
       return res.status(authResult.status).json({ 
-        error: authResult.error,
-        redirectTo: authResult.redirectTo 
+        error: authResult.error
       });
     }
 
@@ -31,7 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'AI service not configured' });
     }
 
-    console.log(`Generating title suggestions for user ${session.user.id}`);
+    const user = authResult.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    console.log(`Generating title suggestions for user ${user.id}`);
 
     const prompt = `
 Based on this image analysis of a marketplace item, generate 4 different title variations that would be appealing to college students:

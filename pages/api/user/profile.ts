@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/server-auth-check';
 import { prisma } from '../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,12 +17,14 @@ async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
     const authResult = await checkApiAuthAndTerms(req, res);
     if (authResult.error) {
       return res.status(authResult.status).json({ 
-        error: authResult.error,
-        redirectTo: authResult.redirectTo 
+        error: authResult.error
       });
     }
     
     const user = authResult.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
 
     const { name, phoneNumber } = req.body;
 
@@ -70,12 +72,14 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
     const authResult = await checkApiAuthAndTerms(req, res);
     if (authResult.error) {
       return res.status(authResult.status).json({ 
-        error: authResult.error,
-        redirectTo: authResult.redirectTo 
+        error: authResult.error
       });
     }
     
     const user = authResult.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
 
     // Fetch user profile data with listings in a single optimized query
     const userData = await prisma.user.findUnique({

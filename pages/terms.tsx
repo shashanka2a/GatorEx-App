@@ -105,7 +105,7 @@ export default function TermsOfService() {
 }
 
 function TermsAcceptanceForm() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -139,14 +139,20 @@ function TermsAcceptanceForm() {
       });
 
       if (response.ok) {
-        // After accepting terms, check if profile needs completion
-        if (session?.user?.profileCompleted === false) {
-          router.push('/complete-profile');
-        } else {
-          // Redirect back to where they came from or to buy page
-          const returnUrl = router.query.returnUrl as string || '/buy';
-          router.push(returnUrl);
-        }
+        // Force session refresh to get updated terms status
+        await update();
+        
+        // Small delay to ensure session update completes
+        setTimeout(() => {
+          // After accepting terms, check if profile needs completion
+          if (session?.user?.profileCompleted === false) {
+            router.push('/complete-profile');
+          } else {
+            // Redirect back to where they came from or to buy page
+            const returnUrl = router.query.returnUrl as string || '/buy';
+            router.push(returnUrl);
+          }
+        }, 100);
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to accept terms');

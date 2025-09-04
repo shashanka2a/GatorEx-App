@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/server-auth-check';
 import { ListingParser } from '../../../src/lib/ai/listingParser';
 
 // Configure API route for larger payloads (images)
@@ -20,8 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const authResult = await checkApiAuthAndTerms(req, res);
     if (authResult.error) {
       return res.status(authResult.status).json({ 
-        error: authResult.error,
-        redirectTo: authResult.redirectTo 
+        error: authResult.error
       });
     }
 
@@ -49,7 +48,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'AI vision service not configured' });
     }
 
-    console.log(`Analyzing image for user ${session.user.id}, size: ${imageSizeMB.toFixed(2)}MB`);
+    const user = authResult.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    console.log(`Analyzing image for user ${user.id}, size: ${imageSizeMB.toFixed(2)}MB`);
 
     const analysis = await ListingParser.analyzeImage(image);
 

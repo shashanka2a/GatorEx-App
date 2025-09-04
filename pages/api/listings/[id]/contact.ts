@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkApiAuthAndTerms } from '../../../../src/lib/auth/terms-check';
+import { checkApiAuthAndTerms } from '../../../../src/lib/auth/server-auth-check';
 import { prisma } from '../../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -12,12 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const authResult = await checkApiAuthAndTerms(req, res);
     if (authResult.error) {
       return res.status(authResult.status).json({ 
-        error: authResult.error,
-        redirectTo: authResult.redirectTo 
+        error: authResult.error
       });
     }
     
     const user = authResult.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
 
     const { id } = req.query;
 
