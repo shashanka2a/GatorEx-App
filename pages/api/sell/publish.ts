@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
 import { prisma } from '../../../src/lib/db/prisma';
 
 interface ListingData {
@@ -40,10 +39,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const authResult = await checkApiAuthAndTerms(req, res);
+    if (authResult.error) {
+      return res.status(authResult.status).json({ 
+        error: authResult.error,
+        redirectTo: authResult.redirectTo 
+      });
     }
+    
+    const user = authResult.user;
 
     const { listing } = req.body as { listing: ListingData };
 
@@ -66,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check rate limits
-    const userId = session.user.id;
+    const userId = user.id;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);

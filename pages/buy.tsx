@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { checkClientAuthAndTerms } from '../src/lib/auth/terms-check';
 import { Card } from '../src/components/ui/card';
 import { Button } from '../src/components/ui/button';
 import { Badge } from '../src/components/ui/badge';
@@ -30,8 +31,10 @@ interface Listing {
 }
 
 export default function BuyPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  // Buy page is public - no auth checks needed
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

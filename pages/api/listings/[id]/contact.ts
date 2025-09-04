@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]';
+import { checkApiAuthAndTerms } from '../../../../src/lib/auth/terms-check';
 import { prisma } from '../../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -10,11 +9,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session?.user?.id) {
-      return res.status(401).json({ error: 'Authentication required to view contact details' });
+    const authResult = await checkApiAuthAndTerms(req, res);
+    if (authResult.error) {
+      return res.status(authResult.status).json({ 
+        error: authResult.error,
+        redirectTo: authResult.redirectTo 
+      });
     }
+    
+    const user = authResult.user;
 
     const { id } = req.query;
 
@@ -53,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await prisma.contactEvent.create({
         data: {
           listingId: listing.id,
-          contacterId: session.user.id,
+          contacterId: user.id,
           contactType: 'VIEW_CONTACT'
         }
       });

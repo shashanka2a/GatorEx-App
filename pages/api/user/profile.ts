@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
 import { prisma } from '../../../src/lib/db/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,11 +14,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session?.user?.id) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const authResult = await checkApiAuthAndTerms(req, res);
+    if (authResult.error) {
+      return res.status(authResult.status).json({ 
+        error: authResult.error,
+        redirectTo: authResult.redirectTo 
+      });
     }
+    
+    const user = authResult.user;
 
     const { name, phoneNumber } = req.body;
 
@@ -34,7 +37,7 @@ async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
 
     // Update user profile
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: {
         name: name.trim(),
         phoneNumber: phoneNumber?.trim() || null,
@@ -64,15 +67,19 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session?.user?.id) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const authResult = await checkApiAuthAndTerms(req, res);
+    if (authResult.error) {
+      return res.status(authResult.status).json({ 
+        error: authResult.error,
+        redirectTo: authResult.redirectTo 
+      });
     }
+    
+    const user = authResult.user;
 
     // Fetch user profile data with listings in a single optimized query
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
       select: {
         id: true,
         name: true,
@@ -128,11 +135,11 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
       }
     });
 
-    if (!user) {
+    if (!userData) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const listings = user.listings;
+    const listings = userData.listings;
 
     // Calculate user stats
     const publishedListings = listings.filter(l => l.status === 'PUBLISHED');
@@ -146,20 +153,20 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
     };
     
     const profileData = {
-      id: user.id,
-      name: user.name || 'Gator Student',
-      phoneNumber: user.phoneNumber,
-      ufEmail: user.email,
-      verified: user.ufEmailVerified,
-      profileCompleted: user.profileCompleted,
-      trustLevel: getTrustLevel(user.trustScore, publishedListings.length),
-      trustScore: user.trustScore,
+      id: userData.id,
+      name: userData.name || 'Gator Student',
+      phoneNumber: userData.phoneNumber,
+      ufEmail: userData.email,
+      verified: userData.ufEmailVerified,
+      profileCompleted: userData.profileCompleted,
+      trustLevel: getTrustLevel(userData.trustScore, publishedListings.length),
+      trustScore: userData.trustScore,
       rating: 4.8, // Mock rating - implement reviews system later
       totalSales: publishedListings.length,
       responseTime: '2h', // Mock - implement messaging system later
       totalViews,
-      joinedAt: user.createdAt,
-      favorites: user.favorites?.map(fav => ({
+      joinedAt: userData.createdAt,
+      favorites: userData.favorites?.map(fav => ({
         id: fav.listing.id,
         title: fav.listing.title,
         image: fav.listing.images && fav.listing.images.length > 0 ? fav.listing.images[0].url : null

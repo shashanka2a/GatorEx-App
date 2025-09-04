@@ -2,8 +2,10 @@ import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './api/auth/[...nextauth]';
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import { checkClientAuthAndTerms } from '../src/lib/auth/terms-check';
 import SellChatWizard from '../src/components/sell/SellChatWizard';
 import { prisma } from '../src/lib/db/prisma';
 
@@ -17,7 +19,22 @@ interface SellPageProps {
 }
 
 export default function SellPage({ userStats }: SellPageProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect if not fully authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (status === 'loading') return;
+      
+      const result = await checkClientAuthAndTerms();
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+      }
+    };
+    
+    checkAuth();
+  }, [status, router]);
 
   return (
     <>
@@ -43,7 +60,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     if (!session || !session.user?.id) {
       return {
         redirect: {
-          destination: '/login-otp',
+          destination: '/verify',
           permanent: false,
         },
       };
@@ -56,6 +73,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
         ufEmailVerified: true, 
         profileCompleted: true,
         termsAccepted: true,
+        privacyAccepted: true,
         id: true
       }
     });
@@ -69,16 +87,18 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
       };
     }
 
-    if (!user?.termsAccepted) {
+    // Check terms acceptance
+    if (!user.termsAccepted || !user.privacyAccepted) {
       return {
         redirect: {
-          destination: '/terms?returnUrl=/sell',
+          destination: '/terms',
           permanent: false,
         },
       };
     }
 
-    if (!user?.profileCompleted) {
+    // Check profile completion
+    if (!user.profileCompleted) {
       return {
         redirect: {
           destination: '/complete-profile',
@@ -86,6 +106,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
         },
       };
     }
+
+
 
     // Get user's listing stats for rate limiting
     const today = new Date();

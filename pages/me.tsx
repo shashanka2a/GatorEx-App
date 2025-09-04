@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import { checkClientAuthAndTerms } from '../src/lib/auth/terms-check';
 import { 
   User, 
   Mail, 
@@ -70,15 +71,21 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (status === 'loading') return;
+    const checkAuth = async () => {
+      if (status === 'loading') return;
+      
+      const result = await checkClientAuthAndTerms();
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+      
+      // If we get here, user is fully authenticated
+      fetchUserProfile();
+    };
     
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-
-    fetchUserProfile();
-  }, [session, status]);
+    checkAuth();
+  }, [status, router]);
 
   const fetchUserProfile = async () => {
     try {

@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { checkApiAuthAndTerms } from '../../../src/lib/auth/terms-check';
 import { ListingParser } from '../../../src/lib/ai/listingParser';
 
 // Configure API route for larger payloads (images)
@@ -18,9 +17,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const authResult = await checkApiAuthAndTerms(req, res);
+    if (authResult.error) {
+      return res.status(authResult.status).json({ 
+        error: authResult.error,
+        redirectTo: authResult.redirectTo 
+      });
     }
 
     const { image } = req.body;
