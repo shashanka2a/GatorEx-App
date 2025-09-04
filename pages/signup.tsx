@@ -15,6 +15,18 @@ export default function SignUp() {
     // Get referral code from URL
     if (router.query.ref && typeof router.query.ref === 'string') {
       setReferralCode(router.query.ref);
+      
+      // Set referral cookie for 30 days
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 30);
+      document.cookie = `gex_ref=${router.query.ref}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      
+      // Also log the referral click
+      fetch('/api/referrals/click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: router.query.ref })
+      }).catch(err => console.error('Failed to log referral click:', err));
     }
   }, [router.query]);
 
