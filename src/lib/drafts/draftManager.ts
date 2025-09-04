@@ -347,6 +347,51 @@ export class DraftManager {
     }
   }
 
+  public markSessionComplete(): void {
+    try {
+      const session = this.getCurrentSession();
+      session.isActive = false;
+      session.metadata.completionPercentage = 100;
+      
+      // Save the completed session
+      localStorage.setItem(
+        `${DraftManager.STORAGE_PREFIX}${this.sessionId}`,
+        JSON.stringify(session)
+      );
+    } catch (error) {
+      console.error('Error marking session complete:', error);
+    }
+  }
+
+  public cleanupCurrentSession(): void {
+    try {
+      // Remove current session and its messages
+      localStorage.removeItem(`${DraftManager.STORAGE_PREFIX}${this.sessionId}`);
+      localStorage.removeItem(`${DraftManager.MESSAGES_PREFIX}${this.sessionId}`);
+      
+      console.log('Cleaned up current session:', this.sessionId);
+    } catch (error) {
+      console.error('Error cleaning up current session:', error);
+    }
+  }
+
+  public cleanupAllUserDrafts(): void {
+    try {
+      const allKeys = Object.keys(localStorage).filter(key => 
+        (key.startsWith(DraftManager.STORAGE_PREFIX) || key.startsWith(DraftManager.MESSAGES_PREFIX)) 
+        && key.includes(this.userId)
+      );
+
+      for (const key of allKeys) {
+        localStorage.removeItem(key);
+      }
+      
+      console.log(`Cleaned up ${allKeys.length} draft-related items for user ${this.userId}`);
+    } catch (error) {
+      console.error('Error cleaning up all user drafts:', error);
+    }
+  }
+
   public getAllUserDrafts(): DraftSession[] {
     try {
       const allKeys = Object.keys(localStorage).filter(key => 

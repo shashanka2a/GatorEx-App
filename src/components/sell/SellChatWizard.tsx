@@ -10,6 +10,8 @@ import DraftStatusIndicator from './DraftStatusIndicator';
 import SmartListingInput from './SmartListingInput';
 import AISuggestions from './AISuggestions';
 import ImageFirstFlow from './ImageFirstFlow';
+import LocationAutocomplete from '../ui/LocationAutocomplete';
+import MeetingSpotInput from './MeetingSpotInput';
 
 // Types moved to separate file
 
@@ -45,6 +47,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [aiConfidence, setAiConfidence] = useState<number>(0);
   const [showImageFirst, setShowImageFirst] = useState(true);
+  const [showMeetingSpotInput, setShowMeetingSpotInput] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
   
   const [draft, setDraft] = useState<ListingDraft>({
     title: '',
@@ -60,13 +64,13 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const draftManagerRef = useRef<DraftManager | null>(null);
 
-  // Enhanced auto-save hook
+  // Enhanced auto-save hook - disabled after publishing
   const { save: saveDraftHook, isOnline, lastSaved } = useDraftAutoSave({
     userId: userId || '',
     draft,
     step,
     messages,
-    enabled: !!userId && !showDraftResume
+    enabled: !!userId && !showDraftResume && !isPublished
   });
 
   const scrollToBottom = () => {
@@ -311,6 +315,28 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     setStep(0);
   }, [addBotMessage]);
 
+  const addUserMessage = useCallback((text: string, images?: string[]) => {
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      text,
+      isBot: false,
+      timestamp: new Date(),
+      images
+    }]);
+  }, []);
+
+  const handleMeetingSpotSelect = useCallback((location: string) => {
+    setDraft(prev => ({ ...prev, meetingSpot: location }));
+    setShowMeetingSpotInput(false);
+    
+    addUserMessage(`📍 ${location}`);
+    addBotMessage(
+      `Perfect! You've chosen "${location}" as your meeting spot.\n\n` +
+      `Finally, add a description with any additional details about your ${draft.title}. Include condition details, why you're selling, etc.`
+    );
+    setStep(6);
+  }, [addBotMessage, addUserMessage, draft.title]);
+
   useEffect(() => {
     // Load existing draft if any
     loadDraft();
@@ -348,15 +374,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     }
   }, [draft, step, messages]);
 
-  const addUserMessage = (text: string, images?: string[]) => {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      text,
-      isBot: false,
-      timestamp: new Date(),
-      images
-    }]);
-  };
+
 
   const validatePrice = (priceText: string): number | null => {
     // Remove $ and any non-numeric characters except decimal point
@@ -454,45 +472,18 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
         }
         
         setDraft(prev => ({ ...prev, condition: userInput }));
-        const meetingSpotButtons = MEETING_SPOTS.map(spot => ({
-          text: spot,
-          value: spot
-        }));
-        meetingSpotButtons.push({ text: 'Other (Custom)', value: 'Other' });
         
-        addBotMessage(`Great! Where would you like to meet buyers? Choose from these popular campus locations:`, 1000, meetingSpotButtons);
+        addBotMessage(`Great! Now let's choose where you'd like to meet buyers. I'll help you find the perfect location:`, 1000);
+        setShowMeetingSpotInput(true);
         setStep(5);
         break;
       
-      case 5: // Meeting spot
-        // Make meeting spot validation more flexible
-        const normalizedInput = userInput.toLowerCase().trim();
-        let matchedSpot = null;
-        
-        // Check if input is a number (1-9)
-        const spotNumber = parseInt(normalizedInput);
-        if (!isNaN(spotNumber) && spotNumber >= 1 && spotNumber <= MEETING_SPOTS.length) {
-          matchedSpot = MEETING_SPOTS[spotNumber - 1];
-        } else {
-          // Check for text match
-          matchedSpot = MEETING_SPOTS.find(spot => 
-            spot.toLowerCase().includes(normalizedInput) || 
-            normalizedInput.includes(spot.toLowerCase())
-          );
-        }
-        
-        if (!matchedSpot && normalizedInput !== 'other') {
-          const meetingSpotButtons = MEETING_SPOTS.map(spot => ({
-            text: spot,
-            value: spot
-          }));
-          meetingSpotButtons.push({ text: 'Other (Custom)', value: 'Other' });
-          addBotMessage(`Please choose one of these meeting spots:`, 1000, meetingSpotButtons);
-          return;
-        }
-        
-        setDraft(prev => ({ ...prev, meetingSpot: matchedSpot || userInput }));
-        addBotMessage(`Perfect! Finally, add a description with any additional details about your ${draft.title}. Include condition details, why you're selling, etc.`);
+      case 5: // Meeting spot - handled by MeetingSpotInput component
+        // This case is now handled by the MeetingSpotInput component
+        // If user types instead of using the component, treat it as a direct input
+        setDraft(prev => ({ ...prev, meetingSpot: userInput.trim() }));
+        setShowMeetingSpotInput(false);
+        addBotMessage(`Perfect! You've chosen "${userInput.trim()}" as your meeting spot.\n\nFinally, add a description with any additional details about your ${draft.title}. Include condition details, why you're selling, etc.`);
         setStep(6);
         break;
       
@@ -675,13 +666,29 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       const data = await response.json();
       
       if (response.ok) {
-        // Clear draft from localStorage
+        // Clear all draft data using DraftManager
+        if (userId && draftManagerRef.current) {
+          try {
+            // Mark current session as complete
+            draftManagerRef.current.markSessionComplete();
+            
+            // Clean up ALL user drafts after successful publish
+            draftManagerRef.current.cleanupAllUserDrafts();
+          } catch (error) {
+            console.error('Error cleaning up drafts after publish:', error);
+          }
+        }
+        
+        // Clear legacy localStorage items as fallback
         if (userId) {
           localStorage.removeItem(`gatorex_draft_${userId}`);
           localStorage.removeItem(`gatorex_draft_step_${userId}`);
         }
         
         addBotMessage(`�� Congratulations! Your listing "${draft.title}" is now live on GatorEx!\n\nListing ID: ${data.listing.id}\nYour item will automatically expire in 14 days.\n\nRedirecting you to the marketplace to see your listing...`);
+        
+        // Mark as published to stop auto-save
+        setIsPublished(true);
         
         // Reset for new listing
         setDraft({
@@ -963,6 +970,19 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   <span className="text-xs text-gray-500 ml-2">GatorBot is typing...</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Meeting Spot Input */}
+          {showMeetingSpotInput && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%]">
+                <MeetingSpotInput
+                  onSubmit={handleMeetingSpotSelect}
+                  onCancel={() => setShowMeetingSpotInput(false)}
+                  disabled={isPublishing}
+                />
               </div>
             </div>
           )}
