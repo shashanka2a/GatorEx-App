@@ -9,6 +9,7 @@ interface ImageFirstFlowProps {
     category: string;
     condition: string;
     description: string;
+    meetingSpot: string;
     images: string[];
     confidence: number;
     suggestions: string[];
@@ -157,6 +158,7 @@ export default function ImageFirstFlow({ onComplete, onError, disabled = false }
           category: parsed.category || imageAnalysis?.category || 'Other',
           condition: parsed.condition || imageAnalysis?.condition || 'Good',
           description: parsed.description || imageAnalysis?.description || '',
+          meetingSpot: 'Reitz Union', // Default campus location
           images: [uploadedImage],
           confidence: Math.min(parsed.confidence, imageAnalysis?.confidence || 0),
           suggestions: [...(parsed.suggestions || []), ...(imageAnalysis?.suggestions || [])]
@@ -184,6 +186,7 @@ export default function ImageFirstFlow({ onComplete, onError, disabled = false }
       category: imageAnalysis.category,
       condition: imageAnalysis.condition,
       description: imageAnalysis.description,
+      meetingSpot: 'Reitz Union', // Default campus location
       images: [uploadedImage],
       confidence: imageAnalysis.confidence,
       suggestions: imageAnalysis.suggestions

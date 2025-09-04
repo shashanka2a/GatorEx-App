@@ -238,6 +238,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       category: data.category,
       condition: data.condition,
       description: data.description,
+      meetingSpot: data.meetingSpot || prev.meetingSpot,
       images: data.images
     }));
 
