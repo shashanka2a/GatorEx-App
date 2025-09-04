@@ -1,0 +1,474 @@
+{
+    "chatFlow": {
+        "sessionId": "sell_session_12345",
+        "userId": "user_abc123",
+        "startTime": "2025-01-15T10:30:00Z",
+        "endTime": "2025-01-15T10:45:00Z",
+        "status": "completed",
+        "listingId": "listing_xyz789",
+        "conversation": [
+            {
+                "step": 0,
+                "timestamp": "2025-01-15T10:30:00Z",
+                "bot": {
+                    "message": "Hi! I'm GatorBot 🐊 Let's create your listing step by step. What would you like to sell?",
+                    "isBot": true,
+                    "messageId": "msg_001"
+                },
+                "seller": {
+                    "message": "iPhone 14 Pro Max 256GB Space Black",
+                    "isBot": false,
+                    "messageId": "msg_002",
+                    "timestamp": "2025-01-15T10:30:45Z"
+                },
+                "validation": {
+                    "isValid": true,
+                    "length": 35,
+                    "requirements": {
+                        "minLength": 3,
+                        "maxLength": 100,
+                        "passed": true
+                    }
+                },
+                "nextStep": 1
+            },
+            {
+                "step": 1,
+                "timestamp": "2025-01-15T10:30:46Z",
+                "bot": {
+                    "message": "Great! \"iPhone 14 Pro Max 256GB Space Black\" sounds good. Now, what's your asking price? Please enter a number (e.g., 25, 50.99).",
+                    "isBot": true,
+                    "messageId": "msg_003"
+                },
+                "seller": {
+                    "message": "$850",
+                    "isBot": false,
+                    "messageId": "msg_004",
+                    "timestamp": "2025-01-15T10:31:15Z"
+                },
+                "validation": {
+                    "isValid": true,
+                    "rawInput": "$850",
+                    "cleanedPrice": "850",
+                    "parsedPrice": 850.00,
+                    "requirements": {
+                        "minPrice": 0.01,
+                        "maxPrice": 10000,
+                        "passed": true
+                    }
+                },
+                "nextStep": 2
+            },
+            {
+                "step": 2,
+                "timestamp": "2025-01-15T10:31:16Z",
+                "bot": {
+                    "message": "Perfect! $850.00 it is. Now I need at least one photo of your item. Click the upload button to add photos.",
+                    "isBot": true,
+                    "messageId": "msg_005"
+                },
+                "seller": {
+                    "action": "image_upload",
+                    "images": [
+                        {
+                            "originalSize": "2.1MB",
+                            "compressedSize": "450KB",
+                            "dimensions": "800x600",
+                            "format": "JPEG",
+                            "dataUrl": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                            "uploadTime": "2025-01-15T10:32:00Z"
+                        },
+                        {
+                            "originalSize": "1.8MB",
+                            "compressedSize": "380KB",
+                            "dimensions": "800x600",
+                            "format": "JPEG",
+                            "dataUrl": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                            "uploadTime": "2025-01-15T10:32:15Z"
+                        },
+                        {
+                            "originalSize": "2.3MB",
+                            "compressedSize": "420KB",
+                            "dimensions": "800x600",
+                            "format": "JPEG",
+                            "dataUrl": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                            "uploadTime": "2025-01-15T10:32:30Z"
+                        }
+                    ],
+                    "messageId": "msg_006",
+                    "timestamp": "2025-01-15T10:32:30Z"
+                },
+                "validation": {
+                    "isValid": true,
+                    "imageCount": 3,
+                    "totalSize": "1.25MB",
+                    "requirements": {
+                        "minImages": 1,
+                        "maxImages": 5,
+                        "maxSizePerImage": "500KB",
+                        "maxTotalSize": "2MB",
+                        "passed": true
+                    }
+                },
+                "nextStep": 3
+            },
+            {
+                "step": 3,
+                "timestamp": "2025-01-15T10:32:31Z",
+                "bot": {
+                    "message": "Perfect! 3 photo(s) uploaded and compressed. You now have all the required information. Let's add some optional details to make your listing even better! What category best describes your iPhone 14 Pro Max 256GB Space Black?",
+                    "isBot": true,
+                    "messageId": "msg_007",
+                    "buttons": [
+                        {
+                            "text": "Electronics",
+                            "value": "Electronics"
+                        },
+                        {
+                            "text": "Textbooks",
+                            "value": "Textbooks"
+                        },
+                        {
+                            "text": "Furniture",
+                            "value": "Furniture"
+                        },
+                        {
+                            "text": "Clothing",
+                            "value": "Clothing"
+                        },
+                        {
+                            "text": "Sports & Recreation",
+                            "value": "Sports & Recreation"
+                        },
+                        {
+                            "text": "Home & Garden",
+                            "value": "Home & Garden"
+                        },
+                        {
+                            "text": "Transportation",
+                            "value": "Transportation"
+                        },
+                        {
+                            "text": "Services",
+                            "value": "Services"
+                        },
+                        {
+                            "text": "Other",
+                            "value": "Other"
+                        }
+                    ]
+                },
+                "seller": {
+                    "message": "Electronics",
+                    "isBot": false,
+                    "messageId": "msg_008",
+                    "timestamp": "2025-01-15T10:32:45Z",
+                    "selectedButton": true
+                },
+                "validation": {
+                    "isValid": true,
+                    "selectedCategory": "Electronics",
+                    "requirements": {
+                        "validCategory": true,
+                        "passed": true
+                    }
+                },
+                "nextStep": 4
+            },
+            {
+                "step": 4,
+                "timestamp": "2025-01-15T10:32:46Z",
+                "bot": {
+                    "message": "Got it! Now, what's the condition of your iPhone 14 Pro Max 256GB Space Black?",
+                    "isBot": true,
+                    "messageId": "msg_009",
+                    "buttons": [
+                        {
+                            "text": "New",
+                            "value": "New"
+                        },
+                        {
+                            "text": "Like New",
+                            "value": "Like New"
+                        },
+                        {
+                            "text": "Good",
+                            "value": "Good"
+                        },
+                        {
+                            "text": "Fair",
+                            "value": "Fair"
+                        },
+                        {
+                            "text": "Poor",
+                            "value": "Poor"
+                        }
+                    ]
+                },
+                "seller": {
+                    "message": "Like New",
+                    "isBot": false,
+                    "messageId": "msg_010",
+                    "timestamp": "2025-01-15T10:33:00Z",
+                    "selectedButton": true
+                },
+                "validation": {
+                    "isValid": true,
+                    "selectedCondition": "Like New",
+                    "requirements": {
+                        "validCondition": true,
+                        "passed": true
+                    }
+                },
+                "nextStep": 5
+            },
+            {
+                "step": 5,
+                "timestamp": "2025-01-15T10:33:01Z",
+                "bot": {
+                    "message": "Great! Where would you like to meet buyers? Choose from these popular campus locations:",
+                    "isBot": true,
+                    "messageId": "msg_011",
+                    "buttons": [
+                        {
+                            "text": "Reitz Union",
+                            "value": "Reitz Union"
+                        },
+                        {
+                            "text": "Library West",
+                            "value": "Library West"
+                        },
+                        {
+                            "text": "Turlington Plaza",
+                            "value": "Turlington Plaza"
+                        },
+                        {
+                            "text": "Student Recreation Center",
+                            "value": "Student Recreation Center"
+                        },
+                        {
+                            "text": "Broward Dining",
+                            "value": "Broward Dining"
+                        },
+                        {
+                            "text": "Gator Corner Dining Center",
+                            "value": "Gator Corner Dining Center"
+                        },
+                        {
+                            "text": "Plaza of the Americas",
+                            "value": "Plaza of the Americas"
+                        },
+                        {
+                            "text": "Marston Science Library",
+                            "value": "Marston Science Library"
+                        },
+                        {
+                            "text": "Other (Custom)",
+                            "value": "Other"
+                        }
+                    ]
+                },
+                "seller": {
+                    "message": "Reitz Union",
+                    "isBot": false,
+                    "messageId": "msg_012",
+                    "timestamp": "2025-01-15T10:33:15Z",
+                    "selectedButton": true
+                },
+                "validation": {
+                    "isValid": true,
+                    "selectedMeetingSpot": "Reitz Union",
+                    "requirements": {
+                        "validLocation": true,
+                        "passed": true
+                    }
+                },
+                "nextStep": 6
+            },
+            {
+                "step": 6,
+                "timestamp": "2025-01-15T10:33:16Z",
+                "bot": {
+                    "message": "Perfect! Finally, add a description with any additional details about your iPhone 14 Pro Max 256GB Space Black. Include condition details, why you're selling, etc.",
+                    "isBot": true,
+                    "messageId": "msg_013"
+                },
+                "seller": {
+                    "message": "Excellent condition iPhone 14 Pro Max in Space Black with 256GB storage. Used for only 6 months with a case and screen protector since day one. No scratches, dents, or damage. Battery health is at 98%. Includes original box, charger, and unused EarPods. Selling because I'm upgrading to iPhone 15 Pro. Perfect for students who want a premium phone at a great price!",
+                    "isBot": false,
+                    "messageId": "msg_014",
+                    "timestamp": "2025-01-15T10:34:30Z"
+                },
+                "validation": {
+                    "isValid": true,
+                    "length": 398,
+                    "requirements": {
+                        "minLength": 10,
+                        "maxLength": 1000,
+                        "passed": true
+                    }
+                },
+                "nextStep": 7
+            },
+            {
+                "step": 7,
+                "timestamp": "2025-01-15T10:34:31Z",
+                "bot": {
+                    "message": "Excellent! Your listing is complete. You can preview it and publish when ready!",
+                    "isBot": true,
+                    "messageId": "msg_015"
+                },
+                "seller": {
+                    "action": "publish_listing",
+                    "timestamp": "2025-01-15T10:35:00Z"
+                },
+                "publishResult": {
+                    "success": true,
+                    "listingId": "listing_xyz789",
+                    "message": "🎉 Congratulations! Your listing \"iPhone 14 Pro Max 256GB Space Black\" is now live on GatorEx!\n\nListing ID: listing_xyz789\nYour item will automatically expire in 14 days.\n\nRedirecting you to the marketplace to see your listing...",
+                    "expiresAt": "2025-01-29T10:35:00Z"
+                }
+            }
+        ],
+        "finalListing": {
+            "id": "listing_xyz789",
+            "title": "iPhone 14 Pro Max 256GB Space Black",
+            "price": 850.00,
+            "category": "Electronics",
+            "condition": "Like New",
+            "meetingSpot": "Reitz Union",
+            "description": "Excellent condition iPhone 14 Pro Max in Space Black with 256GB storage. Used for only 6 months with a case and screen protector since day one. No scratches, dents, or damage. Battery health is at 98%. Includes original box, charger, and unused EarPods. Selling because I'm upgrading to iPhone 15 Pro. Perfect for students who want a premium phone at a great price!",
+            "images": [
+                {
+                    "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                    "filename": "image_1",
+                    "size": "450KB"
+                },
+                {
+                    "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                    "filename": "image_2",
+                    "size": "380KB"
+                },
+                {
+                    "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                    "filename": "image_3",
+                    "size": "420KB"
+                }
+            ],
+            "status": "PUBLISHED",
+            "createdAt": "2025-01-15T10:35:00Z",
+            "expiresAt": "2025-01-29T10:35:00Z",
+            "userId": "user_abc123"
+        },
+        "draftSaves": [
+            {
+                "step": 1,
+                "timestamp": "2025-01-15T10:30:46Z",
+                "data": {
+                    "title": "iPhone 14 Pro Max 256GB Space Black",
+                    "price": null,
+                    "images": [],
+                    "category": "",
+                    "condition": "",
+                    "meetingSpot": "",
+                    "description": ""
+                }
+            },
+            {
+                "step": 2,
+                "timestamp": "2025-01-15T10:31:16Z",
+                "data": {
+                    "title": "iPhone 14 Pro Max 256GB Space Black",
+                    "price": 850.00,
+                    "images": [],
+                    "category": "",
+                    "condition": "",
+                    "meetingSpot": "",
+                    "description": ""
+                }
+            },
+            {
+                "step": 3,
+                "timestamp": "2025-01-15T10:32:31Z",
+                "data": {
+                    "title": "iPhone 14 Pro Max 256GB Space Black",
+                    "price": 850.00,
+                    "images": [
+                        "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                        "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                        "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                    ],
+                    "category": "",
+                    "condition": "",
+                    "meetingSpot": "",
+                    "description": ""
+                }
+            }
+        ],
+        "analytics": {
+            "totalSteps": 7,
+            "completionTime": "15 minutes",
+            "backtrackCount": 0,
+            "validationErrors": 0,
+            "imageUploadTime": "45 seconds",
+            "draftSaveCount": 6,
+            "buttonClickCount": 3,
+            "textInputCount": 4
+        }
+    },
+    "alternativeFlows": {
+        "priceValidationError": {
+            "step": 1,
+            "seller": {
+                "message": "DM for price",
+                "isBot": false
+            },
+            "bot": {
+                "message": "Please enter a valid price between $0.01 and $10,000 (e.g., \"25\" or \"50.99\"). No \"DM for price\" - buyers need to see the price upfront!",
+                "isBot": true,
+                "validationError": true
+            }
+        },
+        "titleTooShort": {
+            "step": 0,
+            "seller": {
+                "message": "TV",
+                "isBot": false
+            },
+            "bot": {
+                "message": "Please provide a more descriptive title (at least 3 characters).",
+                "isBot": true,
+                "validationError": true
+            }
+        },
+        "customMeetingSpot": {
+            "step": 5,
+            "seller": {
+                "message": "Other",
+                "isBot": false,
+                "selectedButton": true
+            },
+            "bot": {
+                "message": "Please specify your preferred meeting location:",
+                "isBot": true,
+                "awaitingCustomInput": true
+            },
+            "seller": {
+                "message": "Starbucks on University Ave",
+                "isBot": false
+            }
+        },
+        "restartCommand": {
+            "anyStep": true,
+            "seller": {
+                "message": "restart",
+                "isBot": false
+            },
+            "bot": {
+                "message": "Let's start over! What would you like to sell?",
+                "isBot": true,
+                "resetToStep": 0
+            }
+        }
+    }
+}
