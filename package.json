@@ -22,6 +22,7 @@
     "test:auth": "node scripts/test-auth-system.js",
     "test:ai": "node scripts/test-ai-parsing.js",
     "test:categories": "node scripts/test-comprehensive-categorization.js",
+    "test:drafts": "node scripts/test-draft-resume.js",
     "setup:turso": "node scripts/setup-turso.js",
     "setup:turso-prod": "node scripts/setup-turso-production.js",
     "push:schema": "node scripts/push-schema-to-turso.js",

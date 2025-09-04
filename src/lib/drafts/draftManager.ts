@@ -178,34 +178,47 @@ export class DraftManager {
     messages: Message[];
     shouldResume: boolean;
   }> {
-    const recentDraft = this.getMostRecentDraft();
-    
-    if (!recentDraft) {
+    try {
+      const recentDraft = this.getMostRecentDraft();
+      
+      if (!recentDraft) {
+        return { session: null, messages: [], shouldResume: false };
+      }
+
+      // Validate draft structure
+      if (!recentDraft.draft || typeof recentDraft.draft !== 'object') {
+        console.error('Invalid draft structure');
+        return { session: null, messages: [], shouldResume: false };
+      }
+
+      // Check if draft is recent enough to resume (within 7 days)
+      const lastSavedTime = new Date(recentDraft.lastSaved).getTime();
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      const shouldResume = lastSavedTime > sevenDaysAgo && recentDraft.isActive;
+
+      // Load messages with better error handling
+      let messages: Message[] = [];
+      try {
+        const savedMessages = localStorage.getItem(`${DraftManager.MESSAGES_PREFIX}${recentDraft.id}`);
+        if (savedMessages) {
+          const parsedMessages = JSON.parse(savedMessages);
+          messages = Array.isArray(parsedMessages) ? parsedMessages : [];
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        messages = [];
+      }
+
+      // Update session ID to continue with this draft
+      if (shouldResume) {
+        this.sessionId = recentDraft.id;
+      }
+
+      return { session: recentDraft, messages, shouldResume };
+    } catch (error) {
+      console.error('Error in loadMostRecentDraft:', error);
       return { session: null, messages: [], shouldResume: false };
     }
-
-    // Check if draft is recent enough to resume (within 7 days)
-    const lastSavedTime = new Date(recentDraft.lastSaved).getTime();
-    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-    const shouldResume = lastSavedTime > sevenDaysAgo && recentDraft.isActive;
-
-    // Load messages
-    let messages: Message[] = [];
-    try {
-      const savedMessages = localStorage.getItem(`${DraftManager.MESSAGES_PREFIX}${recentDraft.id}`);
-      if (savedMessages) {
-        messages = JSON.parse(savedMessages);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-
-    // Update session ID to continue with this draft
-    if (shouldResume) {
-      this.sessionId = recentDraft.id;
-    }
-
-    return { session: recentDraft, messages, shouldResume };
   }
 
   private createNewSession(): DraftSession {
@@ -303,6 +316,35 @@ export class DraftManager {
       clearInterval(this.autoSaveTimer);
     }
     this.forceSave();
+  }
+
+  public cleanupCorruptedDrafts(): void {
+    try {
+      const allKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith(DraftManager.STORAGE_PREFIX) && key.includes(this.userId)
+      );
+
+      for (const key of allKeys) {
+        try {
+          const session = JSON.parse(localStorage.getItem(key) || '{}');
+          
+          // Check if session is valid
+          if (!session.draft || !session.userId || !session.id) {
+            console.log('Removing corrupted draft:', key);
+            localStorage.removeItem(key);
+            
+            // Also remove associated messages
+            const messageKey = `${DraftManager.MESSAGES_PREFIX}${session.id}`;
+            localStorage.removeItem(messageKey);
+          }
+        } catch (error) {
+          console.log('Removing unparseable draft:', key);
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up corrupted drafts:', error);
+    }
   }
 
   public getAllUserDrafts(): DraftSession[] {

@@ -112,6 +112,9 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     }
     
     try {
+      // Clean up any corrupted drafts first
+      draftManagerRef.current.cleanupCorruptedDrafts();
+      
       const { session, messages: savedMessages, shouldResume } = await draftManagerRef.current.loadMostRecentDraft();
       
       if (shouldResume && session) {
@@ -124,19 +127,40 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       }
     } catch (error) {
       console.error('Error loading draft:', error);
+      // Clean up corrupted drafts if there's an error
+      if (draftManagerRef.current) {
+        draftManagerRef.current.cleanupCorruptedDrafts();
+      }
     } finally {
       setIsLoadingDraft(false);
     }
   }, [userId]);
 
   const resumeDraft = useCallback(() => {
-    if (!availableDraft || !draftManagerRef.current) return;
+    try {
+      if (!availableDraft || !draftManagerRef.current) return;
     
     const { session, messages: savedMessages } = availableDraft;
     
-    setDraft(session.draft);
-    setStep(session.currentStep);
-    setMessages(savedMessages);
+    if (!session || !session.draft) {
+      console.error('Invalid session data');
+      setShowDraftResume(false);
+      return;
+    }
+    
+    // Safely set draft with fallbacks
+    setDraft({
+      title: session.draft.title || '',
+      price: session.draft.price || null,
+      images: Array.isArray(session.draft.images) ? session.draft.images : [],
+      category: session.draft.category || '',
+      condition: session.draft.condition || '',
+      meetingSpot: session.draft.meetingSpot || '',
+      description: session.draft.description || ''
+    });
+    
+    setStep(session.currentStep || 0);
+    setMessages(Array.isArray(savedMessages) ? savedMessages : []);
     setShowDraftResume(false);
     
     // Continue conversation from where they left off
@@ -155,6 +179,13 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       "Welcome back! Let's continue where we left off.";
     
     addBotMessage(welcomeMessage, 500);
+    } catch (error) {
+      console.error('Error resuming draft:', error);
+      // Fallback to start fresh if resume fails
+      setShowDraftResume(false);
+      setAvailableDraft(null);
+      addBotMessage("Sorry, there was an issue loading your draft. Let's start fresh! What would you like to sell?", 500);
+    }
   }, [availableDraft, addBotMessage]);
 
   const startFresh = useCallback(() => {
