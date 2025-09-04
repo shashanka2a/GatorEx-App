@@ -1,0 +1,26 @@
+// Add this model to your schema.prisma file
+
+model DraftSession {
+  id                   Int      @id @default(autoincrement())
+  sessionId            String   @unique @map("session_id")
+  userId               String   @map("user_id")
+  draftData            String   @map("draft_data") // JSON string
+  currentStep          Int      @default(0) @map("current_step")
+  completionPercentage Int      @default(0) @map("completion_percentage")
+  isActive             Boolean  @default(true) @map("is_active")
+  lastSaved            DateTime @default(now()) @map("last_saved")
+  createdAt            DateTime @default(now()) @map("created_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([isActive, lastSaved])
+  @@index([userId, isActive, lastSaved])
+  @@map("draft_sessions")
+}
+
+// Also add this to your User model:
+// draftSessions DraftSession[]

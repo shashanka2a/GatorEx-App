@@ -1,37 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Upload, ArrowLeft, Eye, CheckCircle } from 'lucide-react';
+import { Send, Upload, ArrowLeft, Eye, CheckCircle, RotateCcw, Clock } from 'lucide-react';
 import DraftCard from './DraftCard';
 import { useRouter } from 'next/router';
 import { compressImage, getImageSize } from '../../lib/utils/imageCompression';
+import { DraftManager } from '../../lib/drafts/draftManager';
+import { Message, ListingDraft, UserStats } from '../../lib/types/listing';
+import { useDraftAutoSave } from '../../hooks/useDraftAutoSave';
+import DraftStatusIndicator from './DraftStatusIndicator';
+import SmartListingInput from './SmartListingInput';
+import AISuggestions from './AISuggestions';
+import ImageFirstFlow from './ImageFirstFlow';
 
-interface Message {
-  id: string;
-  text: string;
-  isBot: boolean;
-  timestamp: Date;
-  images?: string[];
-  buttons?: Array<{
-    text: string;
-    value: string;
-  }>;
-}
-
-interface ListingDraft {
-  title: string;
-  price: number | null;
-  images: string[];
-  category: string;
-  condition: string;
-  meetingSpot: string;
-  description: string;
-}
-
-interface UserStats {
-  dailyListings: number;
-  totalLiveListings: number;
-  canCreateListing: boolean;
-  rateLimitMessage?: string;
-}
+// Types moved to separate file
 
 interface SellChatWizardProps {
   userStats: UserStats;
@@ -59,6 +39,12 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const [step, setStep] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showDraftResume, setShowDraftResume] = useState(false);
+  const [availableDraft, setAvailableDraft] = useState<any>(null);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(true);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiConfidence, setAiConfidence] = useState<number>(0);
+  const [showImageFirst, setShowImageFirst] = useState(true);
   
   const [draft, setDraft] = useState<ListingDraft>({
     title: '',
@@ -72,6 +58,16 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftManagerRef = useRef<DraftManager | null>(null);
+
+  // Enhanced auto-save hook
+  const { save: saveDraftHook, isOnline, lastSaved } = useDraftAutoSave({
+    userId: userId || '',
+    draft,
+    step,
+    messages,
+    enabled: !!userId && !showDraftResume
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,46 +91,230 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     }, delay);
   }, []);
 
-  const loadDraft = useCallback(() => {
-    if (!userId) return;
+  // Initialize draft manager
+  useEffect(() => {
+    if (userId) {
+      draftManagerRef.current = new DraftManager(userId);
+      
+      // Cleanup on unmount
+      return () => {
+        if (draftManagerRef.current) {
+          draftManagerRef.current.cleanup();
+        }
+      };
+    }
+  }, [userId]);
+
+  const loadDraft = useCallback(async () => {
+    if (!userId || !draftManagerRef.current) {
+      setIsLoadingDraft(false);
+      return;
+    }
     
     try {
-      const savedDraft = localStorage.getItem(`gatorex_draft_${userId}`);
-      const savedStep = localStorage.getItem(`gatorex_draft_step_${userId}`);
+      const { session, messages: savedMessages, shouldResume } = await draftManagerRef.current.loadMostRecentDraft();
       
-      if (savedDraft) {
-        const parsedDraft = JSON.parse(savedDraft);
-        setDraft(parsedDraft);
-        setStep(parseInt(savedStep || '0'));
-        addBotMessage("I found your saved draft! Let's continue where we left off.");
+      if (shouldResume && session) {
+        setAvailableDraft({
+          session,
+          messages: savedMessages,
+          timeSince: new Date(session.lastSaved).toLocaleString()
+        });
+        setShowDraftResume(true);
       }
     } catch (error) {
       console.error('Error loading draft:', error);
+    } finally {
+      setIsLoadingDraft(false);
     }
-  }, [userId, addBotMessage, setDraft, setStep]);
+  }, [userId]);
+
+  const resumeDraft = useCallback(() => {
+    if (!availableDraft || !draftManagerRef.current) return;
+    
+    const { session, messages: savedMessages } = availableDraft;
+    
+    setDraft(session.draft);
+    setStep(session.currentStep);
+    setMessages(savedMessages);
+    setShowDraftResume(false);
+    
+    // Continue conversation from where they left off
+    const stepMessages = {
+      0: "Welcome back! Let's continue with your listing. What would you like to sell?",
+      1: `Great! I see you're selling "${session.draft.title}". What's your asking price?`,
+      2: `Perfect! $${session.draft.price} for "${session.draft.title}". Now let's add some photos.`,
+      3: "Excellent! Now let's categorize your item. What category best describes it?",
+      4: "Got it! What's the condition of your item?",
+      5: "Great! Where would you like to meet buyers?",
+      6: "Perfect! Finally, add a description with any additional details.",
+      7: "Your listing is ready! You can preview and publish when ready."
+    };
+    
+    const welcomeMessage = stepMessages[session.currentStep as keyof typeof stepMessages] || 
+      "Welcome back! Let's continue where we left off.";
+    
+    addBotMessage(welcomeMessage, 500);
+  }, [availableDraft, addBotMessage]);
+
+  const startFresh = useCallback(() => {
+    setShowDraftResume(false);
+    setAvailableDraft(null);
+    // Initialize new session
+    if (draftManagerRef.current) {
+      draftManagerRef.current.cleanupOldDrafts();
+    }
+  }, []);
+
+  // AI parsing handlers
+  const handleTextParsed = useCallback((parsed: any) => {
+    setDraft(prev => ({
+      ...prev,
+      title: parsed.title || prev.title,
+      price: parsed.price !== null ? parsed.price : prev.price,
+      category: parsed.category || prev.category,
+      condition: parsed.condition || prev.condition,
+      description: parsed.description || prev.description
+    }));
+
+    setAiSuggestions(parsed.suggestions || []);
+    setAiConfidence(parsed.confidence || 0);
+    setShowImageFirst(false);
+
+    // Add bot message about successful parsing
+    addBotMessage(
+      `Great! I've extracted the following from your description:\n\n` +
+      `📱 Title: ${parsed.title}\n` +
+      `💰 Price: ${parsed.price ? `$${parsed.price}` : 'Not specified'}\n` +
+      `📂 Category: ${parsed.category}\n` +
+      `⭐ Condition: ${parsed.condition}\n\n` +
+      `${parsed.confidence >= 0.8 ? 'I\'m confident about this parsing!' : 'Please review and adjust if needed.'} ` +
+      `Now let's add some photos to complete your listing.`
+    );
+
+    // Skip to photo step
+    setStep(2);
+  }, [addBotMessage]);
+
+  const handleImageAnalyzed = useCallback((analysis: any) => {
+    setDraft(prev => ({
+      ...prev,
+      title: analysis.title || prev.title,
+      category: analysis.category || prev.category,
+      condition: analysis.condition || prev.condition,
+      description: analysis.description || prev.description,
+      images: analysis.originalImage ? [analysis.originalImage, ...prev.images] : prev.images
+    }));
+
+    setAiSuggestions(analysis.suggestions || []);
+    setAiConfidence(analysis.confidence || 0);
+    setShowImageFirst(false);
+
+    // Add bot message about successful analysis
+    const detectedInfo = [];
+    if (analysis.title) detectedInfo.push(`📱 Item: ${analysis.title}`);
+    if (analysis.category) detectedInfo.push(`📂 Category: ${analysis.category}`);
+    if (analysis.condition) detectedInfo.push(`⭐ Condition: ${analysis.condition}`);
+    if (analysis.detectedText && analysis.detectedText.length > 0) {
+      detectedInfo.push(`📝 Text found: ${analysis.detectedText.join(', ')}`);
+    }
+
+    addBotMessage(
+      `Excellent! I've analyzed your photo and detected:\n\n` +
+      detectedInfo.join('\n') + '\n\n' +
+      `${analysis.confidence >= 0.7 ? 'The image analysis looks good!' : 'Please review the details and adjust if needed.'} ` +
+      `What's your asking price for this item?`
+    );
+
+    // Skip to price step
+    setStep(1);
+  }, [addBotMessage]);
+
+  const handleImageFirstComplete = useCallback((data: any) => {
+    setDraft(prev => ({
+      ...prev,
+      title: data.title,
+      price: data.price > 0 ? data.price : prev.price,
+      category: data.category,
+      condition: data.condition,
+      description: data.description,
+      images: data.images
+    }));
+
+    setAiSuggestions(data.suggestions || []);
+    setAiConfidence(data.confidence || 0);
+    setShowImageFirst(false);
+
+    // Add bot message about successful processing
+    if (data.price > 0) {
+      // Complete listing from image + text parsing
+      addBotMessage(
+        `Perfect! I've created your listing:\n\n` +
+        `📱 ${data.title}\n` +
+        `💰 $${data.price}\n` +
+        `📂 ${data.category}\n` +
+        `⭐ ${data.condition}\n\n` +
+        `Your listing is ready to publish! You can review it in the preview.`
+      );
+      setStep(7); // Complete
+    } else {
+      // Need price input
+      addBotMessage(
+        `Excellent! I've analyzed your photo:\n\n` +
+        `📱 ${data.title}\n` +
+        `📂 ${data.category}\n` +
+        `⭐ ${data.condition}\n\n` +
+        `What's your asking price for this item?`
+      );
+      setStep(1); // Price step
+    }
+  }, [addBotMessage]);
+
+  const handleAIError = useCallback((error: string) => {
+    addBotMessage(
+      `I had trouble processing that with AI: ${error}\n\n` +
+      `No worries! Let's continue with the regular flow. What would you like to sell?`
+    );
+    setShowImageFirst(false);
+    setStep(0);
+  }, [addBotMessage]);
 
   useEffect(() => {
     // Load existing draft if any
     loadDraft();
-    
-    // Initialize conversation
-    if (!userStats.canCreateListing) {
-      addBotMessage(userStats.rateLimitMessage || "You've reached your listing limit.");
-    } else {
-      addBotMessage("Hi! I'm GatorBot 🐊 Let's create your listing step by step. What would you like to sell?");
-    }
-  }, [userStats.canCreateListing, userStats.rateLimitMessage, loadDraft, addBotMessage]);
+  }, [loadDraft]);
 
-  const saveDraft = () => {
-    if (!userId) return;
+  useEffect(() => {
+    // Initialize conversation only after draft loading is complete
+    if (!isLoadingDraft && !showDraftResume && !showImageFirst) {
+      if (!userStats.canCreateListing) {
+        addBotMessage(userStats.rateLimitMessage || "You've reached your listing limit.");
+      } else {
+        addBotMessage("Hi! I'm GatorBot 🐊 Let's create your listing step by step. What would you like to sell?");
+      }
+    }
+  }, [isLoadingDraft, showDraftResume, showImageFirst, userStats.canCreateListing, userStats.rateLimitMessage, addBotMessage]);
+
+  const saveDraft = useCallback(async (updatedDraft?: ListingDraft, updatedStep?: number, updatedMessages?: Message[]) => {
+    if (!draftManagerRef.current) return;
     
     try {
-      localStorage.setItem(`gatorex_draft_${userId}`, JSON.stringify(draft));
-      localStorage.setItem(`gatorex_draft_step_${userId}`, step.toString());
+      await draftManagerRef.current.save(
+        updatedDraft || draft,
+        updatedStep !== undefined ? updatedStep : step,
+        updatedMessages || messages
+      );
     } catch (error) {
       console.error('Error saving draft:', error);
     }
-  };
+  }, [draft, step, messages]);
+
+  // Auto-save whenever draft, step, or messages change
+  useEffect(() => {
+    if (draftManagerRef.current && (draft.title || draft.price || draft.images.length > 0)) {
+      draftManagerRef.current.markDirty();
+    }
+  }, [draft, step, messages]);
 
   const addUserMessage = (text: string, images?: string[]) => {
     setMessages(prev => [...prev, {
@@ -530,8 +710,98 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     );
   }
 
+  // Loading state
+  if (isLoadingDraft) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your drafts...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex">
+      {/* Draft Resume Modal */}
+      {showDraftResume && availableDraft && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" />
+            
+            <div className="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl relative">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <RotateCcw className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Resume Your Listing?</h3>
+                    <p className="text-sm text-gray-600">We found a draft you were working on</p>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">Last saved: {availableDraft.timeSince}</span>
+                  </div>
+                  
+                  {availableDraft.session.draft.title && (
+                    <div className="mb-2">
+                      <span className="text-sm font-medium text-gray-700">Title: </span>
+                      <span className="text-sm text-gray-900">{availableDraft.session.draft.title}</span>
+                    </div>
+                  )}
+                  
+                  {availableDraft.session.draft.price && (
+                    <div className="mb-2">
+                      <span className="text-sm font-medium text-gray-700">Price: </span>
+                      <span className="text-sm text-green-600 font-semibold">${availableDraft.session.draft.price}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-sm font-medium text-gray-700">Progress:</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${availableDraft.session.metadata.completionPercentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-600">{availableDraft.session.metadata.completionPercentage}%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={resumeDraft}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium flex items-center justify-center space-x-2"
+                  >
+                    <RotateCcw size={16} />
+                    <span>Resume Draft</span>
+                  </button>
+                  
+                  <button
+                    onClick={startFresh}
+                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-all font-medium"
+                  >
+                    Start Fresh
+                  </button>
+                </div>
+                
+                <p className="text-xs text-gray-500 mt-3 text-center">
+                  Your draft is automatically saved as you work
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chat Interface */}
       <div className="flex-1 flex flex-col max-w-2xl mx-auto">
         {/* Header - Made Sticky */}
@@ -545,7 +815,16 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             </button>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Create Listing</h1>
-              <p className="text-sm text-gray-600">Chat with GatorBot to list your item</p>
+              <div className="flex items-center space-x-3">
+                <p className="text-sm text-gray-600">Chat with GatorBot to list your item</p>
+                {userId && (
+                  <DraftStatusIndicator 
+                    isOnline={isOnline}
+                    lastSaved={lastSaved}
+                    className="hidden sm:inline-flex"
+                  />
+                )}
+              </div>
             </div>
           </div>
           
@@ -572,6 +851,26 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             )}
           </div>
         </div>
+
+        {/* Image-First Flow (shown at the beginning) */}
+        {showImageFirst && !showDraftResume && (
+          <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
+            <ImageFirstFlow
+              onComplete={handleImageFirstComplete}
+              onError={handleAIError}
+              disabled={!userStats.canCreateListing}
+            />
+
+            <div className="text-center mt-4">
+              <button
+                onClick={() => setShowImageFirst(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Skip photo and use regular chat flow
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white pt-6">
@@ -635,6 +934,23 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
               </div>
             </div>
           )}
+
+          {/* AI Suggestions in chat */}
+          {!showImageFirst && aiSuggestions.length > 0 && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%]">
+                <AISuggestions
+                  suggestions={aiSuggestions}
+                  confidence={aiConfidence}
+                  onApplySuggestion={(suggestion) => {
+                    addUserMessage(`Applied suggestion: ${suggestion}`);
+                    addBotMessage("Great! That suggestion should help improve your listing.");
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
 

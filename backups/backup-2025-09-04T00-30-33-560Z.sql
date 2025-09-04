@@ -1,3 +1,6 @@
+-- Database Backup Created: 2025-09-04T00:30:33.561Z
+-- Schema Backup
+
 generator client {
   provider = "prisma-client-js"
 }
