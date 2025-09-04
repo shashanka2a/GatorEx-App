@@ -9,7 +9,6 @@ import {
   Mail, 
   Star, 
   Package, 
-  Clock, 
   AlertCircle,
   CheckCircle,
   RefreshCw,
@@ -657,15 +656,15 @@ export default function ProfilePage() {
                 )}
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="space-y-4">
                 {filteredListings.map((listing) => (
-                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all hover:border-gray-300">
-                    <div className="flex items-start space-x-4">
+                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:border-gray-300 overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
                       {listing.image ? (
                         <img
                           src={listing.image}
                           alt={listing.title}
-                          className="w-24 h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                          className="w-full h-48 sm:w-24 sm:h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity shadow-sm flex-shrink-0"
                           onClick={() => {
                             // Open image in modal or new tab
                             if (listing.image) {
@@ -674,79 +673,85 @@ export default function ProfilePage() {
                           }}
                         />
                       ) : (
-                        <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center shadow-sm">
+                        <div className="w-full h-48 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
                           <Package size={28} className="text-gray-400" />
                         </div>
                       )}
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors text-lg">
+                            <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-lg line-clamp-2">
                               {listing.title}
                             </h3>
                             <p className="text-2xl font-bold text-green-600 mt-1">
                               ${listing.price}
                             </p>
-                            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-600">
-                              <div className="flex items-center space-x-1">
-                                <Eye size={14} />
-                                <span className="font-medium">{listing.views} views</span>
-                              </div>
-                              <span>Created {new Date(listing.createdAt).toLocaleDateString()}</span>
-                              {listing.status === 'PUBLISHED' && listing.expiresAt && (
-                                <span className="text-orange-600 font-medium">
-                                  Expires {new Date(listing.expiresAt).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
                           </div>
                           
-                          <div className="flex flex-col items-end space-y-2 flex-shrink-0">
+                          <div className="flex items-center justify-between sm:flex-col sm:items-end space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0">
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(listing.status)}`}>
                               {listing.status}
                             </span>
-                            
-                            {/* Quick Action Buttons */}
-                            <div className="flex items-center space-x-2">
-                              {listing.status === 'PUBLISHED' && (
-                                <>
-                                  <button
-                                    onClick={() => viewListingContacts(listing.id)}
-                                    className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center space-x-1"
-                                    title="View contacts"
-                                  >
-                                    <Users size={12} />
-                                    <span>Contacts</span>
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
-                                    }}
-                                    className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center space-x-1"
-                                    title="Share listing"
-                                  >
-                                    <MessageSquare size={12} />
-                                    <span>Share</span>
-                                  </button>
-                                  <button
-                                    onClick={() => router.push(`/edit-listing/${listing.id}`)}
-                                    className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors flex items-center space-x-1"
-                                    title="Edit listing"
-                                  >
-                                    <Edit3 size={12} />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleMarkAsSold(listing.id)}
-                                    className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors flex items-center space-x-1"
-                                    title="Mark as sold"
-                                  >
-                                    <DollarSign size={12} />
-                                    <span>Sold</span>
-                                  </button>
-                                </>
-                              )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Eye size={14} />
+                            <span className="font-medium">{listing.views} views</span>
+                          </div>
+                          <span>•</span>
+                          <span>Created {new Date(listing.createdAt).toLocaleDateString()}</span>
+                          {listing.status === 'PUBLISHED' && listing.expiresAt && (
+                            <>
+                              <span>•</span>
+                              <span className="text-orange-600 font-medium">
+                                Expires {new Date(listing.expiresAt).toLocaleDateString()}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Action Buttons - Now in a responsive grid */}
+                        {listing.status === 'PUBLISHED' && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                            <button
+                              onClick={() => viewListingContacts(listing.id)}
+                              className="bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center justify-center space-x-1"
+                              title="View contacts"
+                            >
+                              <Users size={12} />
+                              <span className="hidden sm:inline">Contacts</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
+                              }}
+                              className="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center justify-center space-x-1"
+                              title="Share listing"
+                            >
+                              <MessageSquare size={12} />
+                              <span className="hidden sm:inline">Share</span>
+                            </button>
+                            <button
+                              onClick={() => router.push(`/edit-listing/${listing.id}`)}
+                              className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors flex items-center justify-center space-x-1"
+                              title="Edit listing"
+                            >
+                              <Edit3 size={12} />
+                              <span className="hidden sm:inline">Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleMarkAsSold(listing.id)}
+                              className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors flex items-center justify-center space-x-1"
+                              title="Mark as sold"
+                            >
+                              <DollarSign size={12} />
+                              <span className="hidden sm:inline">Sold</span>
+                            </button>
+                          </div>
+                        )}
                               
                               {listing.status === 'SOLD' && (
                                 <button
@@ -757,32 +762,34 @@ export default function ProfilePage() {
                                   <Users size={12} />
                                   <span>Contacts</span>
                                 </button>
-                              )}
-                              
-                              {listing.status === 'EXPIRED' && (
-                                <button
-                                  onClick={() => handleRenewListing(listing.id)}
-                                  className="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-orange-200 transition-colors flex items-center space-x-1"
-                                  title="Renew listing"
-                                >
-                                  <RefreshCw size={12} />
-                                  <span>Renew</span>
-                                </button>
-                              )}
-                              
-                              {listing.status === 'DRAFT' && (
-                                <button
-                                  onClick={() => router.push('/sell')}
-                                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center space-x-1"
-                                  title="Complete listing"
-                                >
-                                  <Edit3 size={12} />
-                                  <span>Complete</span>
-                                </button>
-                              )}
-                            </div>
+                        )}
+                        
+                        {/* Action Buttons for other statuses */}
+                        {listing.status === 'EXPIRED' && (
+                          <div className="pt-2">
+                            <button
+                              onClick={() => handleRenewListing(listing.id)}
+                              className="w-full sm:w-auto bg-orange-100 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-200 transition-colors flex items-center justify-center space-x-2"
+                              title="Renew listing"
+                            >
+                              <RefreshCw size={14} />
+                              <span>Renew Listing</span>
+                            </button>
                           </div>
-                        </div>
+                        )}
+                        
+                        {listing.status === 'DRAFT' && (
+                          <div className="pt-2">
+                            <button
+                              onClick={() => router.push('/sell')}
+                              className="w-full sm:w-auto bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2"
+                              title="Complete listing"
+                            >
+                              <Edit3 size={14} />
+                              <span>Complete Listing</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

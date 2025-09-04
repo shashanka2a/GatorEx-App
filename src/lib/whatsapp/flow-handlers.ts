@@ -176,13 +176,14 @@ Is this correct? Reply "YES" or tell me the right category/condition:`;
       let condition = conversationData.condition;
       
       if (message.toUpperCase().trim() !== 'YES') {
-        // Parse user correction
+        // Parse user correction and normalize
+        const { validateCategory, validateCondition } = await import('./ai-suggestions');
         const parts = message.split('-').map(p => p.trim());
         if (parts.length >= 2) {
-          category = parts[0];
-          condition = parts[1];
+          category = validateCategory(parts[0]);
+          condition = validateCondition(parts[1]);
         } else {
-          category = message.trim();
+          category = validateCategory(message.trim());
         }
       }
       

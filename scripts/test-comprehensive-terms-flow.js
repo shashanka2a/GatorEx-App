@@ -108,8 +108,13 @@ function testTermsImplementation() {
     },
     {
       file: 'src/lib/auth/terms-check.ts',
-      patterns: ['checkApiAuthAndTerms', 'checkClientAuthAndTerms'],
-      description: 'Terms check utility exists'
+      patterns: ['checkClientAuthAndTerms'],
+      description: 'Client terms check utility exists'
+    },
+    {
+      file: 'src/lib/auth/server-auth-check.ts',
+      patterns: ['checkApiAuthAndTerms'],
+      description: 'Server terms check utility exists'
     },
     {
       file: 'pages/sell.tsx',

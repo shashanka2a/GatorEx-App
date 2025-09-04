@@ -8,12 +8,11 @@ export interface CategoryConditionSuggestion {
 
 // Predefined categories that match the app's structure
 const CATEGORIES = [
-  'Electronics',
-  'Books', 
-  'Clothing',
-  'Furniture',
-  'Transportation',
-  'Other'
+  'Electronics', 'Textbooks', 'Furniture', 'Clothing', 'Sports & Recreation',
+  'Home & Garden', 'Transportation', 'Services', 'Food & Beverages', 
+  'Beauty & Personal Care', 'Art & Crafts', 'Music & Instruments', 
+  'Pet Supplies', 'Office & School Supplies', 'Health & Wellness',
+  'Party & Events', 'Storage & Organization', 'Seasonal Items', 'Other'
 ];
 
 const CONDITIONS = [
@@ -27,29 +26,150 @@ const CONDITIONS = [
 // Category keywords mapping
 const CATEGORY_KEYWORDS = {
   'Electronics': [
-    'phone', 'iphone', 'android', 'samsung', 'laptop', 'computer', 'macbook', 'pc',
-    'tablet', 'ipad', 'headphones', 'airpods', 'speaker', 'tv', 'monitor', 'camera',
-    'gaming', 'xbox', 'playstation', 'nintendo', 'switch', 'console', 'charger',
-    'cable', 'mouse', 'keyboard', 'webcam', 'printer', 'router', 'bluetooth'
+    // Phones & Tablets
+    'iphone', 'phone', 'smartphone', 'android', 'samsung', 'pixel', 'tablet', 'ipad',
+    // Computers & Accessories
+    'laptop', 'computer', 'macbook', 'pc', 'desktop', 'monitor', 'keyboard', 'mouse', 'webcam',
+    'charger', 'cable', 'adapter', 'hub', 'dock', 'stand', 'case', 'sleeve',
+    // Audio & Video
+    'headphones', 'earbuds', 'airpods', 'speaker', 'bluetooth', 'tv', 'television',
+    'camera', 'gopro', 'lens', 'tripod', 'microphone', 'recorder',
+    // Gaming
+    'gaming', 'xbox', 'playstation', 'nintendo', 'switch', 'console', 'controller',
+    'steam', 'deck', 'vr', 'oculus', 'headset',
+    // Kitchen Appliances
+    'airfryer', 'air fryer', 'blender', 'microwave', 'toaster', 'coffee maker', 'keurig',
+    'rice cooker', 'instant pot', 'pressure cooker', 'mixer', 'juicer', 'kettle',
+    // Other Electronics
+    'printer', 'scanner', 'router', 'modem', 'wifi', 'smart watch', 'fitbit', 'apple watch',
+    'drone', 'projector', 'calculator', 'kindle', 'e-reader'
   ],
-  'Books': [
-    'book', 'textbook', 'novel', 'manual', 'guide', 'study', 'edition', 'isbn',
-    'calculus', 'chemistry', 'biology', 'physics', 'history', 'english', 'math',
-    'psychology', 'economics', 'accounting', 'finance', 'marketing', 'engineering'
-  ],
-  'Clothing': [
-    'shirt', 'pants', 'dress', 'shoes', 'sneakers', 'boots', 'jacket', 'coat',
-    'hoodie', 'sweater', 'jeans', 'shorts', 'skirt', 'blouse', 'suit', 'tie',
-    'hat', 'cap', 'socks', 'underwear', 'bra', 'swimsuit', 'uniform', 'jersey'
+  'Textbooks': [
+    'textbook', 'book', 'manual', 'study', 'edition', 'isbn', 'course', 'class',
+    'calculus', 'chemistry', 'physics', 'biology', 'psychology', 'economics',
+    'accounting', 'finance', 'marketing', 'statistics', 'algebra', 'geometry',
+    'history', 'english', 'literature', 'philosophy', 'sociology', 'anthropology',
+    'engineering', 'computer science', 'programming', 'java', 'python', 'c++',
+    'medical', 'nursing', 'anatomy', 'physiology', 'pharmacology',
+    'law', 'legal', 'business', 'management', 'operations'
   ],
   'Furniture': [
-    'desk', 'chair', 'table', 'bed', 'mattress', 'couch', 'sofa', 'dresser',
-    'bookshelf', 'lamp', 'mirror', 'rug', 'curtains', 'blinds', 'nightstand',
-    'wardrobe', 'cabinet', 'shelf', 'ottoman', 'futon', 'recliner'
+    // Seating
+    'chair', 'desk chair', 'office chair', 'gaming chair', 'bean bag', 'stool',
+    'couch', 'sofa', 'loveseat', 'futon', 'sectional',
+    // Tables & Desks
+    'desk', 'table', 'coffee table', 'dining table', 'end table', 'nightstand',
+    'standing desk', 'computer desk', 'study table',
+    // Bedroom
+    'bed', 'mattress', 'bed frame', 'headboard', 'dresser', 'wardrobe', 'closet',
+    'chest', 'drawer', 'armoire',
+    // Storage & Organization
+    'bookshelf', 'shelf', 'shelving', 'cabinet', 'storage', 'organizer',
+    'tv stand', 'entertainment center', 'rack'
+  ],
+  'Clothing': [
+    // Tops
+    'shirt', 't-shirt', 'tshirt', 'tank top', 'blouse', 'sweater', 'hoodie',
+    'sweatshirt', 'cardigan', 'jacket', 'coat', 'blazer', 'vest',
+    // Bottoms
+    'pants', 'jeans', 'shorts', 'skirt', 'dress', 'leggings', 'joggers',
+    'sweatpants', 'khakis', 'chinos', 'trousers',
+    // Footwear
+    'shoes', 'sneakers', 'boots', 'sandals', 'heels', 'flats', 'loafers',
+    'nike', 'adidas', 'converse', 'vans', 'jordans',
+    // Accessories
+    'hat', 'cap', 'beanie', 'scarf', 'gloves', 'belt', 'bag', 'backpack',
+    'purse', 'wallet', 'watch', 'jewelry', 'necklace', 'bracelet', 'ring'
+  ],
+  'Sports & Recreation': [
+    // Exercise Equipment
+    'weights', 'dumbbells', 'barbell', 'kettlebell', 'resistance bands',
+    'yoga mat', 'exercise bike', 'treadmill', 'elliptical', 'bench',
+    // Sports Gear
+    'basketball', 'football', 'soccer ball', 'tennis racket', 'golf clubs',
+    'baseball bat', 'glove', 'helmet', 'pads', 'cleats',
+    // Outdoor & Recreation
+    'camping', 'tent', 'sleeping bag', 'backpack', 'hiking', 'fishing',
+    'skateboard', 'longboard', 'roller blades', 'scooter',
+    'pool', 'float', 'beach', 'cooler'
+  ],
+  'Home & Garden': [
+    // Lighting & Decor
+    'lamp', 'light', 'led', 'string lights', 'fairy lights', 'candle',
+    'mirror', 'picture frame', 'wall art', 'poster', 'tapestry',
+    // Textiles
+    'rug', 'carpet', 'curtains', 'blinds', 'pillow', 'cushion',
+    'blanket', 'throw', 'sheet', 'comforter', 'duvet',
+    // Kitchen & Dining
+    'dishes', 'plates', 'bowls', 'cups', 'mugs', 'utensils', 'cookware',
+    'pots', 'pans', 'baking', 'cutting board', 'knife set',
+    // Plants & Garden
+    'plant', 'succulent', 'flower', 'pot', 'planter', 'vase',
+    'garden', 'soil', 'fertilizer', 'seeds'
   ],
   'Transportation': [
-    'bike', 'bicycle', 'scooter', 'skateboard', 'longboard', 'car', 'motorcycle',
-    'moped', 'helmet', 'lock', 'pump', 'tire', 'wheel', 'pedal', 'chain'
+    'car', 'vehicle', 'auto', 'truck', 'suv', 'sedan', 'honda', 'toyota',
+    'ford', 'chevrolet', 'bmw', 'mercedes', 'audi',
+    'bike', 'bicycle', 'mountain bike', 'road bike', 'electric bike',
+    'scooter', 'moped', 'motorcycle', 'skateboard', 'longboard',
+    'car parts', 'tires', 'wheels', 'battery', 'oil', 'filter'
+  ],
+  'Services': [
+    'tutoring', 'tutor', 'lessons', 'teaching', 'help', 'assistance',
+    'cleaning', 'moving', 'delivery', 'ride', 'transportation',
+    'repair', 'fix', 'maintenance', 'installation', 'setup',
+    'photography', 'photo', 'video', 'editing', 'design', 'graphic'
+  ],
+  'Food & Beverages': [
+    'food', 'snacks', 'drinks', 'coffee', 'tea', 'energy drinks',
+    'protein bars', 'supplements', 'vitamins', 'meal prep',
+    'dining plan', 'gift card', 'restaurant', 'takeout'
+  ],
+  'Beauty & Personal Care': [
+    'makeup', 'cosmetics', 'skincare', 'perfume', 'cologne', 'lotion',
+    'shampoo', 'conditioner', 'hair products', 'styling tools',
+    'nail polish', 'lipstick', 'foundation', 'mascara',
+    'razor', 'toothbrush', 'soap', 'deodorant'
+  ],
+  'Art & Crafts': [
+    'art supplies', 'paint', 'brushes', 'canvas', 'sketchbook',
+    'colored pencils', 'markers', 'craft supplies', 'yarn',
+    'sewing machine', 'fabric', 'beads', 'glue gun'
+  ],
+  'Music & Instruments': [
+    'guitar', 'piano', 'keyboard', 'drums', 'violin', 'ukulele',
+    'microphone', 'amplifier', 'music stand', 'sheet music',
+    'headphones', 'audio interface', 'midi controller'
+  ],
+  'Pet Supplies': [
+    'pet food', 'dog food', 'cat food', 'pet bed', 'leash',
+    'collar', 'pet toys', 'litter box', 'aquarium', 'fish tank',
+    'bird cage', 'pet carrier', 'grooming supplies'
+  ],
+  'Office & School Supplies': [
+    'pens', 'pencils', 'notebooks', 'binders', 'folders',
+    'stapler', 'paper', 'highlighters', 'sticky notes',
+    'calculator', 'ruler', 'scissors', 'tape', 'glue'
+  ],
+  'Health & Wellness': [
+    'vitamins', 'supplements', 'protein powder', 'first aid',
+    'thermometer', 'blood pressure monitor', 'scale',
+    'heating pad', 'ice pack', 'massage', 'essential oils'
+  ],
+  'Party & Events': [
+    'decorations', 'balloons', 'party supplies', 'costumes',
+    'halloween', 'christmas', 'birthday', 'graduation',
+    'speakers', 'lights', 'photo booth', 'games'
+  ],
+  'Storage & Organization': [
+    'storage bins', 'containers', 'organizers', 'hangers',
+    'shoe rack', 'closet organizer', 'drawer dividers',
+    'file cabinet', 'storage boxes', 'baskets'
+  ],
+  'Seasonal Items': [
+    'winter clothes', 'summer gear', 'holiday decorations',
+    'christmas tree', 'halloween costumes', 'beach gear',
+    'winter boots', 'snow gear', 'fans', 'heaters'
   ]
 };
 
@@ -132,9 +252,9 @@ Example: "Category: Electronics, Condition: Good, Confidence: 85"`;
   const condition = conditionMatch?.[1]?.trim() || 'Good';
   const confidence = parseInt(confidenceMatch?.[1] || '70');
 
-  // Validate suggestions
-  const validCategory = CATEGORIES.includes(category) ? category : 'Other';
-  const validCondition = CONDITIONS.includes(condition) ? condition : 'Good';
+  // Normalize and validate suggestions
+  const validCategory = normalizeCategory(category);
+  const validCondition = normalizeCondition(condition);
 
   return {
     category: validCategory,
@@ -184,18 +304,102 @@ function getKeywordBasedSuggestion(text: string): CategoryConditionSuggestion {
   const confidence = Math.min(90, Math.max(30, (bestCategoryScore + bestConditionScore) * 10));
   
   return {
-    category: bestCategory,
-    condition: bestCondition,
+    category: normalizeCategory(bestCategory),
+    condition: normalizeCondition(bestCondition),
     confidence
   };
 }
 
+// Normalize category to proper capitalization
+function normalizeCategory(category: string): string {
+  const normalized = category.trim();
+  
+  // Find exact match (case insensitive)
+  const exactMatch = CATEGORIES.find(cat => 
+    cat.toLowerCase() === normalized.toLowerCase()
+  );
+  
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Handle common variations
+  const variations: { [key: string]: string } = {
+    'electronics': 'Electronics',
+    'textbooks': 'Textbooks',
+    'books': 'Textbooks',
+    'furniture': 'Furniture',
+    'clothing': 'Clothing',
+    'sports': 'Sports & Recreation',
+    'sports & recreation': 'Sports & Recreation',
+    'home': 'Home & Garden',
+    'home & garden': 'Home & Garden',
+    'transportation': 'Transportation',
+    'services': 'Services',
+    'food': 'Food & Beverages',
+    'food & beverages': 'Food & Beverages',
+    'beauty': 'Beauty & Personal Care',
+    'beauty & personal care': 'Beauty & Personal Care',
+    'art': 'Art & Crafts',
+    'art & crafts': 'Art & Crafts',
+    'music': 'Music & Instruments',
+    'music & instruments': 'Music & Instruments',
+    'pets': 'Pet Supplies',
+    'pet supplies': 'Pet Supplies',
+    'office': 'Office & School Supplies',
+    'office & school supplies': 'Office & School Supplies',
+    'health': 'Health & Wellness',
+    'health & wellness': 'Health & Wellness',
+    'party': 'Party & Events',
+    'party & events': 'Party & Events',
+    'storage': 'Storage & Organization',
+    'storage & organization': 'Storage & Organization',
+    'seasonal': 'Seasonal Items',
+    'seasonal items': 'Seasonal Items',
+    'other': 'Other'
+  };
+  
+  const variation = variations[normalized.toLowerCase()];
+  return variation || 'Other';
+}
+
+// Normalize condition to proper capitalization
+function normalizeCondition(condition: string): string {
+  const normalized = condition.trim();
+  
+  // Find exact match (case insensitive)
+  const exactMatch = CONDITIONS.find(cond => 
+    cond.toLowerCase() === normalized.toLowerCase()
+  );
+  
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Handle common variations
+  const variations: { [key: string]: string } = {
+    'new': 'New',
+    'like new': 'Like New',
+    'likenew': 'Like New',
+    'excellent': 'Like New',
+    'good': 'Good',
+    'great': 'Good',
+    'fair': 'Fair',
+    'okay': 'Fair',
+    'poor': 'Poor',
+    'bad': 'Poor'
+  };
+  
+  const variation = variations[normalized.toLowerCase()];
+  return variation || 'Good';
+}
+
 export function validateCategory(category: string): string {
-  return CATEGORIES.includes(category) ? category : 'Other';
+  return normalizeCategory(category);
 }
 
 export function validateCondition(condition: string): string {
-  return CONDITIONS.includes(condition) ? condition : 'Good';
+  return normalizeCondition(condition);
 }
 
 export function getAvailableCategories(): string[] {
