@@ -217,8 +217,12 @@ Send the link or say "skip":`;
       
       // Create the listing
       try {
+        // Polish the title before creating the listing
+        const { ListingParser } = await import('../ai/listingParser');
+        const polishedTitle = await ListingParser.polishTitleWithAI(conversationData.itemName || '');
+        
         const listingData = {
-          title: conversationData.itemName,
+          title: polishedTitle,
           price: conversationData.price,
           category: conversationData.category,
           condition: conversationData.condition,

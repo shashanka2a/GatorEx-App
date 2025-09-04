@@ -63,8 +63,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Price must be between $0.01 and $10,000' });
     }
 
+    // Polish the title for professional display
+    const { ListingParser } = await import('../../../src/lib/ai/listingParser');
+    const polishedTitle = await ListingParser.polishTitleWithAI(listing.title);
+    
     // Content moderation
-    const contentToCheck = `${listing.title} ${listing.description}`.toLowerCase();
+    const contentToCheck = `${polishedTitle} ${listing.description}`.toLowerCase();
     if (!moderateContent(contentToCheck)) {
       return res.status(400).json({ 
         error: 'Your listing contains prohibited content. Please review our community guidelines and try again.' 
@@ -108,10 +112,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 14);
 
-    // Create the listing
+    // Create the listing with polished title
     const newListing = await prisma.listing.create({
       data: {
-        title: listing.title.trim(),
+        title: polishedTitle,
         description: listing.description?.trim() || null,
         price: listing.price,
         category: listing.category || null,

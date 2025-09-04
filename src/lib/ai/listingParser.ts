@@ -37,6 +37,158 @@ const CONDITIONS = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
 export class ListingParser {
   
   /**
+   * Extract and polish a clean product title using AI
+   */
+  static async polishTitleWithAI(title: string): Promise<string> {
+    if (!title) return 'Item for Sale';
+    
+    // Try AI-powered title extraction first
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const prompt = `
+Extract a clean, professional product title from this text. Remove any extra information like "DM for price", "selling", contact instructions, or incomplete phrases.
+
+Input: "${title}"
+
+Rules:
+1. Extract ONLY the product name and key details (brand, model, size, etc.)
+2. Use proper capitalization for brands (iPhone, Samsung Galaxy, MacBook, etc.)
+3. Remove selling instructions, contact info, or promotional text
+4. If the title is incomplete or unclear, make it complete and professional
+5. Keep it concise but descriptive
+
+Examples:
+- "Selling this apple mouse, DM for price!" → "Apple Mouse"
+- "iphone 13 pro max 256gb" → "iPhone 13 Pro Max 256GB"
+- "samsung galaxy s23 ultra like new condition" → "Samsung Galaxy S23 Ultra"
+- "Apple Watch for" → "Apple Watch"
+- "macbook air 13 inch 2022" → "MacBook Air 13" 2022"
+
+Return ONLY the cleaned title, nothing else:`;
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.1,
+          max_tokens: 100,
+        });
+
+        const cleanedTitle = response.choices[0]?.message?.content?.trim();
+        if (cleanedTitle && cleanedTitle.length > 0 && cleanedTitle.length < 100) {
+          return this.polishTitleBasic(cleanedTitle);
+        }
+      } catch (error) {
+        console.error('AI title polishing failed, using fallback:', error);
+      }
+    }
+    
+    // Fallback to basic polishing
+    return this.polishTitleBasic(title);
+  }
+
+  /**
+   * Basic title polishing without AI
+   */
+  static polishTitleBasic(title: string): string {
+    if (!title) return 'Item for Sale';
+    
+    let polished = title.trim();
+    
+    // Remove common selling phrases
+    const sellingPhrases = [
+      /^selling\s+/i,
+      /^for\s+sale\s*:?\s*/i,
+      /,?\s*dm\s+for\s+price!?$/i,
+      /,?\s*message\s+me$/i,
+      /,?\s*contact\s+me$/i,
+      /,?\s*interested\?$/i,
+      /,?\s*serious\s+buyers\s+only$/i,
+      /,?\s*cash\s+only$/i,
+      /,?\s*obo$/i,
+      /,?\s*or\s+best\s+offer$/i
+    ];
+    
+    sellingPhrases.forEach(phrase => {
+      polished = polished.replace(phrase, '');
+    });
+    
+    // Common brand/product name corrections
+    const brandCorrections: { [key: string]: string } = {
+      'iphone': 'iPhone',
+      'ipad': 'iPad',
+      'macbook': 'MacBook',
+      'airpods': 'AirPods',
+      'samsung': 'Samsung',
+      'galaxy': 'Galaxy',
+      'zflip': 'Z Flip',
+      'zfold': 'Z Fold',
+      'nintendo': 'Nintendo',
+      'playstation': 'PlayStation',
+      'xbox': 'Xbox',
+      'airfryer': 'Air Fryer',
+      'instant pot': 'Instant Pot',
+      'macbook pro': 'MacBook Pro',
+      'macbook air': 'MacBook Air',
+      'apple watch': 'Apple Watch',
+      'apple mouse': 'Apple Mouse',
+      'magic mouse': 'Magic Mouse',
+      'fitbit': 'Fitbit',
+      'gopro': 'GoPro',
+      'kindle': 'Kindle',
+      'surface pro': 'Surface Pro',
+      'thinkpad': 'ThinkPad',
+      'chromebook': 'Chromebook'
+    };
+    
+    // Apply brand corrections (case insensitive)
+    for (const [incorrect, correct] of Object.entries(brandCorrections)) {
+      const regex = new RegExp(`\\b${incorrect}\\b`, 'gi');
+      polished = polished.replace(regex, correct);
+    }
+    
+    // Capitalize first letter of each word for general items
+    polished = polished.replace(/\b\w+/g, (word) => {
+      // Don't change already corrected brand names
+      if (Object.values(brandCorrections).includes(word)) {
+        return word;
+      }
+      // Capitalize first letter, keep rest as is for mixed case words
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    });
+    
+    // Handle common patterns
+    polished = polished
+      .replace(/\b(\d+)\s*(gb|tb|mb)\b/gi, '$1$2') // "128 GB" → "128GB"
+      .replace(/\b(\d+)\s*(inch|in)\b/gi, '$1"') // "13 inch" → "13""
+      .replace(/\bpro\b/gi, 'Pro')
+      .replace(/\bair\b/gi, 'Air')
+      .replace(/\bmax\b/gi, 'Max')
+      .replace(/\bmini\b/gi, 'Mini')
+      .replace(/\bplus\b/gi, 'Plus')
+      .replace(/\bultra\b/gi, 'Ultra');
+    
+    // Clean up extra spaces and punctuation
+    polished = polished
+      .replace(/\s+/g, ' ')
+      .replace(/[,\s]+$/, '')
+      .trim();
+    
+    // Handle incomplete titles
+    if (polished.endsWith(' for') || polished.endsWith(' For')) {
+      polished = polished.replace(/\s+for$/i, '');
+    }
+    
+    return polished || 'Item for Sale';
+  }
+
+  /**
+   * Synchronous version for backward compatibility
+   */
+  static polishTitle(title: string): string {
+    return this.polishTitleBasic(title);
+  }
+  
+  /**
    * Parse a single sentence into listing components
    * Example: "iPhone 14, $850, Like New" → {title: "iPhone 14", price: 850, condition: "Like New"}
    */
@@ -113,6 +265,9 @@ Example output: {"title": "iPhone 14", "price": 850, "category": "Electronics", 
       if (!parsed.title) {
         throw new Error('Title is required');
       }
+
+      // Polish the title for professional display using AI
+      parsed.title = await this.polishTitleWithAI(parsed.title);
 
       // Ensure category and condition are valid
       if (!CATEGORIES.includes(parsed.category)) {
@@ -223,6 +378,9 @@ Rules:
       if (!parsed.title) {
         parsed.title = 'Item for Sale';
       }
+
+      // Polish the title for professional display using AI
+      parsed.title = await this.polishTitleWithAI(parsed.title);
 
       if (!CATEGORIES.includes(parsed.category)) {
         parsed.category = 'Other';
@@ -442,6 +600,9 @@ Rules:
     if (!title) {
       title = 'Item for Sale';
     }
+
+    // Polish the title (use basic version for fallback)
+    title = this.polishTitleBasic(title);
 
     return {
       title,
