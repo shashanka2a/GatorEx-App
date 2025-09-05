@@ -137,7 +137,7 @@ export default function SignUp() {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link href="/login-otp" className="text-orange-500 hover:text-orange-600 font-medium">
+                <Link href="/verify" className="text-orange-500 hover:text-orange-600 font-medium">
                   Sign In
                 </Link>
               </p>

@@ -32,7 +32,7 @@ export default function WebNav({ userVerified = false, onSearch }: WebNavProps) 
 
     if (!userVerified) {
       setNavigating(true);
-      router.push('/login-otp').finally(() => setNavigating(false));
+      router.push('/verify').finally(() => setNavigating(false));
       return;
     }
 

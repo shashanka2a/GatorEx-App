@@ -717,7 +717,7 @@ export default function EnhancedReferralsPage() {
                         Don't have an account yet?
                       </p>
                       <button
-                        onClick={() => router.push('/login-otp')}
+                        onClick={() => router.push('/verify')}
                         className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
                       >
                         Sign Up to Get Started
@@ -769,7 +769,7 @@ export default function EnhancedReferralsPage() {
                       </p>
                       
                       <button
-                        onClick={() => router.push('/login-otp')}
+                        onClick={() => router.push('/verify')}
                         className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
                       >
                         Sign In for Full Dashboard Access
@@ -913,7 +913,7 @@ export default function EnhancedReferralsPage() {
                 </p>
                 {!session && (
                   <button
-                    onClick={() => router.push('/login-otp')}
+                    onClick={() => router.push('/verify')}
                     className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
                   >
                     Sign In to View Rankings
@@ -950,7 +950,7 @@ export default function EnhancedReferralsPage() {
                 ) : (
                   <>
                     <button
-                      onClick={() => router.push('/login-otp')}
+                      onClick={() => router.push('/verify')}
                       className="bg-white text-orange-500 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
                     >
                       📱 Get Started Now

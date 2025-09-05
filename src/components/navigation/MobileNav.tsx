@@ -27,7 +27,7 @@ export default function MobileNav({ userVerified = false }: MobileNavProps) {
 
     if (!userVerified) {
       setNavigating(true);
-      router.push('/login-otp').finally(() => setNavigating(false));
+      router.push('/verify').finally(() => setNavigating(false));
       return;
     }
 

@@ -156,7 +156,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     console.error('Error in sell page:', error);
     return {
       redirect: {
-        destination: '/login-otp',
+        destination: '/verify',
         permanent: false,
       },
     };

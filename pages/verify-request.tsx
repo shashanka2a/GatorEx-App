@@ -39,7 +39,7 @@ export default function VerifyRequestPage() {
             </Link>
             
             <button
-              onClick={() => window.location.href = '/login-otp'}
+              onClick={() => window.location.href = '/verify'}
               className="block w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors mb-4"
             >
               Enter Verification Code
