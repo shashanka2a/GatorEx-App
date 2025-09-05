@@ -194,7 +194,14 @@ export class DraftManager {
       // Check if draft is recent enough to resume (within 7 days)
       const lastSavedTime = new Date(recentDraft.lastSaved).getTime();
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      const shouldResume = lastSavedTime > sevenDaysAgo && recentDraft.isActive;
+      
+      // Check if draft has meaningful content (at least a title or an image)
+      const hasMeaningfulContent = recentDraft.draft.title?.trim() || 
+                                   (recentDraft.draft.images && recentDraft.draft.images.length > 0);
+      
+      const shouldResume = lastSavedTime > sevenDaysAgo && 
+                          recentDraft.isActive && 
+                          hasMeaningfulContent;
 
       // Load messages with better error handling
       let messages: Message[] = [];
