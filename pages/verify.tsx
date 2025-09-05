@@ -189,8 +189,8 @@ export default function VerifyPage() {
               
               <button
                 onClick={() => {
-                  // Pass the email and referral code to verify page for code entry
-                  const url = new URL('/verify', window.location.origin);
+                  // Pass the email and referral code to login-otp page for code entry
+                  const url = new URL('/login-otp', window.location.origin);
                   url.searchParams.set('email', email);
                   url.searchParams.set('step', 'code');
                   if (referralCode) {
