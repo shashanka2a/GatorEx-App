@@ -20,7 +20,15 @@ import {
   Users,
   MessageSquare,
   X,
-  Save
+  Save,
+  QrCode,
+  CreditCard,
+  Copy,
+  Share2,
+  Shield,
+  TrendingUp,
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
@@ -360,436 +368,490 @@ export default function ProfilePage() {
         <title>Profile - GatorEx</title>
       </Head>
 
-      <div className="max-w-6xl mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8">
-        {/* User Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3 md:space-x-4 flex-1">
-              <div className="bg-orange-100 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0">
-                <User size={24} className="text-orange-600 md:w-8 md:h-8" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-lg md:text-2xl font-bold text-gray-900 truncate">{user?.name}</h1>
-                <div className="flex items-center space-x-2 mt-1 flex-wrap">
-                  <Mail size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-600 truncate">{user?.ufEmail}</span>
-                  {user?.verified && (
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                      <CheckCircle size={14} className="text-green-500" />
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                        🐊 UF Verified
-                      </span>
-                    </div>
-                  )}
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-6 pb-24 md:pb-8">
+        {/* Personalized Header */}
+        <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <div className="bg-white/20 backdrop-blur-sm w-16 h-16 rounded-full flex items-center justify-center">
+                  <User size={32} className="text-white" />
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-2 space-y-1 sm:space-y-0">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getTrustLevelColor(user?.trustLevel || 'BASIC')}`}>
-                    {user?.trustLevel}
-                  </span>
-                  <span className="text-xs md:text-sm text-gray-600">
-                    Trust Score: {user?.trustScore}/100
-                  </span>
-                  <span className="text-xs md:text-sm text-gray-600">
-                    Joined {user?.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : ''}
-                  </span>
+                <div>
+                  <h1 className="text-2xl font-bold">Hey, {user?.name?.split(' ')[0] || 'Gator'}! 👋</h1>
+                  <p className="text-orange-100 text-sm">Welcome back to your marketplace</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Link
-                href="/referrals"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
-              >
-                🎁 Referrals
-              </Link>
               <button 
                 onClick={handleEditProfile}
-                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="bg-white/20 backdrop-blur-sm p-2 rounded-lg hover:bg-white/30 transition-colors"
                 title="Edit Profile"
               >
                 <Edit3 size={20} />
               </button>
             </div>
+            
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <Mail size={16} className="text-orange-200" />
+                <span className="text-orange-100">{user?.ufEmail}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Calendar size={16} className="text-orange-200" />
+                <span className="text-orange-100">
+                  Since {user?.joinedAt ? new Date(user.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Unified Stats & Verification Overview */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Account Overview</h2>
+            <Link
+              href="/referrals"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 rounded-full text-xs font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
+            >
+              🎁 Referrals
+            </Link>
           </div>
 
-          {/* Profile Completeness Meter */}
-          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+          {/* Progress Bar */}
+          <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
+              <span className="text-sm font-medium text-gray-700">Profile Strength</span>
               <span className="text-sm font-bold text-blue-600">
-                {Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0)) / 4 * 100)}%
+                {Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + (user?.trustScore > 50 ? 1 : 0)) / 5 * 100)}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
               <div 
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.ufEmail ? 1 : 0) + (user?.verified ? 1 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0)) / 4 * 100)}%` }}
-              ></div>
+                className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-700 relative overflow-hidden"
+                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + (user?.trustScore > 50 ? 1 : 0)) / 5 * 100)}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {!user?.name && <span className="text-gray-600">• Add profile picture</span>}
-              {!user?.verified && <span className="text-gray-600">• Verify UF email</span>}
-              {(user?.listings?.length || 0) === 0 && <span className="text-gray-600">• Create your first listing</span>}
-              {user?.name && user?.verified && (user?.listings?.length || 0) > 0 && (
-                <span className="text-green-600 font-medium">🎉 Profile complete!</span>
-              )}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-1">
+                {user?.verified ? (
+                  <CheckCircle size={14} className="text-green-500" />
+                ) : (
+                  <AlertCircle size={14} className="text-orange-500" />
+                )}
+                <span className={user?.verified ? "text-green-600" : "text-orange-600"}>
+                  {user?.verified ? "UF Verified" : "Verification Pending"}
+                </span>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTrustLevelColor(user?.trustLevel || 'BASIC')}`}>
+                {user?.trustLevel} • {user?.trustScore}/100
+              </span>
             </div>
           </div>
 
-          {/* Key Stats - Highlighted */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-            <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
               <div className="flex items-center justify-center mb-2">
-                <Star size={16} className="text-yellow-500 mr-1" />
-                <span className="font-bold text-gray-900 text-lg">{user?.rating}</span>
+                <Star size={18} className="text-yellow-500 mr-1" />
+                <span className="font-bold text-gray-900 text-xl">{user?.rating}</span>
               </div>
               <p className="text-xs text-gray-600 font-medium">Rating</p>
             </div>
             
-            <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
-              <div className="font-bold text-gray-900 mb-2 text-lg">{user?.totalSales}</div>
-              <p className="text-xs text-gray-600 font-medium">Total Listings</p>
-            </div>
-            
-            <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <div className="font-bold text-gray-900 mb-2 text-lg">{user?.totalViews || 0}</div>
-              <p className="text-xs text-gray-600 font-medium">Total Views</p>
-            </div>
-            
-            <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
-              <div className="font-bold text-gray-900 mb-2 text-lg">
-                {user?.listings.filter(l => l.status === 'SOLD').length}
+            <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center justify-center mb-2">
+                <Package size={18} className="text-green-500 mr-1" />
+                <span className="font-bold text-gray-900 text-xl">{user?.totalSales}</span>
               </div>
-              <p className="text-xs text-gray-600 font-medium">Items Sold</p>
+              <p className="text-xs text-gray-600 font-medium">Listings</p>
+            </div>
+            
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+              <div className="flex items-center justify-center mb-2">
+                <Eye size={18} className="text-blue-500 mr-1" />
+                <span className="font-bold text-gray-900 text-xl">{user?.totalViews || 0}</span>
+              </div>
+              <p className="text-xs text-gray-600 font-medium">Views</p>
+            </div>
+            
+            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+              <div className="flex items-center justify-center mb-2">
+                <DollarSign size={18} className="text-purple-500 mr-1" />
+                <span className="font-bold text-gray-900 text-xl">
+                  {user?.listings.filter(l => l.status === 'SOLD').length}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 font-medium">Sold</p>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 md:mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <Link href="/favorites" className="block p-4 hover:bg-gray-50 transition-colors group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-red-50 p-3 rounded-full group-hover:bg-red-100 transition-colors">
-                    <Heart className="w-6 h-6 text-red-500" fill="currentColor" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">My Favorites</h3>
-                    <p className="text-sm text-gray-600">
-                      {user?.favorites?.length || 0} saved items
-                    </p>
-                  </div>
-                </div>
-                <div className="text-gray-400 group-hover:text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+        {/* Payment Wallet & Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Payment Wallet */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Payment Wallet</h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/profile/${user?.id}`);
+                  }}
+                  className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  title="Copy profile link"
+                >
+                  <Copy size={16} className="text-gray-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: `${user?.name}'s GatorEx Profile`,
+                        url: `${window.location.origin}/profile/${user?.id}`
+                      });
+                    }
+                  }}
+                  className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  title="Share profile"
+                >
+                  <Share2 size={16} className="text-gray-600" />
+                </button>
               </div>
-              {/* Mini preview carousel */}
-              <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
-                {/* Show actual favorite items or placeholders */}
-                {user?.favorites && user.favorites.length > 0 ? (
-                  user.favorites.slice(0, 5).map((favorite, index) => (
-                    <div key={favorite.id || index} className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden">
-                      {favorite.image ? (
-                        <img
-                          src={favorite.image}
-                          alt={favorite.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                          <Package size={16} className="text-gray-400" />
-                        </div>
-                      )}
+            </div>
+            
+            <div className="space-y-4">
+              {/* QR Code Section */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 text-center">
+                <div className="bg-white p-3 rounded-lg inline-block mb-3 shadow-sm">
+                  <QrCode size={48} className="text-gray-700" />
+                </div>
+                <p className="text-sm text-gray-600 mb-2">Quick Profile Share</p>
+                <button className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">
+                  Generate QR
+                </button>
+              </div>
+              
+              {/* Payment Methods */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Payment Methods</p>
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-3">
+                    <CreditCard size={20} className="text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Venmo</p>
+                      <p className="text-xs text-gray-600">@{user?.name?.toLowerCase().replace(' ', '')}</p>
                     </div>
-                  ))
-                ) : (
-                  // Show placeholder items when no favorites
-                  Array.from({ length: 3 }, (_, i) => (
-                    <div key={`placeholder-${i}`} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Heart size={16} className="text-gray-300" />
-                    </div>
-                  ))
-                )}
-                {/* Show "View All" indicator if there are more favorites */}
-                {user?.favorites && user.favorites.length > 5 && (
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg flex items-center justify-center border-2 border-dashed border-red-200">
-                    <span className="text-xs font-medium text-red-600">+{user.favorites.length - 5}</span>
                   </div>
-                )}
+                  <button className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    Primary
+                  </button>
+                </div>
+                <button className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
+                  + Add Payment Method
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Favorites & Create Listing */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <Link href="/favorites" className="block p-4 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-red-50 p-2 rounded-lg group-hover:bg-red-100 transition-colors">
+                      <Heart className="w-5 h-5 text-red-500" fill="currentColor" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Favorites</h3>
+                      <p className="text-sm text-gray-600">{user?.favorites?.length || 0} items</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-400 group-hover:text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex space-x-2 overflow-x-auto pb-1">
+                  {user?.favorites && user.favorites.length > 0 ? (
+                    user.favorites.slice(0, 4).map((favorite, index) => (
+                      <div key={favorite.id || index} className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
+                        {favorite.image ? (
+                          <img src={favorite.image} alt={favorite.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <Package size={14} className="text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    Array.from({ length: 3 }, (_, i) => (
+                      <div key={`placeholder-${i}`} className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Heart size={12} className="text-gray-300" />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Link>
+            </div>
+            
+            <Link
+              href="/sell"
+              className="block bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-sm p-4 hover:shadow-md transition-all text-white group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Create Listing</h3>
+                  <p className="text-sm text-orange-100">Start selling today 🚀</p>
+                </div>
               </div>
             </Link>
           </div>
-          
-          <Link
-            href="/sell"
-            className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-sm p-4 hover:shadow-md transition-all border border-orange-200 group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-orange-500 p-3 rounded-full group-hover:bg-orange-600 transition-colors">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Create Listing</h3>
-                <p className="text-sm text-orange-700">Start selling today 🚀</p>
-              </div>
-            </div>
-          </Link>
         </div>
 
-        {/* Listings Section */}
-        <div className="bg-white rounded-lg shadow-sm">
+        {/* Listings Section - Compressed */}
+        <div className="bg-white rounded-2xl shadow-sm">
           <div className="border-b border-gray-200">
-            <div className="flex space-x-4 md:space-x-8 px-4 md:px-6 overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-6 px-6 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('active')}
-                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
+                className={`py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'active'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Active ({user?.listings.filter(l => l.status === 'PUBLISHED').length || 0})
+                <div className="flex items-center space-x-2">
+                  <TrendingUp size={16} />
+                  <span>Active</span>
+                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                    {user?.listings.filter(l => l.status === 'PUBLISHED').length || 0}
+                  </span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('draft')}
-                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
+                className={`py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'draft'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Drafts ({user?.listings.filter(l => l.status === 'DRAFT').length || 0})
+                <div className="flex items-center space-x-2">
+                  <Edit3 size={16} />
+                  <span>Drafts</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                    {user?.listings.filter(l => l.status === 'DRAFT').length || 0}
+                  </span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('expired')}
-                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
+                className={`py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'expired'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Expired ({user?.listings.filter(l => l.status === 'EXPIRED').length || 0})
+                <div className="flex items-center space-x-2">
+                  <AlertCircle size={16} />
+                  <span>Expired</span>
+                  <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                    {user?.listings.filter(l => l.status === 'EXPIRED').length || 0}
+                  </span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('sold')}
-                className={`py-3 md:py-4 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
+                className={`py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'sold'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Sold ({user?.listings.filter(l => l.status === 'SOLD').length || 0})
+                <div className="flex items-center space-x-2">
+                  <CheckCircle size={16} />
+                  <span>Sold</span>
+                  <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                    {user?.listings.filter(l => l.status === 'SOLD').length || 0}
+                  </span>
+                </div>
               </button>
             </div>
           </div>
 
-          <div className="p-4 md:p-6">
+          <div className="p-6">
             {filteredListings.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-8">
                 {activeTab === 'active' && (
-                  <div className="mb-6">
-                    <div className="text-6xl mb-4">🚀</div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Ready to start selling?
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Create your first listing and start earning! The GatorEx community is waiting to see what you have to offer.
-                    </p>
+                  <div>
+                    <div className="text-4xl mb-3">🚀</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to start selling?</h3>
+                    <p className="text-gray-600 mb-4 text-sm">Create your first listing and start earning!</p>
                     <Link
                       href="/sell"
-                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium inline-flex items-center"
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium inline-flex items-center text-sm"
                     >
-                      <Package size={20} className="mr-2" />
-                      Create Your First Listing
+                      <Package size={16} className="mr-2" />
+                      Create Listing
                     </Link>
                   </div>
                 )}
                 
                 {activeTab === 'draft' && (
-                  <div className="mb-6">
-                    <div className="text-6xl mb-4">✏️</div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      No drafts yet
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Draft listings are automatically saved when you start creating a listing. Come back anytime to finish them!
-                    </p>
+                  <div>
+                    <div className="text-4xl mb-3">✏️</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No drafts yet</h3>
+                    <p className="text-gray-600 text-sm">Drafts are automatically saved when you create listings.</p>
                   </div>
                 )}
                 
                 {activeTab === 'expired' && (
-                  <div className="mb-6">
-                    <div className="text-6xl mb-4">⏰</div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      All listings are fresh!
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Great job keeping your listings active! Expired listings will appear here when they need renewal.
-                    </p>
+                  <div>
+                    <div className="text-4xl mb-3">⏰</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">All listings are fresh!</h3>
+                    <p className="text-gray-600 text-sm">Great job keeping your listings active!</p>
                   </div>
                 )}
                 
                 {activeTab === 'sold' && (
-                  <div className="mb-6">
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Your first sale awaits!
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Once you make your first sale, you'll see it here. Keep promoting your listings to increase visibility!
-                    </p>
-                    {user?.listings.filter(l => l.status === 'PUBLISHED').length === 0 && (
-                      <Link
-                        href="/sell"
-                        className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors font-medium inline-flex items-center"
-                      >
-                        <DollarSign size={20} className="mr-2" />
-                        Start Selling Now
-                      </Link>
-                    )}
+                  <div>
+                    <div className="text-4xl mb-3">🎉</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Your first sale awaits!</h3>
+                    <p className="text-gray-600 text-sm">Keep promoting your listings to increase visibility!</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredListings.map((listing) => (
-                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:border-gray-300 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:border-gray-300">
+                    <div className="flex items-start space-x-4">
                       {listing.image ? (
                         <img
                           src={listing.image}
                           alt={listing.title}
-                          className="w-full h-48 sm:w-24 sm:h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity shadow-sm flex-shrink-0"
+                          className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
                           onClick={() => {
-                            // Open image in modal or new tab
                             if (listing.image) {
                               window.open(listing.image, '_blank');
                             }
                           }}
                         />
                       ) : (
-                        <div className="w-full h-48 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                          <Package size={28} className="text-gray-400" />
+                        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Package size={20} className="text-gray-400" />
                         </div>
                       )}
                       
-                      <div className="flex-1 min-w-0 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-lg line-clamp-2">
+                            <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1 text-sm">
                               {listing.title}
                             </h3>
-                            <p className="text-2xl font-bold text-green-600 mt-1">
-                              ${listing.price}
-                            </p>
+                            <p className="text-lg font-bold text-green-600">${listing.price}</p>
                           </div>
                           
-                          <div className="flex items-center justify-between sm:flex-col sm:items-end space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(listing.status)}`}>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
                               {listing.status}
                             </span>
+                            {listing.status === 'PUBLISHED' && (
+                              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                <Eye size={12} />
+                                <span>{listing.views}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                          <div className="flex items-center space-x-1">
-                            <Eye size={14} />
-                            <span className="font-medium">{listing.views} views</span>
-                          </div>
-                          <span>•</span>
-                          <span>Created {new Date(listing.createdAt).toLocaleDateString()}</span>
-                          {listing.status === 'PUBLISHED' && listing.expiresAt && (
-                            <>
-                              <span>•</span>
-                              <span className="text-orange-600 font-medium">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 text-xs text-gray-500">
+                            <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
+                            {listing.status === 'PUBLISHED' && listing.expiresAt && (
+                              <span className="text-orange-600">
                                 Expires {new Date(listing.expiresAt).toLocaleDateString()}
                               </span>
-                            </>
-                          )}
-                        </div>
-                        
-                        {/* Action Buttons - Now in a responsive grid */}
-                        {listing.status === 'PUBLISHED' && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                            <button
-                              onClick={() => viewListingContacts(listing.id)}
-                              className="bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center justify-center space-x-1"
-                              title="View contacts"
-                            >
-                              <Users size={12} />
-                              <span className="hidden sm:inline">Contacts</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
-                              }}
-                              className="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors flex items-center justify-center space-x-1"
-                              title="Share listing"
-                            >
-                              <MessageSquare size={12} />
-                              <span className="hidden sm:inline">Share</span>
-                            </button>
-                            <button
-                              onClick={() => router.push(`/edit-listing/${listing.id}`)}
-                              className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors flex items-center justify-center space-x-1"
-                              title="Edit listing"
-                            >
-                              <Edit3 size={12} />
-                              <span className="hidden sm:inline">Edit</span>
-                            </button>
-                            <button
-                              onClick={() => handleMarkAsSold(listing.id)}
-                              className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors flex items-center justify-center space-x-1"
-                              title="Mark as sold"
-                            >
-                              <DollarSign size={12} />
-                              <span className="hidden sm:inline">Sold</span>
-                            </button>
+                            )}
                           </div>
-                        )}
-                              
-                              {listing.status === 'SOLD' && (
+                          
+                          <div className="flex items-center space-x-1">
+                            {listing.status === 'PUBLISHED' && (
+                              <>
                                 <button
                                   onClick={() => viewListingContacts(listing.id)}
-                                  className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-purple-200 transition-colors flex items-center space-x-1"
+                                  className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
                                   title="View contacts"
                                 >
                                   <Users size={12} />
-                                  <span>Contacts</span>
                                 </button>
-                        )}
-                        
-                        {/* Action Buttons for other statuses */}
-                        {listing.status === 'EXPIRED' && (
-                          <div className="pt-2">
-                            <button
-                              onClick={() => handleRenewListing(listing.id)}
-                              className="w-full sm:w-auto bg-orange-100 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-200 transition-colors flex items-center justify-center space-x-2"
-                              title="Renew listing"
-                            >
-                              <RefreshCw size={14} />
-                              <span>Renew Listing</span>
-                            </button>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
+                                  }}
+                                  className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                                  title="Share listing"
+                                >
+                                  <Share2 size={12} />
+                                </button>
+                                <button
+                                  onClick={() => router.push(`/edit-listing/${listing.id}`)}
+                                  className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                                  title="Edit listing"
+                                >
+                                  <Edit3 size={12} />
+                                </button>
+                                <button
+                                  onClick={() => handleMarkAsSold(listing.id)}
+                                  className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                                  title="Mark as sold"
+                                >
+                                  <DollarSign size={12} />
+                                </button>
+                              </>
+                            )}
+                            
+                            {listing.status === 'SOLD' && (
+                              <button
+                                onClick={() => viewListingContacts(listing.id)}
+                                className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+                                title="View contacts"
+                              >
+                                <Users size={12} />
+                              </button>
+                            )}
+                            
+                            {listing.status === 'EXPIRED' && (
+                              <button
+                                onClick={() => handleRenewListing(listing.id)}
+                                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium hover:bg-orange-200 transition-colors"
+                                title="Renew listing"
+                              >
+                                Renew
+                              </button>
+                            )}
+                            
+                            {listing.status === 'DRAFT' && (
+                              <button
+                                onClick={() => router.push('/sell')}
+                                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
+                                title="Complete listing"
+                              >
+                                Complete
+                              </button>
+                            )}
                           </div>
-                        )}
-                        
-                        {listing.status === 'DRAFT' && (
-                          <div className="pt-2">
-                            <button
-                              onClick={() => router.push('/sell')}
-                              className="w-full sm:w-auto bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors flex items-center justify-center space-x-2"
-                              title="Complete listing"
-                            >
-                              <Edit3 size={14} />
-                              <span>Complete Listing</span>
-                            </button>
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
