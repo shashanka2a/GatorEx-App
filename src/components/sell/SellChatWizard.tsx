@@ -590,33 +590,47 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       }
 
       if (newImages.length > 0) {
-        setDraft(prev => {
-          // Filter out any duplicate images by comparing data URLs
-          const existingImages = prev.images;
-          const uniqueNewImages = newImages.filter(newImg => 
-            !existingImages.some(existingImg => existingImg === newImg)
-          );
+        // For now, store compressed images as data URLs
+        // TODO: Upload to Cloudinary when credentials are working
+        addBotMessage(`Processing ${newImages.length} image(s)...`);
+        
+        const uploadedUrls = newImages; // Use compressed data URLs directly
+        
+        if (uploadedUrls.length > 0) {
+          setDraft(prev => {
+            // Filter out any duplicate images by comparing URLs
+            const existingImages = prev.images;
+            const uniqueNewImages = uploadedUrls.filter(newUrl => 
+              !existingImages.some(existingUrl => existingUrl === newUrl)
+            );
+            
+            return { 
+              ...prev, 
+              images: [...existingImages, ...uniqueNewImages] 
+            };
+          });
           
-          return { 
-            ...prev, 
-            images: [...existingImages, ...uniqueNewImages] 
-          };
-        });
-        
-        // Debug log to check for duplicates
-        console.log('New images being added:', newImages.length);
-        console.log('Total images after upload:', draft.images.length + newImages.length);
-        
-        addUserMessage(`Uploaded ${newImages.length} image(s)`, newImages);
-        
-        if (step === 2 && draft.images.length === 0) {
-          // First images uploaded, move to next step
-          setTimeout(() => {
-            addBotMessage(`Perfect! ${newImages.length} photo(s) uploaded and compressed. You now have all the required information. Let's add some optional details to make your listing even better!`);
-            handleOptionalFields();
-          }, 1000);
-        } else {
-          addBotMessage(`Great! ${draft.images.length + newImages.length} total photos uploaded and compressed. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
+          console.log('New images processed:', uploadedUrls.length);
+          console.log('Total images after processing:', draft.images.length + uploadedUrls.length);
+          
+          addUserMessage(`Added ${uploadedUrls.length} image(s)`, uploadedUrls);
+          
+          if (step === 2 && draft.images.length === 0) {
+            // First images uploaded, move to next step
+            setTimeout(() => {
+              addBotMessage(`Perfect! ${uploadedUrls.length} photo(s) processed successfully. You now have all the required information. Let's add some optional details to make your listing even better!`);
+              handleOptionalFields();
+            }, 1000);
+          } else {
+            addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
+          }
+          } else {
+            addBotMessage("Failed to upload any images. Please try again with different images.");
+          }
+
+        } catch (uploadError) {
+          console.error('Image upload error:', uploadError);
+          addBotMessage("There was an error uploading your images. Please try again.");
         }
       }
     } catch (error) {
@@ -639,23 +653,53 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       return;
     }
     
-    // Check total payload size
-    const totalImageSize = uniqueImages.reduce((total, img) => total + getImageSize(img), 0);
-    const totalSizeMB = totalImageSize / (1024 * 1024);
-    
-    if (totalSizeMB > 2) { // 2MB total limit
-      addBotMessage(`Your images are too large (${totalSizeMB.toFixed(1)}MB total). Please remove some images or use smaller ones.`);
-      return;
-    }
-    
-    console.log('Publishing draft:', { ...draft, images: `${uniqueImages.length} unique images (${totalSizeMB.toFixed(1)}MB)` });
-    
     setIsPublishing(true);
+    addBotMessage("Publishing your listing...");
+    
     try {
+      // Check if any images are still data URLs and upload them
+      const finalImageUrls: string[] = [];
+      
+      for (let i = 0; i < uniqueImages.length; i++) {
+        const imageUrl = uniqueImages[i];
+        
+        if (imageUrl.startsWith('data:')) {
+          // This is a data URL, need to upload it
+          addBotMessage(`Uploading image ${i + 1}...`);
+          
+          try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], `image_${Date.now()}_${i}.jpg`, { type: 'image/jpeg' });
+            
+            const { uploadImageToCloudinary } = await import('../../lib/storage/cloudinary');
+            const uploadResult = await uploadImageToCloudinary(file, userId);
+            
+            if (uploadResult.error) {
+              addBotMessage(`Failed to upload image ${i + 1}: ${uploadResult.error}`);
+              setIsPublishing(false);
+              return;
+            }
+            
+            finalImageUrls.push(uploadResult.url);
+          } catch (uploadError) {
+            console.error('Image upload error during publish:', uploadError);
+            addBotMessage(`Failed to upload image ${i + 1}. Please try again.`);
+            setIsPublishing(false);
+            return;
+          }
+        } else {
+          // Already a proper URL
+          finalImageUrls.push(imageUrl);
+        }
+      }
+      
+      console.log('Publishing draft:', { ...draft, images: `${finalImageUrls.length} images` });
+      
       const response = await fetch('/api/sell/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing: { ...draft, images: uniqueImages } })
+        body: JSON.stringify({ listing: { ...draft, images: finalImageUrls } })
       });
 
       if (response.status === 413) {
