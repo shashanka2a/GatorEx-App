@@ -379,7 +379,7 @@ export default function ProfilePage() {
                   <User size={32} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">Hey, {user?.name?.split(' ')[0] || 'Gator'}! 👋</h1>
+                  <h1 className="text-lg font-semibold">Hey, {user?.name?.split(' ')[0] || 'Gator'}! 👋</h1>
                   <p className="text-orange-100 text-sm">Welcome back to your marketplace</p>
                 </div>
               </div>
