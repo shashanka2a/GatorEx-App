@@ -35,7 +35,7 @@ const mockListings = [
     likes: 23,
     views: 189,
     category: "Appliances",
-    seller: { name: "Sarah G.", verified: true, rating: 4.7, responseTime: "1h" },
+    seller: { name: "Sarah G.", verified: true, trustScore: 85, responseTime: "1h" },
     timePosted: "2h ago",
     condition: "Like New",
     trending: true,
@@ -52,7 +52,7 @@ const mockListings = [
     likes: 18,
     views: 156,
     category: "Textbooks",
-    seller: { name: "Mike R.", verified: true, rating: 4.9, responseTime: "30m" },
+    seller: { name: "Mike R.", verified: true, trustScore: 92, responseTime: "30m" },
     timePosted: "1h ago",
     condition: "Excellent",
     trending: true,
@@ -69,7 +69,7 @@ const mockListings = [
     likes: 45,
     views: 234,
     category: "Electronics",
-    seller: { name: "Jessica L.", verified: true, rating: 5.0, responseTime: "15m" },
+    seller: { name: "Jessica L.", verified: true, trustScore: 100, responseTime: "15m" },
     timePosted: "45m ago",
     condition: "Like New",
     trending: true,
@@ -86,7 +86,7 @@ const mockListings = [
     likes: 31,
     views: 198,
     category: "Furniture",
-    seller: { name: "Alex T.", verified: true, rating: 4.8, responseTime: "2h" },
+    seller: { name: "Alex T.", verified: true, trustScore: 88, responseTime: "2h" },
     timePosted: "3h ago",
     condition: "Good",
     trending: true,
@@ -103,7 +103,7 @@ const mockListings = [
     likes: 12,
     views: 87,
     category: "Clothing",
-    seller: { name: "Chris M.", verified: true, rating: 4.6, responseTime: "1h" },
+    seller: { name: "Chris M.", verified: true, trustScore: 78, responseTime: "1h" },
     timePosted: "4h ago",
     condition: "Good",
     trending: false,
@@ -120,7 +120,7 @@ const mockListings = [
     likes: 67,
     views: 312,
     category: "Electronics",
-    seller: { name: "Emma K.", verified: true, rating: 4.9, responseTime: "30m" },
+    seller: { name: "Emma K.", verified: true, trustScore: 94, responseTime: "30m" },
     timePosted: "5h ago",
     condition: "Excellent",
     trending: true,
@@ -137,7 +137,7 @@ const mockListings = [
     likes: 38,
     views: 167,
     category: "Gaming",
-    seller: { name: "Ryan P.", verified: true, rating: 4.7, responseTime: "45m" },
+    seller: { name: "Ryan P.", verified: true, trustScore: 84, responseTime: "45m" },
     timePosted: "6h ago",
     condition: "Like New",
     trending: false,
@@ -154,7 +154,7 @@ const mockListings = [
     likes: 89,
     views: 445,
     category: "Tickets",
-    seller: { name: "Jordan S.", verified: true, rating: 5.0, responseTime: "10m" },
+    seller: { name: "Jordan S.", verified: true, trustScore: 100, responseTime: "10m" },
     timePosted: "1h ago",
     condition: "New",
     trending: true,
@@ -185,8 +185,8 @@ export function Home({ onListingClick, onCategoryClick }: HomeProps) {
             <div className="text-xs text-white/80">Verified Students</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">4.8★</div>
-            <div className="text-xs text-white/80">Avg Rating</div>
+            <div className="text-2xl font-bold">87🛡️</div>
+            <div className="text-xs text-white/80">Avg Trust</div>
           </div>
         </div>
       </div>
@@ -302,7 +302,7 @@ export function Home({ onListingClick, onCategoryClick }: HomeProps) {
                           </div>
                         )}
                         <span className="text-xs text-gray-600">
-                          ⭐ {listing.seller.rating}
+                          🛡️ {listing.seller.trustScore}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500">

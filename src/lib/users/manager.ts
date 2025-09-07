@@ -34,10 +34,12 @@ export async function verifyUserEmail(userId: string, ufEmail: string) {
     data: {
       ufEmail,
       ufEmailVerified: true,
-      verifyToken: null,
-      trustScore: { increment: 10 } // Boost trust score for verification
+      verifyToken: null
     }
   });
+
+  // Increment trust score for verification (capped at 100)
+  await incrementUserTrustScore(userId, 10);
 
   return user;
 }
@@ -60,10 +62,23 @@ export async function getUserByVerificationToken(token: string) {
 }
 
 export async function incrementUserTrustScore(userId: string, points: number = 1) {
+  // First get current score to check if we need to cap it
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { trustScore: true }
+  });
+
+  if (!currentUser) {
+    throw new Error('User not found');
+  }
+
+  // Calculate new score and cap at 100
+  const newScore = Math.min(currentUser.trustScore + points, 100);
+  
   const user = await prisma.user.update({
     where: { id: userId },
     data: {
-      trustScore: { increment: points }
+      trustScore: newScore
     }
   });
 
@@ -74,10 +89,23 @@ export async function incrementUserTrustScore(userId: string, points: number = 1
 }
 
 export async function decrementUserTrustScore(userId: string, points: number = 5) {
+  // First get current score to ensure we don't go below reasonable limits
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { trustScore: true }
+  });
+
+  if (!currentUser) {
+    throw new Error('User not found');
+  }
+
+  // Calculate new score (allow negative scores for problematic users)
+  const newScore = currentUser.trustScore - points;
+  
   const user = await prisma.user.update({
     where: { id: userId },
     data: {
-      trustScore: { decrement: points }
+      trustScore: newScore
     }
   });
 

@@ -16,7 +16,7 @@ const mockUser = {
   email: "alex.johnson@ufl.edu",
   location: "Gainesville, FL",
   memberSince: "September 2023",
-  rating: 4.9,
+  trustScore: 89,
   reviews: 24,
   verified: true
 };
@@ -78,7 +78,7 @@ export function Profile({ onEditProfile, onCreateListing, onListingClick }: Prof
             
             <div className="flex items-center gap-2 text-sm opacity-90 mb-2">
               <Star className="w-4 h-4 fill-current" />
-              <span>{mockUser.rating} ({mockUser.reviews} reviews)</span>
+              <span>Trust: {mockUser.trustScore}/100 ({mockUser.reviews} reviews)</span>
             </div>
             
             <div className="flex items-center gap-1 text-sm opacity-90">

@@ -7,28 +7,25 @@ import { checkClientAuthAndTerms } from '../src/lib/auth/terms-check';
 import { 
   User, 
   Mail, 
-  Star, 
   Package, 
   AlertCircle,
   CheckCircle,
-  RefreshCw,
   Edit3,
   Loader2,
   Eye,
   Heart,
   DollarSign,
   Users,
-  MessageSquare,
   X,
   Save,
   QrCode,
-  CreditCard,
   Copy,
   Share2,
   Shield,
   TrendingUp,
   Calendar,
-  MapPin
+  MapPin,
+  Info
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
 
@@ -46,7 +43,6 @@ interface UserProfile {
   zelleId?: string;
   paymentQrCode?: string;
   preferredPaymentMethod?: string;
-  rating: number;
   totalSales: number;
   responseTime: string;
   totalViews: number;
@@ -471,12 +467,21 @@ export default function ProfilePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
               <div className="flex items-center justify-center mb-2">
-                <Star size={18} className="text-yellow-500 mr-1" />
-                <span className="font-bold text-gray-900 text-xl">{user?.rating}</span>
+                <Shield size={18} className="text-blue-500 mr-1" />
+                <span className="font-bold text-gray-900 text-xl">{user?.trustScore || 0}</span>
+                <div className="relative ml-1 group">
+                  <Info size={14} className="text-gray-400 cursor-help" />
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                    Trust score reflects your reliability as a seller.<br/>
+                    Earn points through verified sales, good reviews,<br/>
+                    and positive community interactions. Max: 100
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-gray-600 font-medium">Rating</p>
+              <p className="text-xs text-gray-600 font-medium">Trust Score</p>
             </div>
             
             <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">

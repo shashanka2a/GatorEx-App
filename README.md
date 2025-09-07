@@ -25,7 +25,7 @@ A secure, verified marketplace exclusively for University of Florida students to
 - **Real-time Notifications**: Instant updates for favorites, contacts, and status changes
 
 ### **🎯 Advanced User Management**
-- **Trust System**: User ratings, verification badges, and trust scores
+- **Trust System**: User trust scores (capped at 100), verification badges, and reputation tracking
 - **Profile Management**: Current & past listings with action buttons
 - **Giveaway System**: Contest management with Instagram verification
 - **Usage Analytics**: View tracking, engagement metrics, and performance insights

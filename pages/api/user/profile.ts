@@ -189,14 +189,13 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
       ufEmail: userData.email,
       verified: userData.ufEmailVerified,
       profileCompleted: userData.profileCompleted,
-      trustLevel: getTrustLevel(userData.trustScore, publishedListings.length),
-      trustScore: userData.trustScore,
+      trustLevel: getTrustLevel(Math.min(userData.trustScore, 100), publishedListings.length),
+      trustScore: Math.min(userData.trustScore, 100),
       venmoId: userData.venmoId,
       cashappId: userData.cashappId,
       zelleId: userData.zelleId,
       paymentQrCode: userData.paymentQrCode,
       preferredPaymentMethod: userData.preferredPaymentMethod,
-      rating: 4.8, // Mock rating - implement reviews system later
       totalSales: publishedListings.length,
       responseTime: '2h', // Mock - implement messaging system later
       totalViews,

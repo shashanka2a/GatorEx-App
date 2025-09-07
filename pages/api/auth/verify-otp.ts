@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './[...nextauth]';
+import { incrementUserTrustScore } from '../../../src/lib/users/manager';
 
 const prisma = new PrismaClient();
 
@@ -106,10 +107,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { id: user.id },
         data: {
           ufEmail: email,
-          ufEmailVerified: true,
-          trustScore: { increment: 5 } // Bonus for re-verification
+          ufEmailVerified: true
         }
       });
+
+      // Increment trust score for re-verification (capped at 100)
+      await incrementUserTrustScore(user.id, 5);
     }
 
     // Create a session for the user

@@ -1,5 +1,6 @@
 import { getEmailProvider } from './providers';
 import { prisma } from '../db/prisma';
+import { incrementUserTrustScore } from '../users/manager';
 
 // Rate limiting for email sending
 const emailRateLimit = new Map<string, number[]>();
@@ -150,10 +151,12 @@ export async function verifyEmailToken(token: string, email: string): Promise<bo
       data: {
         ufEmail: email,
         ufEmailVerified: true,
-        verifyToken: null,
-        trustScore: { increment: 10 }
+        verifyToken: null
       }
     });
+
+    // Increment trust score for email verification (capped at 100)
+    await incrementUserTrustScore(user.id, 10);
 
     // Publish any ready draft listings
     await publishReadyListings(user.id);

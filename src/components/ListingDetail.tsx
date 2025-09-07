@@ -26,7 +26,7 @@ const mockListings = {
       name: "Sarah G.",
       fullName: "Sarah Garcia",
       avatar: "student portrait female",
-      rating: 4.7,
+      trustScore: 85,
       reviews: 28,
       verified: true,
       responseTime: "Usually responds within 1 hour",
@@ -65,7 +65,7 @@ const mockListings = {
       name: "Mike R.",
       fullName: "Mike Rodriguez",
       avatar: "student portrait male",
-      rating: 4.9,
+      trustScore: 92,
       reviews: 31,
       verified: true,
       responseTime: "Usually responds within 30 minutes",
@@ -241,8 +241,8 @@ export function ListingDetail({ listingId, onContactSeller }: ListingDetailProps
               
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                  <span>{listing.seller.rating} ({listing.seller.reviews} reviews)</span>
+                  <Shield className="w-4 h-4 text-blue-500 fill-current" />
+                  <span>Trust: {listing.seller.trustScore}/100 ({listing.seller.reviews} reviews)</span>
                 </div>
                 <span>•</span>
                 <span>{listing.seller.totalSales} completed sales</span>
