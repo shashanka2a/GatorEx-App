@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AchievementBadges from './AchievementBadges';
-import StickyReferralBar from './StickyReferralBar';
+
 import SuccessStories from './SuccessStories';
 import { REFERRAL_CONFIG } from '../../lib/referrals/config';
 import WebNav from '../navigation/WebNav';
@@ -903,8 +903,7 @@ export default function EnhancedReferralsPage() {
           </div>
         </div>
 
-        {/* Sticky Referral Bar for Mobile */}
-        <StickyReferralBar referralLink={summary?.referralLink} />
+
       </div>
 
       <style jsx>{`
