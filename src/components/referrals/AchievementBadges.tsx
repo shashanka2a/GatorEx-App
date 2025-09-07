@@ -18,7 +18,7 @@ interface AchievementBadgesProps {
 
 export default function AchievementBadges({ referrals, clicks, streak = 0 }: AchievementBadgesProps) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
+
 
   useEffect(() => {
     const achievementList: Achievement[] = [
@@ -96,17 +96,7 @@ export default function AchievementBadges({ referrals, clicks, streak = 0 }: Ach
       }
     ];
 
-    // Check for newly unlocked achievements
-    const previouslyUnlocked = achievements.filter(a => a.unlocked).map(a => a.id);
-    const currentlyUnlocked = achievementList.filter(a => a.unlocked).map(a => a.id);
-    const newUnlocks = achievementList.filter(a => 
-      currentlyUnlocked.includes(a.id) && !previouslyUnlocked.includes(a.id)
-    );
 
-    if (newUnlocks.length > 0) {
-      setNewlyUnlocked(newUnlocks);
-      setTimeout(() => setNewlyUnlocked([]), 5000);
-    }
 
     setAchievements(achievementList);
   }, [referrals, clicks, streak, achievements]);
@@ -167,22 +157,7 @@ export default function AchievementBadges({ referrals, clicks, streak = 0 }: Ach
         ))}
       </div>
 
-      {/* Achievement Unlock Notifications */}
-      {newlyUnlocked.map((achievement, index) => (
-        <div
-          key={achievement.id}
-          className="fixed top-4 right-4 bg-yellow-400 text-yellow-900 p-4 rounded-lg shadow-lg z-50 animate-bounce"
-          style={{ animationDelay: `${index * 0.5}s` }}
-        >
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">{achievement.icon}</span>
-            <div>
-              <p className="font-semibold">Achievement Unlocked!</p>
-              <p className="text-sm">{achievement.title}</p>
-            </div>
-          </div>
-        </div>
-      ))}
+
     </div>
   );
 }
