@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Upload, ArrowLeft, Eye, CheckCircle, RotateCcw, Clock } from 'lucide-react';
+import { Send, Upload, ArrowLeft, Eye, CheckCircle, RotateCcw, Clock, Sparkles } from 'lucide-react';
 import DraftCard from './DraftCard';
 import { useRouter } from 'next/router';
 import { compressImage, getImageSize } from '../../lib/utils/imageCompression';
@@ -47,6 +47,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [aiConfidence, setAiConfidence] = useState<number>(0);
   const [showImageFirst, setShowImageFirst] = useState(true);
+  const [showSmartInput, setShowSmartInput] = useState(false);
   const [showMeetingSpotInput, setShowMeetingSpotInput] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   
@@ -312,7 +313,65 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
       `No worries! Let's continue with the regular flow. What would you like to sell?`
     );
     setShowImageFirst(false);
+    setShowSmartInput(false);
     setStep(0);
+  }, [addBotMessage]);
+
+  const handleSmartTextParsed = useCallback((data: any) => {
+    setDraft(prev => ({
+      ...prev,
+      title: data.title,
+      price: data.price > 0 ? data.price : prev.price,
+      category: data.category,
+      condition: data.condition,
+      description: data.description,
+      meetingSpot: data.meetingSpot || prev.meetingSpot,
+      images: data.images || prev.images
+    }));
+
+    addBotMessage(
+      `Great! I've extracted the details from your description:\n\n` +
+      `📦 **${data.title}**\n` +
+      `💰 **$${data.price > 0 ? data.price.toFixed(2) : 'Price needed'}**\n` +
+      `📂 **${data.category}**\n` +
+      `⭐ **${data.condition}**\n\n` +
+      `Let's continue with the remaining details!`
+    );
+
+    // If price is missing, go to price step, otherwise continue to optional fields
+    if (data.price <= 0) {
+      setStep(1); // Price step
+    } else {
+      handleOptionalFields();
+    }
+  }, [addBotMessage]);
+
+  const handleSmartImageAnalyzed = useCallback((data: any) => {
+    setDraft(prev => ({
+      ...prev,
+      title: data.title,
+      price: data.price > 0 ? data.price : prev.price,
+      category: data.category,
+      condition: data.condition,
+      description: data.description,
+      meetingSpot: data.meetingSpot || prev.meetingSpot,
+      images: [...prev.images, data.originalImage]
+    }));
+
+    addBotMessage(
+      `Perfect! I've analyzed your image and extracted:\n\n` +
+      `📦 **${data.title}**\n` +
+      `📂 **${data.category}**\n` +
+      `⭐ **${data.condition}**\n\n` +
+      `Let's continue with the remaining details!`
+    );
+
+    // If price is missing, go to price step, otherwise continue to optional fields
+    if (data.price <= 0) {
+      setStep(1); // Price step
+    } else {
+      handleOptionalFields();
+    }
   }, [addBotMessage]);
 
   const addUserMessage = useCallback((text: string, images?: string[]) => {
@@ -438,6 +497,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           addBotMessage("Please upload at least one photo using the upload button before continuing.");
           return;
         }
+        // If user types something in step 2 but images are already uploaded, continue the flow
+        addBotMessage("Great! I see you have photos uploaded. Let's continue with the optional details!");
         handleOptionalFields();
         break;
       
@@ -510,7 +571,7 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     setTimeout(saveDraft, 500);
   };
 
-  const handleOptionalFields = () => {
+  const handleOptionalFields = useCallback(() => {
     const categoryButtons = CATEGORIES.map(category => ({
       text: category,
       value: category
@@ -518,7 +579,30 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     
     addBotMessage(`Great! I have the required info. Now let's add some optional details to make your listing better. What category best describes your ${draft.title}?`, 1000, categoryButtons);
     setStep(3);
-  };
+  }, [addBotMessage, draft.title]);
+
+  // Auto-continue flow when images are added in step 2
+  useEffect(() => {
+    if (step === 2 && draft.images.length > 0) {
+      // Check if we haven't already shown the continuation message
+      const hasContinuationMessage = messages.some(msg => 
+        msg.isBot && msg.text.includes('Let\'s add some optional details')
+      );
+      
+      if (!hasContinuationMessage) {
+        setTimeout(() => {
+          // Use a direct message addition instead of addBotMessage to avoid dependency issues
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            text: `Perfect! ${draft.images.length} photo(s) processed successfully. You now have all the required information. Let's add some optional details to make your listing even better!`,
+            isBot: true,
+            timestamp: new Date()
+          }]);
+          handleOptionalFields();
+        }, 1000);
+      }
+    }
+  }, [draft.images, step, messages, handleOptionalFields]);
 
   const handleButtonClick = (value: string) => {
     addUserMessage(value);
@@ -615,14 +699,24 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           
           addUserMessage(`Added ${uploadedUrls.length} image(s)`, uploadedUrls);
           
-          if (step === 2 && draft.images.length === 0) {
+          // Check if this is the first time images are being added (step 2 and no previous images)
+          const isFirstImageUpload = step === 2 && draft.images.length === 0;
+          
+          if (isFirstImageUpload) {
             // First images uploaded, move to next step
             setTimeout(() => {
               addBotMessage(`Perfect! ${uploadedUrls.length} photo(s) processed successfully. You now have all the required information. Let's add some optional details to make your listing even better!`);
               handleOptionalFields();
             }, 1000);
+          } else if (step === 2) {
+            // Additional images added in step 2, continue the flow
+            setTimeout(() => {
+              addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. Ready to continue! What category best describes your item?`);
+              handleOptionalFields();
+            }, 1000);
           } else {
-            addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
+            // Images added in other steps
+            addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. Photos updated!`);
           }
         } else {
           addBotMessage("Failed to upload any images. Please try again with different images.");
@@ -945,10 +1039,37 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
 
             <div className="text-center mt-4">
               <button
-                onClick={() => setShowImageFirst(false)}
+                onClick={() => {
+                  setShowImageFirst(false);
+                  setShowSmartInput(true);
+                }}
                 className="text-sm text-gray-500 hover:text-gray-700 underline"
               >
-                Skip photo and use regular chat flow
+                Skip photo and use smart text input
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Smart Input Flow (alternative to image-first) */}
+        {showSmartInput && !showDraftResume && (
+          <div className="p-4 bg-gradient-to-b from-gray-50 to-white">
+            <SmartListingInput
+              onTextParsed={handleSmartTextParsed}
+              onImageAnalyzed={handleSmartImageAnalyzed}
+              onError={handleAIError}
+              disabled={!userStats.canCreateListing}
+            />
+
+            <div className="text-center mt-4">
+              <button
+                onClick={() => {
+                  setShowSmartInput(false);
+                  setStep(0);
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Skip smart input and use regular chat flow
               </button>
             </div>
           </div>
@@ -1067,6 +1188,16 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             >
               <Upload size={20} />
             </button>
+            {!showImageFirst && !showSmartInput && (
+              <button
+                type="button"
+                onClick={() => setShowSmartInput(true)}
+                className="p-3 text-purple-500 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-all duration-200 hover:shadow-sm"
+                title="Use AI-powered smart input"
+              >
+                <Sparkles size={20} />
+              </button>
+            )}
             <input
               type="text"
               value={inputText}

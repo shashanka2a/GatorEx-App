@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { checkClientAuthAndTerms } from '../src/lib/auth/terms-check';
+// Optimized icon imports - only import what we need
 import { 
   User, 
   Mail, 
@@ -24,10 +25,143 @@ import {
   Shield,
   TrendingUp,
   Calendar,
-  MapPin,
   Info
 } from 'lucide-react';
 import Layout from '../src/components/layout/Layout';
+
+// Memoized listing card component for better performance
+const ListingCard = memo(function ListingCard({ listing, getStatusColor, viewListingContacts, handleMarkAsSold, handleRenewListing, router }: {
+  listing: any;
+  getStatusColor: (status: string) => string;
+  viewListingContacts: (id: string) => void;
+  handleMarkAsSold: (id: string) => void;
+  handleRenewListing: (id: string) => void;
+  router: any;
+}) {
+  return (
+  <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:border-gray-300">
+    <div className="flex items-start space-x-4">
+      {listing.image ? (
+        <img
+          src={listing.image}
+          alt={listing.title}
+          className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+          onClick={() => {
+            if (listing.image) {
+              window.open(listing.image, '_blank');
+            }
+          }}
+        />
+      ) : (
+        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Package size={20} className="text-gray-400" />
+        </div>
+      )}
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1 text-sm">
+              {listing.title}
+            </h3>
+            <p className="text-lg font-bold text-green-600">${listing.price}</p>
+          </div>
+          
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
+              {listing.status}
+            </span>
+            {listing.status === 'PUBLISHED' && (
+              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <Eye size={12} />
+                <span>{listing.views}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-xs text-gray-500">
+            <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
+            {listing.status === 'PUBLISHED' && listing.expiresAt && (
+              <span className="text-orange-600">
+                Expires {new Date(listing.expiresAt).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            {listing.status === 'PUBLISHED' && (
+              <>
+                <button
+                  onClick={() => viewListingContacts(listing.id)}
+                  className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+                  title="View contacts"
+                >
+                  <Users size={12} />
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
+                  }}
+                  className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  title="Share listing"
+                >
+                  <Share2 size={12} />
+                </button>
+                <button
+                  onClick={() => router.push(`/edit-listing/${listing.id}`)}
+                  className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                  title="Edit listing"
+                >
+                  <Edit3 size={12} />
+                </button>
+                <button
+                  onClick={() => handleMarkAsSold(listing.id)}
+                  className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                  title="Mark as sold"
+                >
+                  <DollarSign size={12} />
+                </button>
+              </>
+            )}
+            
+            {listing.status === 'SOLD' && (
+              <button
+                onClick={() => viewListingContacts(listing.id)}
+                className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+                title="View contacts"
+              >
+                <Users size={12} />
+              </button>
+            )}
+            
+            {listing.status === 'EXPIRED' && (
+              <button
+                onClick={() => handleRenewListing(listing.id)}
+                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium hover:bg-orange-200 transition-colors"
+                title="Renew listing"
+              >
+                Renew
+              </button>
+            )}
+            
+            {listing.status === 'DRAFT' && (
+              <button
+                onClick={() => router.push('/sell')}
+                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
+                title="Complete listing"
+              >
+                Complete
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+});
 
 interface UserProfile {
   id: string;
@@ -84,24 +218,7 @@ export default function ProfilePage() {
   });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (status === 'loading') return;
-      
-      const result = await checkClientAuthAndTerms();
-      if (result.redirectTo) {
-        router.push(result.redirectTo);
-        return;
-      }
-      
-      // If we get here, user is fully authenticated
-      fetchUserProfile();
-    };
-    
-    checkAuth();
-  }, [status, router]);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -149,7 +266,24 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (status === 'loading') return;
+      
+      const result = await checkClientAuthAndTerms();
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+      
+      // If we get here, user is fully authenticated
+      fetchUserProfile();
+    };
+    
+    checkAuth();
+  }, [status, router, fetchUserProfile]);
 
   const handleEditProfile = () => {
     setShowEditModal(true);
@@ -232,22 +366,28 @@ export default function ProfilePage() {
     router.push(`/listing/${listingId}/contacts`);
   };
 
-  const filteredListings = user?.listings.filter(listing => {
-    switch (activeTab) {
-      case 'active':
-        return listing.status === 'PUBLISHED';
-      case 'draft':
-        return listing.status === 'DRAFT';
-      case 'expired':
-        return listing.status === 'EXPIRED';
-      case 'sold':
-        return listing.status === 'SOLD';
-      default:
-        return true;
-    }
-  }) || [];
+  // Memoized filtered listings for better performance
+  const filteredListings = useMemo(() => {
+    if (!user?.listings) return [];
+    
+    return user.listings.filter(listing => {
+      switch (activeTab) {
+        case 'active':
+          return listing.status === 'PUBLISHED';
+        case 'draft':
+          return listing.status === 'DRAFT';
+        case 'expired':
+          return listing.status === 'EXPIRED';
+        case 'sold':
+          return listing.status === 'SOLD';
+        default:
+          return true;
+      }
+    });
+  }, [user?.listings, activeTab]);
 
-  const getStatusColor = (status: string) => {
+  // Memoized color functions for better performance
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'PUBLISHED':
         return 'text-green-600 bg-green-100';
@@ -260,9 +400,9 @@ export default function ProfilePage() {
       default:
         return 'text-gray-600 bg-gray-100';
     }
-  };
+  }, []);
 
-  const getTrustLevelColor = (level: string) => {
+  const getTrustLevelColor = useCallback((level: string) => {
     switch (level) {
       case 'TRUSTED':
         return 'text-blue-600 bg-blue-100';
@@ -271,7 +411,7 @@ export default function ProfilePage() {
       default:
         return 'text-gray-600 bg-gray-100';
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -817,127 +957,15 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-3">
                 {filteredListings.map((listing) => (
-                  <div key={listing.id} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:border-gray-300">
-                    <div className="flex items-start space-x-4">
-                      {listing.image ? (
-                        <img
-                          src={listing.image}
-                          alt={listing.title}
-                          className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
-                          onClick={() => {
-                            if (listing.image) {
-                              window.open(listing.image, '_blank');
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package size={20} className="text-gray-400" />
-                        </div>
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors line-clamp-1 text-sm">
-                              {listing.title}
-                            </h3>
-                            <p className="text-lg font-bold text-green-600">${listing.price}</p>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2 flex-shrink-0">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
-                              {listing.status}
-                            </span>
-                            {listing.status === 'PUBLISHED' && (
-                              <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                <Eye size={12} />
-                                <span>{listing.views}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3 text-xs text-gray-500">
-                            <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
-                            {listing.status === 'PUBLISHED' && listing.expiresAt && (
-                              <span className="text-orange-600">
-                                Expires {new Date(listing.expiresAt).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center space-x-1">
-                            {listing.status === 'PUBLISHED' && (
-                              <>
-                                <button
-                                  onClick={() => viewListingContacts(listing.id)}
-                                  className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-                                  title="View contacts"
-                                >
-                                  <Users size={12} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/listing/${listing.id}`);
-                                  }}
-                                  className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-                                  title="Share listing"
-                                >
-                                  <Share2 size={12} />
-                                </button>
-                                <button
-                                  onClick={() => router.push(`/edit-listing/${listing.id}`)}
-                                  className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                                  title="Edit listing"
-                                >
-                                  <Edit3 size={12} />
-                                </button>
-                                <button
-                                  onClick={() => handleMarkAsSold(listing.id)}
-                                  className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                                  title="Mark as sold"
-                                >
-                                  <DollarSign size={12} />
-                                </button>
-                              </>
-                            )}
-                            
-                            {listing.status === 'SOLD' && (
-                              <button
-                                onClick={() => viewListingContacts(listing.id)}
-                                className="p-1.5 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-                                title="View contacts"
-                              >
-                                <Users size={12} />
-                              </button>
-                            )}
-                            
-                            {listing.status === 'EXPIRED' && (
-                              <button
-                                onClick={() => handleRenewListing(listing.id)}
-                                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium hover:bg-orange-200 transition-colors"
-                                title="Renew listing"
-                              >
-                                Renew
-                              </button>
-                            )}
-                            
-                            {listing.status === 'DRAFT' && (
-                              <button
-                                onClick={() => router.push('/sell')}
-                                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
-                                title="Complete listing"
-                              >
-                                Complete
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    getStatusColor={getStatusColor}
+                    viewListingContacts={viewListingContacts}
+                    handleMarkAsSold={handleMarkAsSold}
+                    handleRenewListing={handleRenewListing}
+                    router={router}
+                  />
                 ))}
               </div>
             )}

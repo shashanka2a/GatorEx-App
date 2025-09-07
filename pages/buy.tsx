@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -9,9 +9,14 @@ import { Button } from '../src/components/ui/button';
 import { Badge } from '../src/components/ui/badge';
 import { Heart, MapPin, Shield, Clock, Eye, MessageCircle, Mail, Phone, Search, Filter, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from '../src/components/figma/ImageWithFallback';
+import dynamic from 'next/dynamic';
 import WebNav from '../src/components/navigation/WebNav';
 import MobileNav from '../src/components/navigation/MobileNav';
-import ListingModal from '../src/components/ui/ListingModal';
+// Lazy load the modal for better initial page load
+const ListingModal = dynamic(() => import('../src/components/ui/ListingModal'), {
+  loading: () => <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={32} /></div>,
+  ssr: false
+});
 import { ListingGridSkeleton } from '../src/components/ui/ListingSkeleton';
 import { ListingCard } from '../src/components/ui/ListingCard';
 
@@ -137,6 +142,22 @@ export default function BuyPage() {
       fetchListings(selectedCategory, searchTerm, nextPage, true);
     }
   }, [loading, hasMore, page, selectedCategory, searchTerm, fetchListings]);
+
+  // Intersection observer for infinite scroll
+  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMore();
+      }
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loading, hasMore, loadMore]);
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Memoized filtered listings for better performance
   const filteredListings = useMemo(() => {
@@ -290,9 +311,9 @@ export default function BuyPage() {
             </div>
           )}
 
-          {/* Load More Button */}
+          {/* Load More Button with Intersection Observer */}
           {!loading && !error && filteredListings.length > 0 && hasMore && (
-            <div className="text-center mt-8">
+            <div ref={loadMoreRef} className="text-center mt-8">
               <Button
                 onClick={loadMore}
                 variant="outline"
