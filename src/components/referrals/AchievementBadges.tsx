@@ -109,7 +109,7 @@ export default function AchievementBadges({ referrals, clicks, streak = 0 }: Ach
     }
 
     setAchievements(achievementList);
-  }, [referrals, clicks, streak]);
+  }, [referrals, clicks, streak, achievements]);
 
   return (
     <div className="bg-white rounded-2xl p-6 mb-8 shadow-xl">

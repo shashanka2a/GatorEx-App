@@ -624,14 +624,11 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           } else {
             addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. ${step === 2 ? "Ready to continue!" : "Photos updated!"}`);
           }
-          } else {
-            addBotMessage("Failed to upload any images. Please try again with different images.");
-          }
-
-        } catch (uploadError) {
-          console.error('Image upload error:', uploadError);
-          addBotMessage("There was an error uploading your images. Please try again.");
+        } else {
+          addBotMessage("Failed to upload any images. Please try again with different images.");
         }
+      } else {
+        addBotMessage("Failed to process any images. Please try again with different images.");
       }
     } catch (error) {
       console.error('Image upload error:', error);
@@ -672,8 +669,8 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
             const blob = await response.blob();
             const file = new File([blob], `image_${Date.now()}_${i}.jpg`, { type: 'image/jpeg' });
             
-            const { uploadImageToCloudinary } = await import('../../lib/storage/cloudinary');
-            const uploadResult = await uploadImageToCloudinary(file, userId);
+            const { uploadImage } = await import('../../lib/storage/images');
+            const uploadResult = await uploadImage(file, userId || 'anonymous');
             
             if (uploadResult.error) {
               addBotMessage(`Failed to upload image ${i + 1}: ${uploadResult.error}`);

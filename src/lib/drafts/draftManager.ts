@@ -196,7 +196,7 @@ export class DraftManager {
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       
       // Check if draft has meaningful content (at least a title or an image)
-      const hasMeaningfulContent = recentDraft.draft.title?.trim() || 
+      const hasMeaningfulContent = Boolean(recentDraft.draft.title?.trim()) || 
                                    (recentDraft.draft.images && recentDraft.draft.images.length > 0);
       
       const shouldResume = lastSavedTime > sevenDaysAgo && 

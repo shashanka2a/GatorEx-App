@@ -379,7 +379,7 @@ export default function ProfilePage() {
                   <User size={32} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold">Hey, {user?.name?.split(' ')[0] || 'Gator'}! 👋</h1>
+                  <h1 className="text-2xl font-bold">Hey, {user?.name?.split(' ')[0] || 'Gator'}! 👋</h1>
                   <p className="text-orange-100 text-sm">Welcome back to your marketplace</p>
                 </div>
               </div>
@@ -424,13 +424,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Profile Strength</span>
               <span className="text-sm font-bold text-blue-600">
-                {Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + (user?.trustScore > 50 ? 1 : 0)) / 5 * 100)}%
+                {Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + ((user?.trustScore || 0) > 50 ? 1 : 0)) / 5 * 100)}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
               <div 
                 className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-700 relative overflow-hidden"
-                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + (user?.trustScore > 50 ? 1 : 0)) / 5 * 100)}%` }}
+                style={{ width: `${Math.round(((user?.name ? 1 : 0) + (user?.verified ? 2 : 0) + ((user?.listings?.length || 0) > 0 ? 1 : 0) + ((user?.trustScore || 0) > 50 ? 1 : 0)) / 5 * 100)}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
               </div>
