@@ -491,14 +491,34 @@ export default function ListingModal({ listing, isOpen, onClose, onContact, isAu
                     </p>
                   </div>
                 ) : (
-                  <div className="text-center">
+                  <div className="text-center space-y-4">
+                    <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                      <h4 className="font-semibold text-orange-900 mb-2">Ready to Contact the Seller?</h4>
+                      <p className="text-sm text-orange-800 mb-3">
+                        Sign in or create your free UF account to get contact details and start messaging sellers instantly.
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-orange-700">
+                        <Shield size={12} />
+                        <span>UF verified • Safe & secure</span>
+                      </div>
+                    </div>
+                    
                     <Button
-                      onClick={onClose}
-                      variant="outline"
-                      className="w-full border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50"
+                      onClick={() => {
+                        // Store the current listing ID to return to after auth
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.setItem('returnToListing', listing.id);
+                        }
+                        window.location.href = '/verify';
+                      }}
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3"
                     >
-                      🔐 Sign in to contact seller
+                      🚀 Sign In / Sign Up to Contact
                     </Button>
+                    
+                    <p className="text-xs text-gray-500">
+                      Join thousands of UF students buying and selling safely
+                    </p>
                   </div>
                 )}
               </div>
