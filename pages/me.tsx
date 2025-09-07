@@ -279,9 +279,9 @@ export default function ProfilePage() {
         <Head>
           <title>Profile - GatorEx</title>
         </Head>
-        <div className="max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
           {/* Loading Skeleton */}
-          <div className="animate-pulse">
+          <div className="animate-pulse max-w-4xl mx-auto">
             {/* Profile Header Skeleton */}
             <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
               <div className="flex items-center space-x-4">
@@ -328,8 +328,8 @@ export default function ProfilePage() {
         <Head>
           <title>Profile - GatorEx</title>
         </Head>
-        <div className="max-w-2xl mx-auto px-4 py-12 pb-24 md:pb-12">
-          <div className="text-center bg-white rounded-lg p-8 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-24 md:pb-12">
+          <div className="text-center bg-white rounded-lg p-8 shadow-sm max-w-2xl mx-auto">
             <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
             <h1 className="text-xl font-medium text-gray-900 mb-4">
               {error || 'Please sign in to view your profile'}
@@ -353,8 +353,8 @@ export default function ProfilePage() {
           <title>Profile - GatorEx</title>
         </Head>
 
-        <div className="max-w-2xl mx-auto px-4 py-12 pb-24 md:pb-12">
-          <div className="text-center bg-white rounded-lg p-8 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-24 md:pb-12">
+          <div className="text-center bg-white rounded-lg p-8 shadow-sm max-w-2xl mx-auto">
             <AlertCircle size={64} className="mx-auto text-orange-500 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               Verify Your UF Email
@@ -381,7 +381,8 @@ export default function ProfilePage() {
         <title>Profile - GatorEx</title>
       </Head>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 md:py-6 pb-24 md:pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 pb-24 md:pb-8">
+        <div className="max-w-5xl mx-auto">
         {/* Personalized Header */}
         <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
@@ -941,6 +942,7 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 
