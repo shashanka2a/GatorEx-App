@@ -41,6 +41,11 @@ interface UserProfile {
   profileCompleted: boolean;
   trustLevel: string;
   trustScore: number;
+  venmoId?: string;
+  cashappId?: string;
+  zelleId?: string;
+  paymentQrCode?: string;
+  preferredPaymentMethod?: string;
   rating: number;
   totalSales: number;
   responseTime: string;
@@ -71,9 +76,15 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired' | 'sold'>('active');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    venmoId: '',
+    cashappId: '',
+    zelleId: '',
+    paymentQrCode: '',
+    preferredPaymentMethod: 'venmo'
   });
   const [saving, setSaving] = useState(false);
 
@@ -125,7 +136,12 @@ export default function ProfilePage() {
       // Initialize edit form with current data
       setEditForm({
         name: profileData.name || '',
-        phoneNumber: profileData.phoneNumber || ''
+        phoneNumber: profileData.phoneNumber || '',
+        venmoId: profileData.venmoId || '',
+        cashappId: profileData.cashappId || '',
+        zelleId: profileData.zelleId || '',
+        paymentQrCode: profileData.paymentQrCode || '',
+        preferredPaymentMethod: profileData.preferredPaymentMethod || 'venmo'
       });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -162,6 +178,7 @@ export default function ProfilePage() {
       // Refresh profile data
       await fetchUserProfile();
       setShowEditModal(false);
+      setShowPaymentModal(false);
       
       // Show success message (you could add a toast notification here)
       alert('Profile updated successfully!');
@@ -537,22 +554,82 @@ export default function ProfilePage() {
               
               {/* Payment Methods */}
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Payment Methods</p>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-3">
-                    <CreditCard size={20} className="text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Venmo</p>
-                      <p className="text-xs text-gray-600">@{user?.name?.toLowerCase().replace(' ', '')}</p>
-                    </div>
-                  </div>
-                  <button className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                    Primary
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700">Payment Methods</p>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Edit
                   </button>
                 </div>
-                <button className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
-                  + Add Payment Method
-                </button>
+                
+                {/* Show configured payment methods */}
+                {user?.venmoId && (
+                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">V</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Venmo</p>
+                        <p className="text-xs text-gray-600">@{user.venmoId}</p>
+                      </div>
+                    </div>
+                    {user.preferredPaymentMethod === 'venmo' && (
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {user?.cashappId && (
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">$</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">CashApp</p>
+                        <p className="text-xs text-gray-600">${user.cashappId}</p>
+                      </div>
+                    </div>
+                    {user.preferredPaymentMethod === 'cashapp' && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {user?.zelleId && (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">Z</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Zelle</p>
+                        <p className="text-xs text-gray-600">{user.zelleId}</p>
+                      </div>
+                    </div>
+                    {user.preferredPaymentMethod === 'zelle' && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {!user?.venmoId && !user?.cashappId && !user?.zelleId && (
+                  <button 
+                    onClick={() => setShowPaymentModal(true)}
+                    className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    + Add Payment Method
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -932,6 +1009,151 @@ export default function ProfilePage() {
                   <>
                     <Save size={16} className="mr-2" />
                     Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Methods Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Payment Methods</h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Preferred Payment Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preferred Payment Method
+                </label>
+                <select
+                  value={editForm.preferredPaymentMethod}
+                  onChange={(e) => setEditForm({ ...editForm, preferredPaymentMethod: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="venmo">Venmo</option>
+                  <option value="cashapp">CashApp</option>
+                  <option value="zelle">Zelle</option>
+                </select>
+              </div>
+
+              {/* Venmo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-purple-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">V</span>
+                    </div>
+                    <span>Venmo Username</span>
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.venmoId}
+                  onChange={(e) => setEditForm({ ...editForm, venmoId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="@username (without @)"
+                />
+              </div>
+              
+              {/* CashApp */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-green-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">$</span>
+                    </div>
+                    <span>CashApp Username</span>
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.cashappId}
+                  onChange={(e) => setEditForm({ ...editForm, cashappId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="username (without $)"
+                />
+              </div>
+              
+              {/* Zelle */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">Z</span>
+                    </div>
+                    <span>Zelle Email/Phone</span>
+                  </div>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.zelleId}
+                  onChange={(e) => setEditForm({ ...editForm, zelleId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="email@example.com or phone number"
+                />
+              </div>
+
+              {/* QR Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="flex items-center space-x-2">
+                    <QrCode size={16} className="text-gray-600" />
+                    <span>Payment QR Code (Optional)</span>
+                  </div>
+                </label>
+                <textarea
+                  value={editForm.paymentQrCode}
+                  onChange={(e) => setEditForm({ ...editForm, paymentQrCode: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Paste QR code data or payment link here"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  You can paste a payment QR code data or direct payment link here
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Tip:</strong> Adding multiple payment methods gives buyers more options and can increase your sales!
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} className="mr-2" />
+                    Save Payment Methods
                   </>
                 )}
               </button>

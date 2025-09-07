@@ -26,11 +26,7 @@ interface ReferralSummary {
   } | null;
 }
 
-interface LeaderboardEntry {
-  rank: number;
-  points: number;
-  email: string;
-}
+
 
 // Floating particles component
 const FloatingParticles = () => (
@@ -239,7 +235,7 @@ export default function EnhancedReferralsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -270,13 +266,9 @@ export default function EnhancedReferralsPage() {
     try {
       console.log('🔄 Fetching referral data...');
       
-      const [summaryRes, leaderboardRes] = await Promise.all([
-        fetch('/api/referrals/summary'),
-        fetch('/api/referrals/leaderboard?period=week')
-      ]);
+      const summaryRes = await fetch('/api/referrals/summary');
 
       console.log('📊 Summary response:', summaryRes.status, summaryRes.ok);
-      console.log('🏆 Leaderboard response:', leaderboardRes.status, leaderboardRes.ok);
 
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json();
@@ -285,15 +277,6 @@ export default function EnhancedReferralsPage() {
       } else {
         const errorData = await summaryRes.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ Summary API error:', summaryRes.status, errorData);
-      }
-
-      if (leaderboardRes.ok) {
-        const leaderboardData = await leaderboardRes.json();
-        console.log('✅ Leaderboard data:', leaderboardData);
-        setLeaderboard(leaderboardData.leaderboard || []);
-      } else {
-        const errorData = await leaderboardRes.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Leaderboard API error:', leaderboardRes.status, errorData);
       }
     } catch (error) {
       console.error('❌ Failed to fetch referral data:', error);
@@ -870,58 +853,7 @@ export default function EnhancedReferralsPage() {
             />
           )}
 
-          {/* Enhanced Leaderboard */}
-          <div className="bg-white rounded-2xl p-6 mb-8 shadow-xl">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-2xl mr-2 animate-pulse">👑</span>
-              <h2 className="text-xl font-semibold text-gray-800">Community Leaderboard</h2>
-            </div>
-            <p className="text-center text-gray-600 mb-6">
-              See how you stack up against other GatorEx referrers
-            </p>
 
-            {session && leaderboard.length > 0 ? (
-              <div className="space-y-3">
-                {leaderboard.slice(0, 5).map((entry, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform duration-300 ${
-                        index === 0 ? 'bg-yellow-500' : 
-                        index === 1 ? 'bg-gray-400' : 
-                        index === 2 ? 'bg-orange-400' : 'bg-gray-300'
-                      }`}>
-                        {entry.rank}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-800">{entry.email}</div>
-                        <div className="text-sm text-gray-500">{entry.points} referrals</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-orange-500">${entry.points * 5}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-gray-400 text-2xl">👑</span>
-                </div>
-                <p className="text-gray-500 mb-4">
-                  {session ? 'No leaderboard data available yet' : 'Sign in to see the community leaderboard'}
-                </p>
-                {!session && (
-                  <button
-                    onClick={() => router.push('/verify')}
-                    className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
-                  >
-                    Sign In to View Rankings
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
 
           {/* Enhanced CTA Section */}
           <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-8 text-center text-white relative overflow-hidden">

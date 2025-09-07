@@ -26,7 +26,7 @@ async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    const { name, phoneNumber } = req.body;
+    const { name, phoneNumber, venmoId, cashappId, zelleId, paymentQrCode, preferredPaymentMethod } = req.body;
 
     // Validate input
     if (!name || name.trim().length === 0) {
@@ -37,18 +37,39 @@ async function handleUpdateProfile(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'Name must be less than 100 characters' });
     }
 
+    // Validate payment method IDs
+    if (venmoId && venmoId.length > 100) {
+      return res.status(400).json({ error: 'Venmo ID must be less than 100 characters' });
+    }
+    if (cashappId && cashappId.length > 100) {
+      return res.status(400).json({ error: 'CashApp ID must be less than 100 characters' });
+    }
+    if (zelleId && zelleId.length > 100) {
+      return res.status(400).json({ error: 'Zelle ID must be less than 100 characters' });
+    }
+
     // Update user profile
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         name: name.trim(),
         phoneNumber: phoneNumber?.trim() || null,
+        venmoId: venmoId?.trim() || null,
+        cashappId: cashappId?.trim() || null,
+        zelleId: zelleId?.trim() || null,
+        paymentQrCode: paymentQrCode?.trim() || null,
+        preferredPaymentMethod: preferredPaymentMethod || 'venmo',
         profileCompleted: true // Mark profile as completed when user updates it
       },
       select: {
         id: true,
         name: true,
         phoneNumber: true,
+        venmoId: true,
+        cashappId: true,
+        zelleId: true,
+        paymentQrCode: true,
+        preferredPaymentMethod: true,
         profileCompleted: true
       }
     });
@@ -92,6 +113,11 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
         ufEmailVerified: true,
         profileCompleted: true,
         trustScore: true,
+        venmoId: true,
+        cashappId: true,
+        zelleId: true,
+        paymentQrCode: true,
+        preferredPaymentMethod: true,
         createdAt: true,
         listings: {
           select: {
@@ -165,6 +191,11 @@ async function handleGetProfile(req: NextApiRequest, res: NextApiResponse) {
       profileCompleted: userData.profileCompleted,
       trustLevel: getTrustLevel(userData.trustScore, publishedListings.length),
       trustScore: userData.trustScore,
+      venmoId: userData.venmoId,
+      cashappId: userData.cashappId,
+      zelleId: userData.zelleId,
+      paymentQrCode: userData.paymentQrCode,
+      preferredPaymentMethod: userData.preferredPaymentMethod,
       rating: 4.8, // Mock rating - implement reviews system later
       totalSales: publishedListings.length,
       responseTime: '2h', // Mock - implement messaging system later
