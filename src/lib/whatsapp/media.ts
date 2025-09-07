@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
+import { supabase } from '../supabase';
 
 const prisma = new PrismaClient();
 
@@ -32,9 +33,11 @@ export async function downloadMedia(mediaUrl: string, mediaId: string): Promise<
 }
 
 async function uploadToStorage(buffer: Buffer, filename: string, mimeType: string): Promise<MediaUploadResult> {
-  const storageProvider = process.env.STORAGE_PROVIDER || 'local';
+  const storageProvider = process.env.STORAGE_PROVIDER || 'supabase';
   
   switch (storageProvider.toLowerCase()) {
+    case 'supabase':
+      return await uploadToSupabase(buffer, filename, mimeType);
     case 'cloudinary':
       return await uploadToCloudinary(buffer, filename, mimeType);
     case 's3':
@@ -42,6 +45,40 @@ async function uploadToStorage(buffer: Buffer, filename: string, mimeType: strin
     case 'local':
     default:
       return await uploadToLocal(buffer, filename, mimeType);
+  }
+}
+
+async function uploadToSupabase(buffer: Buffer, filename: string, mimeType: string): Promise<MediaUploadResult> {
+  try {
+    // Upload to Supabase storage
+    const { data, error } = await supabase.storage
+      .from('listing-images')
+      .upload(filename, buffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: mimeType
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new Error(`Supabase upload failed: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('listing-images')
+      .getPublicUrl(filename);
+
+    return {
+      url: urlData.publicUrl,
+      filename: filename,
+      size: buffer.length,
+      mimeType
+    };
+  } catch (error) {
+    console.error('Supabase upload failed:', error);
+    // Fallback to local storage
+    return await uploadToLocal(buffer, filename, mimeType);
   }
 }
 

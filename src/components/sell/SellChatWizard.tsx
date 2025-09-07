@@ -665,20 +665,22 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           addBotMessage(`Uploading image ${i + 1}...`);
           
           try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const file = new File([blob], `image_${Date.now()}_${i}.jpg`, { type: 'image/jpeg' });
+            // Upload data URL directly to our API
+            const uploadResponse = await fetch('/api/upload/images', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: imageUrl })
+            });
             
-            const { uploadImage } = await import('../../lib/storage/images');
-            const uploadResult = await uploadImage(file, userId || 'anonymous');
+            const uploadData = await uploadResponse.json();
             
-            if (uploadResult.error) {
-              addBotMessage(`Failed to upload image ${i + 1}: ${uploadResult.error}`);
+            if (!uploadResponse.ok) {
+              addBotMessage(`Failed to upload image ${i + 1}: ${uploadData.error}`);
               setIsPublishing(false);
               return;
             }
             
-            finalImageUrls.push(uploadResult.url);
+            finalImageUrls.push(uploadData.url);
           } catch (uploadError) {
             console.error('Image upload error during publish:', uploadError);
             addBotMessage(`Failed to upload image ${i + 1}. Please try again.`);
