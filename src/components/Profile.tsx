@@ -62,7 +62,7 @@ export function Profile({ onEditProfile, onCreateListing, onListingClick }: Prof
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center p-3">
             <img 
-              src="/logo.png" 
+              src="/logo.svg" 
               alt="User Avatar" 
               className="w-full h-full object-contain"
             />

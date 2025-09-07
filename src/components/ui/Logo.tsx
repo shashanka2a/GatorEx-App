@@ -21,7 +21,7 @@ const sizeClasses = {
 
 export function Logo({ 
   size = 'md', 
-  variant = 'png', 
+  variant = 'svg', 
   className = '', 
   white = false,
   rounded = false 

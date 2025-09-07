@@ -63,7 +63,7 @@ export function EmailVerification({ email, onVerified, onBack }: EmailVerificati
       <div className="p-6 text-center text-white opacity-0 animate-[fadeInUp_0.6s_ease-out_forwards]">
         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg p-2">
           <img 
-            src="/logo.png" 
+            src="/logo.svg" 
             alt="GatorEx Logo" 
             className="w-full h-full object-contain"
           />
