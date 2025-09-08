@@ -465,41 +465,62 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
     }
 
     switch (step) {
-      case 0: // Item title
-        if (userInput.trim().length < 3) {
-          addBotMessage("Please provide a more descriptive title (at least 3 characters).");
-          return;
-        }
-        if (userInput.trim().length > 100) {
-          addBotMessage("Title is too long. Please keep it under 100 characters.");
-          return;
-        }
-        
-        setDraft(prev => ({ ...prev, title: userInput.trim() }));
-        addBotMessage(`Great! "${userInput.trim()}" sounds good. Now, what's your asking price? Please enter a number (e.g., 25, 50.99).`);
-        setStep(1);
-        break;
-      
-      case 1: // Price
-        const price = validatePrice(userInput);
-        if (price === null) {
-          addBotMessage('Please enter a valid price between $0.01 and $10,000 (e.g., "25" or "50.99"). No "DM for price" - buyers need to see the price upfront!');
-          return;
-        }
-        
-        setDraft(prev => ({ ...prev, price }));
-        addBotMessage(`Perfect! $${price.toFixed(2)} it is. Now I need at least one photo of your item. Click the upload button to add photos.`);
+      case 0: // Image-first: ask for at least one photo first
+        addBotMessage('Please start by uploading at least one clear photo of your item.');
         setStep(2);
         break;
       
+      case 1: // Combined Title + Price
+        {
+          // Expect formats like: "iPhone 14 Pro Max — $850" or "iPhone - 850"
+          const input = userInput.trim();
+          const dashSplit = input.split(/[-–—]\s*/); // split on -, – or —
+          let proposedTitle = draft.title?.trim() || '';
+          let priceText = '';
+          if (dashSplit.length >= 2) {
+            proposedTitle = dashSplit[0].trim();
+            priceText = dashSplit.slice(1).join(' ').trim();
+          } else {
+            // If only a number provided, treat as price-only edit
+            priceText = input;
+          }
+
+          const parsedPrice = validatePrice(priceText);
+          if (parsedPrice === null) {
+            // Keep any inferred/previous title, ask just for price
+            if (!proposedTitle && draft.title) {
+              proposedTitle = draft.title;
+            }
+            if (proposedTitle && proposedTitle !== draft.title) {
+              setDraft(prev => ({ ...prev, title: proposedTitle }));
+            }
+            addBotMessage(`❌ Price looks invalid. Please reply with just the price (e.g., 25 or 50.99).`);
+            // Stay on step 1 but now expecting just price
+            return;
+          }
+
+          // Update title if provided; otherwise keep existing/inferred
+          const finalTitle = proposedTitle || draft.title;
+          if (!finalTitle || finalTitle.length < 3 || finalTitle.length > 100) {
+            addBotMessage('❌ Title looks off. Please send: Title — $Price (e.g., "iPhone 14 — $300").');
+            return;
+          }
+
+          setDraft(prev => ({ ...prev, title: finalTitle.trim(), price: parsedPrice }));
+          addBotMessage(`✅ Saved: ${finalTitle.trim()} — $${parsedPrice.toFixed(2)}`);
+          // We already have images; proceed to optional details
+          handleOptionalFields();
+          break;
+        }
+      
       case 2: // Photos (handled by file upload)
         if (draft.images.length === 0) {
-          addBotMessage("Please upload at least one photo using the upload button before continuing.");
+          addBotMessage('I need a photo to continue. Please upload at least one image.');
           return;
         }
-        // If user types something in step 2 but images are already uploaded, continue the flow
-        addBotMessage("Great! I see you have photos uploaded. Let's continue with the optional details!");
-        handleOptionalFields();
+        // After first photo, ask for Title + Price together
+        addBotMessage(`📸 Photo received! Now reply with: Title — $Price (e.g., "iPhone 14 — $850").`);
+        setStep(1);
         break;
       
       case 3: // Category
@@ -636,12 +657,27 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
 
     const filesToProcess = Array.from(files).slice(0, availableSlots);
     const newImages: string[] = [];
+    const inferredTitles: string[] = [];
     
     addBotMessage(`Processing ${filesToProcess.length} image(s)... Please wait.`);
 
     try {
       for (let i = 0; i < filesToProcess.length; i++) {
         const file = filesToProcess[i];
+        // Try to infer a draft title from filename (before compression)
+        const rawName = file.name || '';
+        if (rawName) {
+          const baseName = rawName.replace(/\.[^/.]+$/, '');
+          const cleaned = baseName
+            .replace(/[._-]+/g, ' ')
+            .replace(/\b(img|image|photo|pic|whatsapp|screenshot|edited)\b/gi, '')
+            .replace(/\b\d{8,}\b/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          if (cleaned && cleaned.length >= 3) {
+            inferredTitles.push(cleaned);
+          }
+        }
         
         if (file.size > 10 * 1024 * 1024) { // 10MB limit for original file
           addBotMessage(`Image ${i + 1} is too large (${Math.round(file.size / 1024 / 1024)}MB). Please use images under 10MB.`);
@@ -688,8 +724,15 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
               !existingImages.some(existingUrl => existingUrl === newUrl)
             );
             
+            // If we don't have a title yet, try to set from inferred filenames
+            let nextTitle = prev.title;
+            if (!nextTitle && inferredTitles.length > 0) {
+              nextTitle = inferredTitles[0];
+            }
+
             return { 
               ...prev, 
+              title: nextTitle || prev.title,
               images: [...existingImages, ...uniqueNewImages] 
             };
           });
@@ -703,20 +746,19 @@ export default function SellChatWizard({ userStats, userId }: SellChatWizardProp
           const isFirstImageUpload = step === 2 && draft.images.length === 0;
           
           if (isFirstImageUpload) {
-            // First images uploaded, move to next step
+            // After first image, prompt for Title + Price together
+            const titleHint = inferredTitles[0] ? ` Suggested title: "${inferredTitles[0]}".` : '';
             setTimeout(() => {
-              addBotMessage(`Perfect! ${uploadedUrls.length} photo(s) processed successfully. You now have all the required information. Let's add some optional details to make your listing even better!`);
-              handleOptionalFields();
-            }, 1000);
+              addBotMessage(`✅ Photos added! Now reply with: Title — $Price (e.g., "iPhone 14 — $850").${titleHint}`);
+              setStep(1);
+            }, 800);
           } else if (step === 2) {
-            // Additional images added in step 2, continue the flow
             setTimeout(() => {
-              addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. Ready to continue! What category best describes your item?`);
-              handleOptionalFields();
-            }, 1000);
+              addBotMessage(`✅ ${draft.images.length + uploadedUrls.length} photos ready. Reply with: Title — $Price to continue.`);
+              setStep(1);
+            }, 800);
           } else {
-            // Images added in other steps
-            addBotMessage(`Great! ${draft.images.length + uploadedUrls.length} total photos processed successfully. Photos updated!`);
+            addBotMessage(`✅ Photos updated.`);
           }
         } else {
           addBotMessage("Failed to upload any images. Please try again with different images.");

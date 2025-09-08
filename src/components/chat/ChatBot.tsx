@@ -42,12 +42,12 @@ export default function ChatBot({ isOpen, onClose, mode }: ChatBotProps) {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      // Initialize conversation based on mode
-      const welcomeMessage = mode === 'sell' 
-        ? "Hi! I'm GatorBot 🐊 I'll help you create your listing in just a few steps. What would you like to sell?"
-        : "Hi! I'm GatorBot 🐊 How can I help you today?";
-      
-      addBotMessage(welcomeMessage);
+      if (mode === 'sell') {
+        addBotMessage("Let's start with a photo 📸. Please upload at least one image of your item.");
+        setStep(2);
+      } else {
+        addBotMessage("Hi! I'm GatorBot 🐊 How can I help you today?");
+      }
     }
   }, [isOpen, mode, messages.length]);
 
@@ -76,31 +76,55 @@ export default function ChatBot({ isOpen, onClose, mode }: ChatBotProps) {
 
   const handleSellFlow = async (userInput: string) => {
     switch (step) {
-      case 0: // Item title
-        setListingData(prev => ({ ...prev, title: userInput }));
-        addBotMessage(`Great! "${userInput}" sounds interesting. What's your asking price? (e.g., $50, $25, etc.)`);
-        setStep(1);
-        break;
-      
-      case 1: // Price
-        setListingData(prev => ({ ...prev, price: userInput }));
-        addBotMessage(`Perfect! Now tell me more about the condition and any details about "${listingData.title}".`);
+      case 0:
+        addBotMessage('Please upload a photo to begin.');
         setStep(2);
         break;
-      
-      case 2: // Description
+
+      case 1: {
+        const input = userInput.trim();
+        const dashSplit = input.split(/[-–—]\s*/);
+        let title = listingData.title.trim();
+        let priceText = '';
+        if (dashSplit.length >= 2) {
+          title = dashSplit[0].trim();
+          priceText = dashSplit.slice(1).join(' ').trim();
+        } else {
+          priceText = input;
+        }
+
+        const clean = priceText.replace(/[^0-9.]/g, '');
+        const parsed = parseFloat(clean);
+        if (isNaN(parsed) || parsed <= 0) {
+          addBotMessage('❌ Price looks invalid. Please reply with just the price (e.g., 25 or 50.99).');
+          return;
+        }
+
+        if (!title || title.length < 3 || title.length > 100) {
+          addBotMessage('❌ Title looks off. Please send: Title — $Price (e.g., "iPad Air — $280").');
+          return;
+        }
+
+        setListingData(prev => ({ ...prev, title, price: `$${parsed.toFixed(2)}` }));
+        addBotMessage(`✅ Saved: ${title} — $${parsed.toFixed(2)}`);
+        addBotMessage('Tell me a short description (one message).');
+        setStep(2);
+        break;
+      }
+
+      case 2:
         setListingData(prev => ({ ...prev, description: userInput }));
-        addBotMessage(`Excellent description! Would you like to add some photos? You can upload them using the image button, or type "skip" to continue without photos.`);
+        addBotMessage('Now upload at least one photo.');
         setStep(3);
         break;
-      
-      case 3: // Photos or final step
-        if (userInput.toLowerCase() === 'skip' || listingData.images.length > 0) {
-          addBotMessage(`Perfect! Let me create your listing:\n\n📦 **${listingData.title}**\n💰 **${listingData.price}**\n📝 **${listingData.description}**\n\nWould you like to publish this listing? Type "yes" to confirm or "edit" to make changes.`);
-          setStep(4);
-        } else {
-          addBotMessage(`Please upload some photos using the image button, or type "skip" to continue without photos.`);
+
+      case 3:
+        if (listingData.images.length === 0) {
+          addBotMessage('I still need a photo. Please upload one.');
+          return;
         }
+        addBotMessage(`Perfect! Let me create your listing:\n\n📦 **${listingData.title}**\n💰 **${listingData.price}**\n📝 **${listingData.description}**\n\nPublish now? Type "yes" to confirm or "edit" to change.`);
+        setStep(4);
         break;
       
       case 4: // Confirmation
@@ -191,16 +215,37 @@ export default function ChatBot({ isOpen, onClose, mode }: ChatBotProps) {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         imageUrls.push(result);
-        setListingData(prev => ({ 
-          ...prev, 
-          images: [...prev.images, result] 
-        }));
+        setListingData(prev => { 
+          // Infer title from filename if missing
+          let nextTitle = prev.title;
+          if (!nextTitle && file.name) {
+            const base = file.name.replace(/\.[^/.]+$/, '');
+            const cleaned = base
+              .replace(/[._-]+/g, ' ')
+              .replace(/\b(img|image|photo|pic|whatsapp|screenshot|edited)\b/gi, '')
+              .replace(/\b\d{8,}\b/g, '')
+              .replace(/\s{2,}/g, ' ')
+              .trim();
+            if (cleaned && cleaned.length >= 3) {
+              nextTitle = cleaned;
+            }
+          }
+
+          return ({ 
+            ...prev, 
+            title: nextTitle || prev.title,
+            images: [...prev.images, result] 
+          });
+        });
         
         if (imageUrls.length === files.length) {
           addUserMessage(`Uploaded ${files.length} image(s)`, imageUrls);
-          if (step === 3) {
-            addBotMessage(`Great photos! Your listing looks good:\n\n📦 **${listingData.title}**\n💰 **${listingData.price}**\n📝 **${listingData.description}**\n🖼️ **${listingData.images.length} photo(s)**\n\nReady to publish? Type "yes" to confirm!`);
-            setStep(4);
+          if (step === 2) {
+            // After description earlier, we now expect Title + Price
+            addBotMessage('✅ Photo received. Now send: Title — $Price (e.g., "AirPods Pro — $120").');
+            setStep(1);
+          } else if (step === 3) {
+            addBotMessage('✅ Photo received.');
           }
         }
       };
